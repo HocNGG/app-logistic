@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  =====================================================================================
+  lab_ui/views/login.xml  —  Trang đăng nhập "Dark Premium + Lime" (2 panel, toàn màn hình).
+  Người viết: FE-01. Biên giới: addons/lab_ui/views/** (AGENTS.md Luật 10).
+  ADR: docs/adr/ADR-009-dark-premium-lime.md §6/§7. Quy chuẩn: design-system/lab-logistics/MASTER.md §7.
+
+  BỐ CỤC (MASTER.md §7 — DARK là chế độ duy nhất, không có bản sáng):
+    ┌──────────────────────────────┬──────────────────────────────┐
+    │ panel thương hiệu (s1)       │ form trên card (card)        │
+    │  mark + wordmark             │  logo công ty (nhỏ)          │
+    │  H1 ≤ 2 dòng                 │  H2 "Đăng nhập" + gợi ý      │
+    │  3 con số bằng chứng (lime)  │  nhãn + ô nhập + nút lime    │
+    │  chân trang                  │  link phụ                    │
+    └──────────────────────────────┴──────────────────────────────┘
+  < 900px: một cột, panel thương hiệu rút gọn lên trên.
+  QUY TẮC MÀU (ADR-009 §7): panel là token lab-s1 (KHÔNG tô lime diện rộng); lime chỉ ở
+  1 ô logo; nút chính nền lime + chữ token lab-on-accent; viền panel token lab-line.
+
+  ĐỐI CHIẾU SOURCE THẬT — đọc trực tiếp trong container (odoo 17.0, 2026-11-01):
+    /usr/lib/python3/dist-packages/odoo/addons/web/views/webclient_templates.xml
+      • template "web.login_layout"  → div.card.o_database_list (style max-width:300px inline)
+      • template "web.login"         → form.oe_login_form, label[for=login|password],
+                                        div với **t-attf-class** "clearfix oe_login_buttons …",
+                                        button[type=submit]
+    /usr/lib/python3/dist-packages/odoo/addons/auth_signup/views/auth_signup_login_templates.xml
+      • 2 link "Don't have an account?" / "Reset Password" dùng **t-attf-href** và do module
+        auth_signup chèn vào ⇒ lab_ui phải `depends: auth_signup` thì view của ta mới được
+        áp SAU và tìm thấy chúng (xem __manifest__.py).
+
+  BA CÁI BẪY ĐÃ TRẢ GIÁ (đừng lặp lại):
+    1. `hasclass('oe_login_buttons')` KHÔNG khớp: div đó chỉ có `t-attf-class`, không có
+       `class` literal ⇒ `hasclass` chỉ đọc thuộc tính `class` của arch. Anchor vào
+       `//form[hasclass('oe_login_form')]` (form này có class literal) rồi đi xuống.
+    2. `//a[contains(@href, '/web/signup')]` KHÔNG khớp: link sinh bởi auth_signup dùng
+       `t-attf-href` ⇒ phải `contains(@t-attf-href, ...)`.
+    3. Muốn đổi CHỮ của một phần tử thì phải `position="replace"` và chép lại đủ thuộc tính.
+       `position="inside"` chỉ nhận **phần tử con**, text trần bị bỏ im lặng.
+
+  NGUYÊN TẮC BẤT BIẾN:
+    • KHÔNG chạm name= của input, action= của form, csrf_token, controller (`web.Home.login`).
+    • Chỉ thêm khối trình bày + đổi class + đổi CHỮ HIỂN THỊ (giữ nguyên thuộc tính gốc).
+
+  ⚠️ GHI CHÚ i18n (bàn giao BE-01): các chuỗi "Email"/"Password"/"Log in"/"Reset Password"…
+  là chuỗi của `web`/`auth_signup`, đáng lẽ phải đến từ `vi.po` khi DB bật tiếng Việt. DB demo
+  hiện CHỈ có `en_US` (đã kiểm: `res.lang` không có bản ghi `vi_VN`) nên trang đăng nhập lộ
+  chuỗi tiếng Anh — vi phạm Luật 6. Trong biên giới FE-01, cách sửa rẻ nhất là đổi chữ ở lớp
+  view (dưới đây). Khi BE-01 bật `vi_VN` (`base.language.install`) thì XOÁ khối nhãn trong
+  `login_form_lab` và mục (5) trong `login_layout_lab` để lấy lại bản dịch chuẩn.
+  =====================================================================================
+-->
+<odoo>
+
+    <!-- =================================================================================
+         1. KHUNG TRANG — body class, container 2 cột, panel thương hiệu, chân card.
+         ================================================================================= -->
+    <template id="login_layout_lab" inherit_id="web.login_layout" name="Lab Modern Industrial">
+
+        <!-- (1) body: 17.0 đặt 'bg-100' (xám lạnh, !important) → thay bằng class riêng để
+                 backend.scss scope được `body.o_login` và nền lấy từ token lab-bg. -->
+        <xpath expr="//t[@t-set='body_classname']" position="attributes">
+            <attribute name="t-value">'o_login lab_login_body'</attribute>
+        </xpath>
+
+        <!-- (2) container: giữ "container py-5", thêm class để CSS bật lưới 2 cột. -->
+        <xpath expr="//div[hasclass('container')]" position="attributes">
+            <attribute name="class" add="lab_login_shell" separator=" "/>
+        </xpath>
+
+        <!-- (3) card: bỏ `bg-100` (xem đầu file) và bỏ `max-width:300px` inline.
+                 Giữ nguyên `{{login_card_classes}}` — biến này do Odoo tính. -->
+        <xpath expr="//div[contains(@t-attf-class, 'o_database_list')]" position="attributes">
+            <attribute name="t-attf-class">card border-0 mx-auto {{login_card_classes}} o_database_list lab_login_card</attribute>
+            <attribute name="style">max-width: 460px;</attribute>
+        </xpath>
+
+        <!-- (4) PANEL THƯƠNG HIỆU — chèn NGAY TRƯỚC card (không sửa card).
+                 Logo vẽ bằng CSS thuần (2 kiện hàng trên 1 pallet): không ảnh, không SVG.
+                 Ba con số là dữ liệu THẬT của bài toán (docs/00: 19 bước · 6 phòng ban ·
+                 6 ngoại lệ) — không phải "số liệu trang trí" bị cấm ở MASTER §9. -->
+        <xpath expr="//div[contains(@t-attf-class, 'o_database_list')]" position="before">
+            <aside class="lab_login_brand" aria-label="Giới thiệu hệ thống">
+                <div class="lab_login_brand_top">
+                    <span class="lab_login_mark" aria-hidden="true">
+                        <span class="lab_login_mark_unit"></span>
+                        <span class="lab_login_mark_unit"></span>
+                        <span class="lab_login_mark_base"></span>
+                    </span>
+                    <p class="lab_login_wordmark">AppLogictics</p>
+                    <h1 class="lab_login_title">Mỗi kiện hàng,<br/>một bút toán.</h1>
+                    <p class="lab_login_claim">
+                        Từ yêu cầu lấy hàng của shop đến bút toán debit: một luồng dữ liệu
+                        duy nhất trên Odoo 17, không bảng tính rời.
+                    </p>
+                </div>
+
+                <dl class="lab_login_proof">
+                    <div class="lab_login_proof_item">
+                        <dt>19</dt>
+                        <dd>bước nghiệp vụ, có điểm quay về</dd>
+                    </div>
+                    <div class="lab_login_proof_item">
+                        <dt>6</dt>
+                        <dd>phòng ban dùng chung một nguồn số liệu</dd>
+                    </div>
+                    <div class="lab_login_proof_item">
+                        <dt>6</dt>
+                        <dd>nhánh ngoại lệ đều sinh chứng từ</dd>
+                    </div>
+                </dl>
+
+                <p class="lab_login_footnote">
+                    <span>AppLogictics · Odoo 17 CE</span>
+                    <span>Bản nội bộ dùng cho demo</span>
+                </p>
+            </aside>
+        </xpath>
+
+        <!-- (5) Chân card của Odoo — chỉ đổi chữ, giữ nguyên link + class của gốc. -->
+        <xpath expr="//div[hasclass('card-body')]//a[contains(@href, '/web/database/manager')]" position="replace">
+            <a class="border-end pe-2 me-1" href="/web/database/manager">Quản lý cơ sở dữ liệu</a>
+        </xpath>
+        <xpath expr="//div[hasclass('card-body')]//a[contains(@href, 'odoo.com')]" position="replace">
+            <a href="https://www.odoo.com?utm_source=db&amp;utm_medium=auth" target="_blank">Vận hành bởi <span>Odoo</span></a>
+        </xpath>
+    </template>
+
+    <!-- =================================================================================
+         2. ĐẦU FORM + NHÃN TIẾNG VIỆT.
+            Anchor là `web.login` (form.oe_login_form có class literal) — xem bẫy số 1.
+         ================================================================================= -->
+    <template id="login_form_lab" inherit_id="web.login" name="Lab Modern Industrial — Login form">
+
+        <xpath expr="//form[hasclass('oe_login_form')]" position="before">
+            <div class="lab_login_form_head">
+                <h2 class="lab_login_form_title">Đăng nhập</h2>
+                <p class="lab_login_hint">Dùng email công ty do quản trị viên cấp.</p>
+            </div>
+        </xpath>
+
+        <xpath expr="//form[hasclass('oe_login_form')]//label[@for='login']" position="replace">
+            <label for="login" class="form-label">Email công ty</label>
+        </xpath>
+        <xpath expr="//form[hasclass('oe_login_form')]//input[@id='login']" position="attributes">
+            <attribute name="placeholder">ten.ban@congty.vn</attribute>
+        </xpath>
+
+        <xpath expr="//form[hasclass('oe_login_form')]//label[@for='password']" position="replace">
+            <label for="password" class="form-label">Mật khẩu</label>
+        </xpath>
+        <xpath expr="//form[hasclass('oe_login_form')]//input[@id='password']" position="attributes">
+            <attribute name="placeholder">Mật khẩu Odoo</attribute>
+        </xpath>
+
+        <xpath expr="//form[hasclass('oe_login_form')]//button[@type='submit']" position="replace">
+            <button type="submit" class="btn btn-primary">Đăng nhập</button>
+        </xpath>
+    </template>
+
+    <!-- =================================================================================
+         3. HAI LINK PHỤ — chúng do module `auth_signup` chèn vào `.oe_login_buttons`
+            (dùng `t-attf-href`), nên phải để trong một template KẾ THỪA CHÍNH `web.login`
+            và lab_ui phải depends auth_signup để thứ tự áp view là xác định.
+         ================================================================================= -->
+    <template id="login_links_lab" inherit_id="web.login" name="Lab Modern Industrial — Login links">
+        <xpath expr="//a[contains(@t-attf-href, '/web/signup')]" position="replace">
+            <a t-if="signup_enabled" t-attf-href="/web/signup?{{ keep_query() }}">Chưa có tài khoản?</a>
+        </xpath>
+        <xpath expr="//a[contains(@t-attf-href, '/web/reset_password')]" position="replace">
+            <a t-if="reset_password_enabled" t-attf-href="/web/reset_password?{{ keep_query() }}">Quên mật khẩu</a>
+        </xpath>
+    </template>
+
+</odoo>

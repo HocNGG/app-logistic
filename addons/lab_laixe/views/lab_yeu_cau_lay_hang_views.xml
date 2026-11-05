@@ -1,0 +1,380 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  =====================================================================================
+  VIEW XML — model `lab.yeu.cau.lay.hang` (bước ② — docs/02 §2.3 + §3.2, docs/07 nhánh ②).
+  Người viết: FE-01 (Wave B). Biên giới: addons/**/views/** (AGENTS.md Luật 10).
+
+  ĐỐI CHIẾU SOURCE THẬT (`addons/lab_laixe/models/lab_yeu_cau_lay_hang.py`):
+    field  : name, partner_id, sale_order_id, dia_chi_lay, lien_he_ten, lien_he_sdt,
+             khung_gio_tu, khung_gio_den, driver_id (hr.employee), vehicle_id (fleet.vehicle),
+             state, ngay_giao, chu_ky (Binary attachment), anh_ids (o2m ir.attachment),
+             so_kien_thuc_te, khoi_luong_uoc_kg, stock_picking_id, ly_do_that_bai, access_token
+    mixin  : lab_is_exception, lab_exception_type, lab_exception_note, lab_return_step,
+             lab_exception_user_id, lab_exception_date
+    method : ⛔ KHÔNG CÓ method `action_*` nào (model P0 chỉ khai field + state).
+
+  ⛔ VÌ SAO FORM NÀY KHÔNG CÓ NÚT CHUYỂN TRẠNG THÁI:
+     Yêu cầu "statusbar 7 state" ĐÃ LÀM (field `state` + widget statusbar, đủ 7 mã).
+     Nhưng nút bấm phải trỏ tới method thật (`type="object"` + tên method). Model chưa có
+     `action_assign` / `action_start` / `action_picked_up` / `action_confirm` /
+     `action_cancel` / `action_fail` ⇒ gắn nút vào sẽ ra lỗi "method not found" ngay khi
+     người dùng bấm, tệ hơn là không có nút. Vì vậy KHÔNG gắn. Cần BE-01 (nhiệm vụ riêng):
+        action_assign()      new → assigned
+        action_start()       assigned → en_route
+        action_picked_up()   en_route → picked_up
+        action_confirm()     picked_up → confirmed (sinh stock.picking)
+        action_fail()        en_route → failed (bắt buộc nhập ly_do_that_bai)
+        action_cancel()      new/assigned → cancelled
+     Khi có 6 method trên, chỉ cần thêm 6 thẻ <button> vào <header> (chỗ đã ghi dấu ★).
+
+  ODOO 17 IDIOMS: điều kiện là biểu thức; không dùng thuộc tính attrs; không dùng thẻ list.
+
+  ⚠️ CẦN BE-01 KHAI VÀO MANIFEST:
+      addons/lab_laixe/__manifest__.py → "data" thêm
+          "views/lab_yeu_cau_lay_hang_views.xml"   ← trước
+          "views/menuitems.xml"                    ← sau (menuitems phải ở cuối)
+  =====================================================================================
+-->
+<odoo>
+
+    <!-- =================================================================================
+         1. FORM — statusbar 7 trạng thái + chữ ký (widget image) + ảnh hiện trường.
+         ================================================================================= -->
+    <record id="view_lab_yeu_cau_lay_hang_form" model="ir.ui.view">
+        <field name="name">lab.yeu.cau.lay.hang.form</field>
+        <field name="model">lab.yeu.cau.lay.hang</field>
+        <field name="arch" type="xml">
+            <form string="Yêu cầu lấy hàng">
+                <header>
+                    <!-- NÚT NHẬN HÀNG & IN TEM (2026-11-02): một chạm = nhận + sinh kiện + in tem.
+                         Vì sao không tách 2 nút: kho đứng ở dock, tay đeo găng, 1 chạm là chốt. -->
+                    <!-- GAN TAI XE (D1/D2): CS da roi app => phai gan duoc tren WEB.
+                         Wizard goi lai action_assign() cua model, khong nhan ban logic. -->
+                    <button name="%(lab_laixe.action_lab_gan_tai_xe)d" type="action"
+                            string="Gán tài xế" class="oe_highlight"
+                            invisible="state not in ('new', 'assigned')"
+                            groups="lab_core.group_cs,lab_core.group_manager,lab_core.group_sale_admin,lab_core.group_driver_leader"/>
+                    <!-- NHAN TAI QUAY (N13/N15): chi cho kenh khach tu mang toi kho -->
+                    <button name="action_nhan_tai_quay" type="object"
+                            string="Nhận tại quầy" class="oe_highlight"
+                            invisible="kenh_nhan != 'tai_kho' or state != 'new'"
+                            groups="lab_core.group_warehouse"
+                            help="Khách đã mang hàng tới kho: nhận luôn, sinh phiếu nhập + kiện, in tem tại quầy."/>
+                    <!-- HUY VIEC (P0-7) -->
+                    <button name="action_cancel" type="object" string="Huỷ việc"
+                            invisible="state in ('confirmed', 'cancelled', 'failed')"
+                            groups="lab_core.group_cs,lab_core.group_manager,lab_core.group_sale_admin"
+                            confirm="Huỷ việc này? Không hoàn tác được."/>
+                    <button name="action_nhan_va_in_tem" type="object"
+                            string="Nhận hàng &amp; in tem" class="oe_highlight"
+                            invisible="state != 'picked_up'"
+                            groups="lab_core.group_warehouse"
+                            help="Xác nhận hàng đã về kho, sinh phiếu nhập + kiện, rồi in tem nhận (100x70)."/>
+                    <button name="%(lab_laixe.action_report_tem_nhan)d" type="action"
+                            string="In lại tem nhận"
+                            invisible="state != 'confirmed'"
+                            groups="lab_core.group_warehouse,lab_core.group_cs,lab_core.group_manager"
+                            help="In lại tem khi tem cũ rách/mất — mã kiện KHÔNG đổi."/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="new,assigned,en_route,picked_up,confirmed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" string="Số yêu cầu"/>
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Khách &amp; đơn hàng">
+                            <field name="partner_id"
+                                   options="{'no_create': False}"
+                                   placeholder="Shop cần lấy hàng…"/>
+                            <field name="sale_order_id"
+                                   placeholder="Để trống nếu chưa có đơn — cho phép tạo trước"/>
+                            <field name="stock_picking_id"
+                                   placeholder="Sinh ra khi tài xế mang hàng về kho"/>
+                        </group>
+                        <group string="Điều phối">
+                            <field name="driver_id"
+                                   placeholder="Tài xế (hr.employee)…"/>
+                            <field name="vehicle_id"
+                                   placeholder="Xe (fleet.vehicle)…"/>
+                            <field name="kenh_nhan"
+                                   readonly="state != 'new'"
+                                   help="Tài xế tới shop lấy, hay khách tự mang tới kho (bỏ 3 bước tài xế)."/>
+                            <field name="nguoi_giao_ten"
+                                   invisible="kenh_nhan != 'tai_kho'"
+                                   placeholder="Tên người mang hàng tới quầy…"/>
+                            <field name="nguoi_giao_sdt"
+                                   invisible="kenh_nhan != 'tai_kho'"
+                                   placeholder="Số điện thoại người giao…" widget="phone"/>
+                            <field name="gio_nhan_tai_kho" invisible="not gio_nhan_tai_kho"/>
+                            <field name="ngay_giao"/>
+                            <field name="access_token" password="True" groups="lab_core.group_sale_admin,lab_core.group_manager"/>
+                        </group>
+                    </group>
+
+                    <group string="Điểm lấy hàng">
+                        <group>
+                            <field name="dia_chi_lay"
+                                   placeholder="Tự điền theo khách khi chọn khách — sửa nếu lấy ở nơi khác…"/>
+                        </group>
+                        <group>
+                            <field name="lien_he_ten" placeholder="Tự điền theo khách — sửa được…"/>
+                            <field name="lien_he_sdt" placeholder="Tự điền theo khách — sửa được…" widget="phone"/>
+                            <field name="khung_gio_tu"/>
+                            <field name="khung_gio_den"/>
+                        </group>
+                    </group>
+
+                    <group string="Kết quả tài xế báo về">
+                        <group>
+                            <field name="so_kien_thuc_te"
+                                       help="Tài xế đếm khi lấy hàng, hoặc kho nhập khi khách mang tới quầy."/>
+                            <field name="khoi_luong_uoc_kg"/>
+                        </group>
+                        <group>
+                            <!-- Tài xế nhập trên app KMP (POST /driver/jobs/<id>/capture
+                                 → `note`, tối đa 500 ký tự). CS/Kho chỉ ĐỌC ở backend. -->
+                            <field name="ghi_chu_tai_xe"
+                                   readonly="1"
+                                   placeholder="Tài xế nhập từ app KMP…"/>
+                            <field name="ly_do_that_bai"
+                                   placeholder="Bắt buộc khi trạng thái là Lấy hàng thất bại…"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="Chữ ký" name="signature">
+                            <field name="chu_ky" widget="image"
+                                   options="{'size': [320, 160]}"
+                                   class="oe_avatar"
+                                   readonly="state in ('confirmed', 'cancelled')"/>
+                            <div class="text-muted">
+                                Chữ ký PNG do tài xế vẽ trong app KMP (không dùng module
+                                <code>sign</code> của Enterprise — docs/01 §3.3).
+                            </div>
+                        </page>
+                        <page string="Ảnh hàng hoá" name="photos">
+                            <field name="anh_ids"
+                                   readonly="state in ('confirmed', 'cancelled')">
+                                <tree string="Ảnh chụp khi lấy hàng">
+                                    <field name="name" string="Tên tệp"/>
+                                    <field name="mimetype" optional="show"/>
+                                    <field name="create_date" string="Ngày tải" readonly="1"/>
+                                </tree>
+                                <form string="Ảnh">
+                                    <group>
+                                        <field name="name"/>
+                                        <field name="datas" filename="name" widget="binary"/>
+                                    </group>
+                                </form>
+                            </field>
+                        </page>
+                        <page string="Ngoại lệ" name="exceptions">
+                            <group>
+                                <group string="Đánh dấu ngoại lệ"
+                                       groups="lab_core.group_cs,lab_core.group_sale_admin,lab_core.group_manager">
+                                    <field name="lab_is_exception"/>
+                                    <field name="lab_exception_type" invisible="not lab_is_exception"/>
+                                    <field name="lab_return_step" invisible="not lab_is_exception"
+                                           placeholder="vd: gán tài xế khác → ②"/>
+                                    <field name="lab_exception_note" invisible="not lab_is_exception"/>
+                                </group>
+                                <group string="Dấu vết">
+                                    <field name="lab_exception_user_id" readonly="1"/>
+                                    <field name="lab_exception_date" readonly="1"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- =================================================================================
+         2. TREE — màn điều phối của CS: ai đi lấy, khung giờ nào, đang ở trạng thái nào.
+         ================================================================================= -->
+    <record id="view_lab_yeu_cau_lay_hang_tree" model="ir.ui.view">
+        <field name="name">lab.yeu.cau.lay.hang.tree</field>
+        <field name="model">lab.yeu.cau.lay.hang</field>
+        <field name="arch" type="xml">
+            <!-- SẮP XẾP: "cũ nhất lên đầu" (quyết định N1/N2, chốt 2026-11-02).
+                 Vì sao KHÔNG đổi `_order` của model: `_order` ảnh hưởng MỌI màn, mọi RPC và mọi
+                 báo cáo của cả hệ thống. Ở đây chỉ đổi thứ tự HIỂN THỊ của màn danh sách này
+                 bằng `default_order` (Odoo 17 hỗ trợ trên <tree>), nên app/API/kế toán giữ nguyên.
+                 "Tạo sớm nằm trên" = hàng đợi xử lý FIFO, đúng nghiệp vụ kho. -->
+            <tree string="Yêu cầu lấy hàng"
+                  default_order="create_date asc, id asc"
+                  decoration-muted="state == 'cancelled'"
+                  decoration-danger="state == 'failed'"
+                  decoration-success="state == 'confirmed'">
+                <field name="name" string="Số yêu cầu"/>
+                <!-- Cột "Tạo lúc": widget mặc định của create_date là datetime (dd/MM/yyyy HH:mm
+                     theo ngôn ngữ người dùng). KHÔNG dùng widget="date" vì sẽ mất GIỜ — mà giờ tạo
+                     chính là thứ dùng để biết đơn nào chờ lâu. -->
+                <field name="create_date" string="Tạo lúc" optional="show"/>
+                <field name="partner_id" string="Shop"/>
+                <field name="dia_chi_lay" optional="show"/>
+                <field name="khung_gio_tu" string="Lấy từ"/>
+                <field name="khung_gio_den" string="Lấy đến" optional="hide"/>
+                <field name="driver_id"/>
+                <field name="vehicle_id" optional="hide"/>
+                <field name="so_kien_thuc_te" optional="hide" sum="Tổng kiện"/>
+                <field name="khoi_luong_uoc_kg" optional="hide" sum="Tổng kg"/>
+                <field name="sale_order_id" optional="hide"/>
+                <field name="state" widget="badge"
+                       decoration-info="state in ('new', 'assigned')"
+                       decoration-primary="state in ('en_route', 'picked_up')"
+                       decoration-success="state == 'confirmed'"
+                       decoration-warning="state == 'cancelled'"
+                       decoration-danger="state == 'failed'"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- =================================================================================
+         3. KANBAN — bảng điều phối tài xế theo trạng thái (kéo thả được giữa các cột).
+         ================================================================================= -->
+    <record id="view_lab_yeu_cau_lay_hang_kanban" model="ir.ui.view">
+        <field name="name">lab.yeu.cau.lay.hang.kanban</field>
+        <field name="model">lab.yeu.cau.lay.hang</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state" quick_create="false" class="o_kanban_small_column">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="dia_chi_lay"/>
+                <field name="lien_he_sdt"/>
+                <field name="khung_gio_tu"/>
+                <field name="driver_id"/>
+                <field name="state"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="oe_kanban_global_click">
+                            <div class="o_kanban_record_title">
+                                <strong><field name="name"/></strong>
+                            </div>
+                            <div class="text-muted"><field name="partner_id"/></div>
+                            <div class="mt-1">
+                                <i class="fa fa-map-marker" role="img" aria-label="Địa chỉ"/>
+                                <field name="dia_chi_lay"/>
+                            </div>
+                            <div class="text-muted mt-1">
+                                Khung giờ: <field name="khung_gio_tu"/>
+                            </div>
+                            <div class="mt-1">
+                                <span class="text-muted">Tài xế:</span>
+                                <field name="driver_id"/>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- =================================================================================
+         4. SEARCH — lọc theo 7 trạng thái, theo tài xế, theo ngày; groupby.
+         ================================================================================= -->
+    <record id="view_lab_yeu_cau_lay_hang_search" model="ir.ui.view">
+        <field name="name">lab.yeu.cau.lay.hang.search</field>
+        <field name="model">lab.yeu.cau.lay.hang</field>
+        <field name="arch" type="xml">
+            <search string="Tìm yêu cầu lấy hàng">
+                <field name="name" string="Số yêu cầu"/>
+                <field name="partner_id" string="Shop"/>
+                <field name="lien_he_sdt"/>
+                <field name="driver_id"/>
+                <field name="vehicle_id"/>
+
+                <filter name="f_new" string="Mới"
+                        domain="[('state', '=', 'new')]"/>
+                <filter name="f_assigned" string="Đã gán tài xế"
+                        domain="[('state', '=', 'assigned')]"/>
+                <filter name="f_en_route" string="Đang đến lấy"
+                        domain="[('state', '=', 'en_route')]"/>
+                <filter name="f_picked_up" string="Đã lấy được hàng"
+                        domain="[('state', '=', 'picked_up')]"/>
+                <filter name="f_confirmed" string="Đã về kho"
+                        domain="[('state', '=', 'confirmed')]"/>
+                <filter name="f_failed" string="Lấy hàng thất bại"
+                        domain="[('state', '=', 'failed')]"/>
+                <filter name="f_cancelled" string="Đã huỷ"
+                        domain="[('state', '=', 'cancelled')]"/>
+                <separator/>
+                <!-- "Chờ xử lý (cũ → mới)": lọc về đúng hàng đợi cần làm. Thứ tự CŨ → MỚI đã do
+                     `default_order` của tree quyết định (create_date asc), filter chỉ thu hẹp
+                     phạm vi — nên bấm filter là thấy đúng "đơn nào chờ lâu nhất ở trên".
+                     ⚠️ Odoo 17 KHÔNG cho filter đổi thứ tự sắp xếp (không có cơ chế `order` trong
+                     search view), nên KHÔNG làm filter "Mới nhất": người dùng bấm tiêu đề cột
+                     "Tạo lúc" để đảo chiều — đúng cơ chế chuẩn của Odoo, không cần code. -->
+                <filter name="f_cho_xu_ly" string="Chờ xử lý (cũ → mới)"
+                        domain="[('state', 'in', ['new', 'assigned', 'en_route', 'picked_up'])]"
+                        help="Việc còn phải làm: Mới · Đã gán · Đang đến lấy · Đã lấy được hàng. Danh sách đang sắp cũ nhất lên đầu."/>
+                <filter name="f_today" string="Lấy trong hôm nay"
+                        domain="[('khung_gio_tu', '&gt;=', context_today().strftime('%Y-%m-%d 00:00:00')), ('khung_gio_tu', '&lt;=', context_today().strftime('%Y-%m-%d 23:59:59'))]"/>
+                <filter name="f_no_driver" string="Chưa gán tài xế"
+                        domain="[('driver_id', '=', False)]"/>
+                <filter name="f_exception" string="Đang ở nhánh ngoại lệ"
+                        domain="[('lab_is_exception', '=', True)]"/>
+
+                <group expand="0" string="Nhóm theo">
+                    <filter name="g_state" string="Trạng thái" context="{'group_by': 'state'}"/>
+                    <filter name="g_driver" string="Tài xế" context="{'group_by': 'driver_id'}"/>
+                    <filter name="g_vehicle" string="Xe" context="{'group_by': 'vehicle_id'}"/>
+                    <filter name="g_partner" string="Shop" context="{'group_by': 'partner_id'}"/>
+                    <filter name="g_day" string="Ngày lấy hàng"
+                            context="{'group_by': 'khung_gio_tu:day'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- =================================================================================
+         5. ACTION + empty state (Luật 8: mỗi màn phải đẹp cả khi chưa có dữ liệu).
+         ================================================================================= -->
+    <record id="action_lab_yeu_cau_lay_hang" model="ir.actions.act_window">
+        <field name="name">Yêu cầu lấy hàng</field>
+        <field name="res_model">lab.yeu.cau.lay.hang</field>
+        <field name="view_mode">tree,kanban,form</field>
+        <field name="search_view_id" ref="view_lab_yeu_cau_lay_hang_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Chưa có yêu cầu lấy hàng nào</p>
+            <p>
+                Yêu cầu lấy hàng là việc <b>tài xế tới shop lấy hàng tận nơi</b> (bước ②).
+                Tạo yêu cầu trước khi có đơn cũng được — đơn hàng có thể gán sau.
+            </p>
+            <p>
+                Nếu khách <b>tự mang hàng tới kho</b> thì <b>không</b> cần tạo yêu cầu này —
+                ghi nhận thẳng bằng phiếu nhập kho.
+            </p>
+        </field>
+    </record>
+
+    <!-- Cùng model, lọc sẵn các yêu cầu lấy hàng THẤT BẠI — đường vào nhánh ngoại lệ
+         trong ≤ 2 click (AGENTS.md Luật 5). Tài xế không lấy được hàng phải có lý do,
+         CS mở đúng danh sách này để gọi lại shop và gán chuyến khác. -->
+    <record id="action_lab_yeu_cau_lay_hang_failed" model="ir.actions.act_window">
+        <field name="name">Yêu cầu lấy hàng thất bại</field>
+        <field name="res_model">lab.yeu.cau.lay.hang</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[('state', '=', 'failed')]</field>
+        <field name="search_view_id" ref="view_lab_yeu_cau_lay_hang_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Không có yêu cầu nào thất bại</p>
+            <p>
+                Khi tài xế báo không lấy được hàng, yêu cầu vào đây kèm <b>lý do</b>.
+                Điểm quay về luồng chính: gán tài xế/chuyến khác và đưa yêu cầu trở lại
+                <b>Đã gán tài xế</b> — ngoại lệ không được tạo luồng song song vĩnh viễn.
+            </p>
+        </field>
+    </record>
+
+</odoo>

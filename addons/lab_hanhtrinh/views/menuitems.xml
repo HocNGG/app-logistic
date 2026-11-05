@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  =====================================================================================
+  MENU cho model `lab.hanh.trinh` (bước ⑨⑩⑪) — dưới menu gốc "Gom hàng lẻ" (lab_core).
+  Người viết: FE-01 (Wave B). Biên giới: addons/**/views/** (AGENTS.md Luật 10).
+
+  ⚠️ CẦN BE-01 KHAI VÀO MANIFEST, ĐÚNG THỨ TỰ:
+      addons/lab_hanhtrinh/__manifest__.py → "data" thêm, sau security + data:
+          "views/lab_hanh_trinh_views.xml"   ← khai action trước
+          "views/menuitems.xml"              ← file này (phải ở CUỐI)
+
+  ⚠️ PHÂN QUYỀN THEO VAI TRÒ (quyết định D1/D6, chốt 2026-11-02 — bước P0-6; SỬA 2026-11-03
+     theo RV-01 vòng 2 — P1):
+    Hành trình là việc của **Chứng từ** (nhập AWB/HBL, đổi mốc, đính POD, xử lý sự cố) và
+    **Manager** (theo dõi/duyệt); BGĐ xem; **Kế toán XEM để đối soát cước**.
+    ⇒ 4 nhóm: group_docs, group_manager, group_director, group_account.
+    Vì sao thêm group_account: kế toán đối soát cước phải nhìn được AWB/HBL trên hành trình.
+    Chỉ MENU được mở — KHÔNG đổi action, KHÔNG đổi view form, và ACL của group_account trên
+    `lab.hanh.trinh` / `lab.hanh.trinh.line` vẫn là **read-only** (1,0,0,0 — xem
+    security/ir.model.access.csv dòng `access_lab_hanhtrinh_account`), nên mở menu KHÔNG mở
+    quyền ghi.
+    Vẫn BỎ khỏi menu: group_cs (CS làm yêu cầu/chuyến, không đụng AWB), group_warehouse
+    (kho không có nghiệp vụ hành trình), group_sale_admin (ngoài phạm vi đã chốt). Các nhóm
+    này KHÔNG mất ACL — chỉ không thấy menu, đúng nguyên tắc "menu theo vai trò, quyền vẫn do
+    ACL/ir.rule quyết định".
+
+  Dùng `(6, 0, [...])` để ĐẶT LẠI danh sách nhóm; `(4, ...)` chỉ cộng thêm nên nhóm cũ sẽ
+  sống lại sau `-u`.
+
+  ĐƯỜNG VÀO NHÁNH NGOẠI LỆ ⑥ (khiếu nại / trả hàng) ≤ 2 CLICK (Luật 5):
+      Gom hàng lẻ → "Hành trình có sự cố" (lọc sẵn stage = exception).
+  =====================================================================================
+-->
+<odoo>
+
+    <record id="menu_lab_hanh_trinh" model="ir.ui.menu">
+        <field name="name">Hành trình</field>
+        <field name="parent_id" ref="lab_core.menu_lab_root"/>
+        <field name="sequence">30</field>
+        <field name="action" ref="action_lab_hanh_trinh"/>
+        <field name="groups_id" eval="[(6, 0, [
+            ref('lab_core.group_docs'),
+            ref('lab_core.group_manager'),
+            ref('lab_core.group_director'),
+            ref('lab_core.group_account'),
+        ])]"/>
+    </record>
+
+    <record id="menu_lab_hanh_trinh_exception" model="ir.ui.menu">
+        <field name="name">Hành trình có sự cố</field>
+        <field name="parent_id" ref="lab_core.menu_lab_root"/>
+        <field name="sequence">31</field>
+        <field name="action" ref="action_lab_hanh_trinh_exception"/>
+        <field name="groups_id" eval="[(6, 0, [
+            ref('lab_core.group_docs'),
+            ref('lab_core.group_manager'),
+            ref('lab_core.group_director'),
+            ref('lab_core.group_account'),
+        ])]"/>
+    </record>
+
+</odoo>

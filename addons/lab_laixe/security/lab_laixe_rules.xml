@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Record-level security của lab_laixe — nguồn: docs/02-kien-truc.md §4.2.
+  Luật 3 (AGENTS.md): phân quyền record bằng ir.rule, KHÔNG bằng if has_group
+  trong business logic.
+
+  Lưu ý kỹ thuật (skills/04 §4):
+  * rule có `groups` = rule của NHÓM, áp dụng khi user thuộc nhóm đó; user không
+    thuộc nhóm thì rule KHÔNG áp dụng (không phải "deny") -> quyền vẫn phải đến
+    từ ACL (xem security/ir.model.access.csv).
+  * cố ý KHÔNG khai global rule (không `groups`) để tránh khoá sạch dữ liệu.
+-->
+<odoo>
+
+    <!-- Tài xế chỉ thấy yêu cầu lấy hàng do mình phụ trách (docs/02 §4.2) -->
+    <record id="rule_lay_hang_driver_own" model="ir.rule">
+        <field name="name">Tài xế chỉ thấy yêu cầu lấy hàng của mình</field>
+        <field name="model_id" ref="model_lab_yeu_cau_lay_hang"/>
+        <field name="domain_force">[('driver_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('lab_core.group_driver'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+</odoo>

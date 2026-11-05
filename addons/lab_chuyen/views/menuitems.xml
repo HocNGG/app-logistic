@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  =====================================================================================
+  MENU cho model `lab.chuyen` — nằm dưới menu gốc "Gom hàng lẻ" của lab_core.
+  Người viết: FE-01 (Wave B). Biên giới: addons/**/views/** (AGENTS.md Luật 10).
+
+  ⚠️ CẦN BE-01 KHAI VÀO MANIFEST, ĐÚNG THỨ TỰ:
+      addons/lab_chuyen/__manifest__.py → "data" thêm, sau các file security/data:
+          "views/lab_chuyen_views.xml"     ← khai action trước
+          "views/stock_picking_views.xml"
+          "views/menuitems.xml"            ← file này, trỏ tới action ở trên
+  Nếu đảo thứ tự, Odoo báo "External ID not found: lab_chuyen.action_lab_chuyen".
+
+  ĐƯỜNG VÀO NHÁNH NGOẠI LỆ ② (giảm tải) ≤ 2 CLICK — AGENTS.md Luật 5:
+      Gom hàng lẻ → "Chuyến quá tải" (action thứ 2 lọc sẵn ti_le_tai > 100%).
+
+  ⚠️ PHÂN QUYỀN MENU THEO VAI TRÒ (quyết định D1/D6, chốt 2026-11-02 — bước P0-6):
+      * Chuyến là việc của CS + Kho + Sale Admin + Manager (+ Chứng từ/Kế toán CHỈ ĐỌC
+        để đối soát), nên menu giữ đủ các nhóm đó.
+      * Dùng `(6, 0, [...])` chứ KHÔNG dùng `(4, ref(...))`: (4) chỉ CỘNG THÊM nhóm, nên
+        khi thu hẹp quyền mà để (4) thì nhóm cũ vẫn còn trong DB sau `-u` — đây là lỗi
+        im lặng quen thuộc của việc sửa quyền bằng data file.
+  =====================================================================================
+-->
+<odoo>
+
+    <record id="menu_lab_chuyen" model="ir.ui.menu">
+        <field name="name">Chuyến</field>
+        <field name="parent_id" ref="lab_core.menu_lab_root"/>
+        <field name="sequence">10</field>
+        <field name="action" ref="action_lab_chuyen"/>
+        <field name="groups_id" eval="[(6, 0, [
+            ref('lab_core.group_cs'),
+            ref('lab_core.group_warehouse'),
+            ref('lab_core.group_sale_admin'),
+            ref('lab_core.group_manager'),
+            ref('lab_core.group_director'),
+            ref('lab_core.group_docs'),
+            ref('lab_core.group_account'),
+        ])]"/>
+    </record>
+
+    <record id="menu_lab_chuyen_overload" model="ir.ui.menu">
+        <field name="name">Chuyến quá tải (giảm tải)</field>
+        <field name="parent_id" ref="lab_core.menu_lab_root"/>
+        <field name="sequence">11</field>
+        <field name="action" ref="action_lab_chuyen_overload"/>
+        <field name="groups_id" eval="[(6, 0, [
+            ref('lab_core.group_cs'),
+            ref('lab_core.group_warehouse'),
+            ref('lab_core.group_sale_admin'),
+            ref('lab_core.group_manager'),
+            ref('lab_core.group_director'),
+            ref('lab_core.group_docs'),
+            ref('lab_core.group_account'),
+        ])]"/>
+    </record>
+
+</odoo>

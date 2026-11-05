@@ -1,0 +1,80 @@
+# =====================================================================================
+# .gitignore — dự án AppLogictics
+#
+# VÌ SAO CẦN TRƯỚC KHI PUSH LÊN GITHUB (đo 2026-11-03): tổng thư mục hiện tại **552 MB**,
+# trong đó chỉ ~70 MB là mã nguồn thật. Phần còn lại là rác build/cache:
+#     apps/kmp/composeApp/build  286 MB   (Gradle sinh ra, XOÁ ĐƯỢC, build lại 40 giây)
+#     apps/kmp/build              99 MB   (idem)
+#     .tmp                        57 MB   (log, ảnh tạm, cookie jar, probe script)
+#     docs/review                 41 MB   (ảnh chụp bằng chứng — GIỮ, xem ghi chú cuối)
+#     demo/tools/node_modules     18 MB   (Playwright — cài bằng `npm i`)
+#     addons/oca/_repos           13 MB   (source OCA thô — vendor lại bằng script)
+# Nếu commit hết, mỗi lần `git status`/`git add -A` sẽ rất chậm và repo GitHub phình to.
+# =====================================================================================
+
+# ---------- Build output (KHÔNG bao giờ commit) ----------
+**/build/
+**/.gradle/
+**/bin/
+**/obj/
+*.apk
+*.aab
+*.msi
+*.dmg
+*.deb
+*.rpm
+!apps/kmp/gradle/wrapper/gradle-wrapper.jar
+
+# ---------- Node (Playwright dùng cho ảnh chụp) ----------
+**/node_modules/
+**/.pnpm-store/
+npm-debug.log*
+yarn-error.log*
+package-lock.json.bak
+
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# ---------- Dữ liệu tạm của phiên làm việc ----------
+.tmp/
+*.log
+cookies*.txt
+*.pdf
+!docs/**/*.pdf
+
+# ---------- OCA: source thô (vendor lại bằng infra/scripts/vendor-oca*.ps1) ----------
+addons/oca/_repos/
+
+# ---------- Docker / DB local ----------
+infra/pgdata/
+*.sqlite3
+
+# ---------- IDE / OS ----------
+.vscode/
+.idea/
+*.iml
+Thumbs.db
+desktop.ini
+.DS_Store
+*.swp
+
+# ---------- Secrets: KHÔNG BAO GIỜ commit ----------
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.keystore
+*.jks
+local.properties
+
+# =====================================================================================
+# GHI CHÚ: `docs/review/**.png` (41 MB) ĐƯỢC GIỮ — đây là bằng chứng chụp màn hình mà
+# tài liệu (workflow/*.md, REDESIGN_PROGRESS.md) trích dẫn. Nếu sau này repo quá nặng,
+# chuyển ảnh sang Git LFS hoặc một repo `docs-assets` riêng.
+# =====================================================================================

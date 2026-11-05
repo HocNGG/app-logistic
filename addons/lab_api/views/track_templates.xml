@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  =====================================================================================
+  TRANG TRA CỨU KIỆN — công khai, không đăng nhập (mở bằng QR trên tem).
+
+  VÌ SAO CÓ TRANG NÀY:
+    Tem nhận & tem xuất đều in QR. Quét bằng camera điện thoại bất kỳ phải mở được
+    thông tin kiện — không cần cài app, không cần tài khoản. Đây là yêu cầu "quét để
+    báo thông tin" của khách (chốt 2026-11-02).
+
+  GIỚI HẠN DỮ LIỆU (bắt buộc):
+    Chỉ hiện: mã kiện, mã tem xuất, shop, số kiện, chuyến, 4 mốc thời gian, số lần quét.
+    KHÔNG hiện: giá/cước, địa chỉ chi tiết, SĐT, danh sách khách khác, id kỹ thuật.
+
+  Không JS, không CSS ngoài: trang phải mở được cả khi mạng chậm trong kho.
+  =====================================================================================
+-->
+<odoo>
+
+    <template id="track_kien_page">
+        <html lang="vi">
+            <head>
+                <meta charset="utf-8"/>
+                <meta name="viewport" content="width=device-width, initial-scale=1"/>
+                <title t-esc="'Tra cứu kiện ' + kien_ma"/>
+                <style>
+                    body { margin: 0; padding: 24px 16px; font-family: Arial, Helvetica, sans-serif;
+                           background: #f3f2f8; color: #0b0b12; }
+                    .wrap { max-width: 520px; margin: 0 auto; }
+                    .card { background: #fff; border: 1px solid rgba(11,11,18,.10);
+                            border-radius: 16px; padding: 20px; margin-bottom: 14px; }
+                    .k { font-size: 12px; color: #6b6b78; letter-spacing: .04em; text-transform: uppercase; }
+                    .v { font-size: 20px; font-weight: 700; margin-top: 2px; }
+                    .row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0;
+                           border-bottom: 1px solid rgba(11,11,18,.08); font-size: 14px; }
+                    .row:last-child { border-bottom: 0; }
+                    .moc { display: flex; gap: 10px; align-items: baseline; padding: 8px 0; font-size: 14px; }
+                    .dot { width: 10px; height: 10px; border-radius: 50%; background: #d5d5dd; flex: none; }
+                    .dot.on { background: #2f9e5f; }
+                    .luc { color: #6b6b78; font-size: 13px; }
+                    .foot { text-align: center; color: #6b6b78; font-size: 12px; padding: 8px 0 24px; }
+                </style>
+            </head>
+            <body>
+                <div class="wrap">
+                    <div class="card">
+                        <div class="k">Mã kiện</div>
+                        <div class="v" t-esc="kien_ma"/>
+                        <div class="row" t-if="ma_xuat">
+                            <span>Mã tem xuất</span><b t-esc="ma_xuat"/>
+                        </div>
+                        <div class="row">
+                            <span>Trạng thái</span><b t-esc="trang_thai or '—'"/>
+                        </div>
+                        <div class="row" t-if="shop">
+                            <span>Shop gửi</span><b t-esc="shop"/>
+                        </div>
+                        <div class="row" t-if="so_kien">
+                            <span>Số kiện</span><b t-esc="so_kien"/>
+                        </div>
+                        <div class="row" t-if="chuyen">
+                            <span>Chuyến</span><b t-esc="chuyen"/>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="k">Các mốc</div>
+                        <t t-foreach="moc" t-as="m">
+                            <div class="moc">
+                                <span t-attf-class="dot #{'on' if m['xong'] else ''}"></span>
+                                <div>
+                                    <div t-esc="m['nhan']"/>
+                                    <div class="luc" t-esc="m['luc'] or 'chưa có'"/>
+                                </div>
+                            </div>
+                        </t>
+                    </div>
+
+                    <div class="foot">
+                        Quét lúc tra cứu không được ghi nhận. Số lần quét tại kho: <t t-esc="so_lan_quet"/>.
+                        <br/>AppLogistics · hệ thống gom hàng lẻ xuất khẩu
+                    </div>
+                </div>
+            </body>
+        </html>
+    </template>
+
+</odoo>

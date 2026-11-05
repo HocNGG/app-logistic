@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  =====================================================================================
+  INHERIT VIEW `stock.picking` — nối phiếu xuất kho (native) với chuyến (bước ⑦).
+  Người viết: FE-01 (Wave B). Biên giới: addons/**/views/** (AGENTS.md Luật 10).
+
+  LUẬT 1 (native-first, L2 = inherit nhẹ): KHÔNG copy view của `stock`, KHÔNG tạo model
+  phiếu kho mới. Chỉ chèn 1 cột/1 field vào view có sẵn bằng xpath theo @name — không dùng
+  đường dẫn số kiểu //form/sheet/group[2] (skill 08 §5).
+
+  ANCHOR ĐÃ CHỌN VÌ CHẮC CHẮN TỒN TẠI TRONG 17.0:
+    * `//field[@name='name']`     — mọi tree view của stock.picking đều có (cột số phiếu)
+    * `//field[@name='partner_id']` — form view stock.picking luôn có (Khách hàng)
+  Nếu một anchor không khớp, Odoo báo ValidationError ngay khi upgrade (nêu rõ id view sai)
+  — đây là lỗi ồn ào, không phải lỗi âm thầm.
+
+  ⛔ CHẶN — 2 FIELD CHƯA TỒN TẠI TRONG CODE BE-01 (đã grep toàn bộ addons/**/models/*.py):
+     `lab_weight_kg`, `lab_is_cho_khach` (cùng `lab_package_count`) KHÔNG có ở đâu.
+     `addons/lab_chuyen/models/stock_picking.py` hiện chỉ khai `lab_chuyen_id`.
+     Nếu bật khối dưới đây khi field chưa có, Odoo 17 ném lỗi ngay lúc upgrade:
+        "Field lab_weight_kg does not exist in model stock.picking"
+     ⇒ làm đỏ cả 7 module. Vì vậy khối đó để trong XML COMMENT, kèm hướng dẫn bật.
+     Orchestrator đã chuyển việc thêm 3 field cho BE-01 (nhiệm vụ B6).
+
+  ⚠️ CẦN BE-01 KHAI VÀO MANIFEST:
+      addons/lab_chuyen/__manifest__.py → "data": "views/stock_picking_views.xml"
+      (đặt trước "views/menuitems.xml"; lab_core đã depends "sale_stock" nên `stock.view_picking_form`
+      và `stock.vpicktree` chắc chắn có mặt)
+  =====================================================================================
+-->
+<odoo>
+
+    <!-- =================================================================================
+         A. FORM — thêm "Chuyến" ngay sau Khách hàng.
+         ================================================================================= -->
+    <record id="view_picking_form_lab_chuyen" model="ir.ui.view">
+        <field name="name">stock.picking.form.lab.chuyen</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='partner_id']" position="after">
+                <field name="lab_chuyen_id"
+                       groups="lab_core.group_cs,lab_core.group_warehouse,lab_core.group_docs,lab_core.group_sale_admin,lab_core.group_manager,lab_core.group_director"
+                       placeholder="Chọn chuyến chứa phiếu xuất này (bước ⑦)…"/>
+            </xpath>
+
+            <!-- ⛔ CHẶN (chờ BE-01 thêm field vào stock.picking) — BỎ COMMENT KHI CÓ FIELD:
+            <xpath expr="//field[@name='lab_chuyen_id']" position="after">
+                <field name="lab_weight_kg" string="Khối lượng (kg)"
+                       groups="lab_core.group_warehouse,lab_core.group_docs"/>
+            </xpath>
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <field name="lab_is_cho_khach" invisible="1"/>
+            </xpath>
+            <xpath expr="//group[@name='other_infos']" position="inside">
+                <field name="lab_is_cho_khach" string="Hàng chờ khách"
+                       help="Hàng đã về kho nhưng khách chưa tới lấy (kho chờ)."/>
+            </xpath>
+            -->
+        </field>
+    </record>
+
+    <!-- =================================================================================
+         B. TREE — thêm cột "Chuyến" ngay sau số phiếu để Kho lọc nhanh theo chuyến.
+         ================================================================================= -->
+    <record id="view_picking_tree_lab_chuyen" model="ir.ui.view">
+        <field name="name">stock.picking.tree.lab.chuyen</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.vpicktree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="lab_chuyen_id" optional="show"
+                       groups="lab_core.group_cs,lab_core.group_warehouse,lab_core.group_docs,lab_core.group_sale_admin,lab_core.group_manager,lab_core.group_director"/>
+            </xpath>
+
+            <!-- ⛔ CHẶN (chờ BE-01) — BỎ COMMENT KHI CÓ FIELD:
+            <xpath expr="//field[@name='lab_chuyen_id']" position="after">
+                <field name="lab_weight_kg" sum="Tổng kg" optional="show"/>
+                <field name="lab_is_cho_khach" optional="hide" string="Hàng chờ khách"/>
+            </xpath>
+            -->
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SEED DATA DEMO (Luật 8: demo là một tính năng) — nguồn: infra/scripts/seed-users.md.
+  noupdate="1": upgrade KHÔNG ghi đè dữ liệu người dùng đã sửa tay.
+
+  Vì sao partner/đơn hàng/sản phẩm nằm ở lab_core:
+  * đây đều là model NATIVE (res.partner, product.product, sale.order) — lab_core
+    được phép khai vì không trỏ sang module lab_* nào (docs/02 §1);
+  * chuyến (lab.chuyen) và yêu cầu lấy hàng (lab.yeu.cau.lay.hang) KHÔNG thể khai
+    ở đây: lab_core không depends chúng → tách sang data/demo_data.xml của
+    lab_chuyen / lab_laixe.
+
+  ⚠️ ASSUMPTION: docs/02 §2.1 có nhắc `res.partner.lab_role` / `lab_is_agent` /
+  `lab_country_code` nhưng Wave A chưa khai (Orchestrator chốt Wave B chỉ thêm 4
+  field của sale.order/stock.picking). Vì vậy seed dùng field NATIVE:
+  shop = customer_rank=1; đại lý nước ngoài = country_id JP + is_company.
+-->
+<odoo>
+    <data noupdate="1">
+
+        <!-- ============================ 3 SHOP ============================ -->
+        <record id="demo_shop_sen_da" model="res.partner">
+            <field name="name">Sen Đá Shop</field>
+            <field name="is_company" eval="True"/>
+            <field name="customer_rank">1</field>
+            <field name="phone">0903 111 222</field>
+            <field name="street">18 Nguyễn Trãi, Quận 1</field>
+            <field name="city">TP. Hồ Chí Minh</field>
+            <field name="comment">Shop gửi hàng lẻ — demo nhánh chuẩn (① → ② lấy tận nơi).</field>
+        </record>
+
+        <record id="demo_shop_may_trang" model="res.partner">
+            <field name="name">Mây Trắng Store</field>
+            <field name="is_company" eval="True"/>
+            <field name="customer_rank">1</field>
+            <field name="phone">0908 333 444</field>
+            <field name="street">77 Lê Lợi, Hải Châu</field>
+            <field name="city">Đà Nẵng</field>
+        </record>
+
+        <record id="demo_shop_binh_minh" model="res.partner">
+            <field name="name">Bình Minh Home</field>
+            <field name="is_company" eval="True"/>
+            <field name="customer_rank">1</field>
+            <field name="phone">0912 555 666</field>
+            <field name="street">5 Tràng Tiền, Hoàn Kiếm</field>
+            <field name="city">Hà Nội</field>
+        </record>
+
+        <!-- ================== 1 ĐẠI LÝ NƯỚC NGOÀI (JP) ================== -->
+        <record id="demo_dai_ly_sakura" model="res.partner">
+            <field name="name">Sakura Logistics (JP)</field>
+            <field name="is_company" eval="True"/>
+            <field name="country_id" ref="base.jp"/>
+            <field name="city">Tokyo</field>
+            <field name="supplier_rank">1</field>
+            <field name="comment">Đại lý giao hàng tại Nhật — dùng cho lab.hanh.trinh.dai_ly_giao_id.</field>
+        </record>
+
+        <!-- ================= SẢN PHẨM CƯỚC (bước ⑫) ================= -->
+        <record id="demo_product_cuoc_kg" model="product.product">
+            <field name="name">Cước vận chuyển (kg)</field>
+            <field name="type">service</field>
+            <field name="uom_id" ref="uom.product_uom_kgm"/>
+            <field name="list_price">180000</field>
+            <field name="sale_ok" eval="True"/>
+            <field name="purchase_ok" eval="False"/>
+        </record>
+
+        <!-- ======================= 5 ĐƠN HÀNG ======================== -->
+        <record id="demo_so_1" model="sale.order">
+            <field name="partner_id" ref="demo_shop_sen_da"/>
+            <field name="lab_pickup_mode">pickup</field>
+            <field name="lab_shop_ref">SENDA-001</field>
+            <field name="order_line" eval="[(0, 0, {'product_id': ref('demo_product_cuoc_kg'), 'name': 'Cước vận chuyển (kg)', 'product_uom_qty': 500.0, 'price_unit': 180000.0})]"/>
+        </record>
+
+        <record id="demo_so_2" model="sale.order">
+            <field name="partner_id" ref="demo_shop_sen_da"/>
+            <field name="lab_pickup_mode">pickup</field>
+            <field name="lab_shop_ref">SENDA-002</field>
+            <field name="order_line" eval="[(0, 0, {'product_id': ref('demo_product_cuoc_kg'), 'name': 'Cước vận chuyển (kg)', 'product_uom_qty': 400.0, 'price_unit': 175000.0})]"/>
+        </record>
+
+        <record id="demo_so_3" model="sale.order">
+            <field name="partner_id" ref="demo_shop_may_trang"/>
+            <field name="lab_pickup_mode">pickup</field>
+            <field name="lab_shop_ref">MAYTRANG-101</field>
+            <field name="order_line" eval="[(0, 0, {'product_id': ref('demo_product_cuoc_kg'), 'name': 'Cước vận chuyển (kg)', 'product_uom_qty': 300.0, 'price_unit': 165000.0})]"/>
+        </record>
+
+        <!-- Đơn thứ 4: khách TỰ MANG tới kho (nhánh "tự mang" — docs/07) -->
+        <record id="demo_so_4" model="sale.order">
+            <field name="partner_id" ref="demo_shop_may_trang"/>
+            <field name="lab_pickup_mode">drop_off</field>
+            <field name="lab_shop_ref">MAYTRANG-102</field>
+            <field name="order_line" eval="[(0, 0, {'product_id': ref('demo_product_cuoc_kg'), 'name': 'Cước vận chuyển (kg)', 'product_uom_qty': 800.0, 'price_unit': 160000.0})]"/>
+        </record>
+
+        <record id="demo_so_5" model="sale.order">
+            <field name="partner_id" ref="demo_shop_binh_minh"/>
+            <field name="lab_pickup_mode">pickup</field>
+            <field name="lab_shop_ref">BINHMINH-201</field>
+            <field name="order_line" eval="[(0, 0, {'product_id': ref('demo_product_cuoc_kg'), 'name': 'Cước vận chuyển (kg)', 'product_uom_qty': 600.0, 'price_unit': 170000.0})]"/>
+        </record>
+
+        <!-- =====================================================================
+             USER DEMO THEO PHÒNG BAN (nguồn: infra/scripts/seed-users.md).
+             Vì sao cần: nút chuyển trạng thái + dữ liệu bị chặn theo NHÓM QUYỀN,
+             nên đăng nhập bằng `admin` sẽ KHÔNG thấy nút (admin không thuộc nhóm lab).
+             Mật khẩu demo: lab@2026 — chỉ dùng máy local, không dùng môi trường thật.
+
+             ⚠️ `email` là BẮT BUỘC (lỗi thật đo được trong E2E 2026-10-29): thiếu
+             email người gửi thì `mail.thread.message_post` raise
+             "Unable to send message, please configure the sender's email address."
+             -> cả giao dịch nghiệp vụ bị rollback. Đổi lại thành user KHÔNG email
+             là tái sinh đúng lỗi đó. Ghi trực tiếp trên res.users: email là field
+             kế thừa qua `_inherits` (res.users → res.partner) nên Odoo tự ghi
+             xuống partner, không cần tạo partner riêng.
+             ===================================================================== -->
+
+        <record id="demo_user_cs" model="res.users">
+            <field name="name">Nguyễn Thu CS</field>
+            <field name="login">cs01</field>
+            <field name="email">cs01@applogictics.local</field>
+            <field name="password">lab@2026</field>
+            <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('lab_core.group_cs')])]"/>
+        </record>
+
+        <record id="demo_user_kho" model="res.users">
+            <field name="name">Phạm Văn Kho</field>
+            <field name="login">kho01</field>
+            <field name="email">kho01@applogictics.local</field>
+            <field name="password">lab@2026</field>
+            <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('lab_core.group_warehouse')])]"/>
+        </record>
+
+        <record id="demo_user_chungtu" model="res.users">
+            <field name="name">Hoàng Thị Chứng Từ</field>
+            <field name="login">chungtu01</field>
+            <field name="email">chungtu01@applogictics.local</field>
+            <field name="password">lab@2026</field>
+            <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('lab_core.group_docs')])]"/>
+        </record>
+
+        <record id="demo_user_ketoan" model="res.users">
+            <field name="name">Đỗ Thị Kế Toán</field>
+            <field name="login">ketoan01</field>
+            <field name="email">ketoan01@applogictics.local</field>
+            <field name="password">lab@2026</field>
+            <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('lab_core.group_account')])]"/>
+        </record>
+
+        <record id="demo_user_manager" model="res.users">
+            <field name="name">Vũ Trưởng Phòng</field>
+            <field name="login">manager01</field>
+            <field name="email">manager01@applogictics.local</field>
+            <field name="password">lab@2026</field>
+            <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('lab_core.group_sale_admin'), ref('lab_core.group_manager')])]"/>
+        </record>
+
+        <record id="demo_user_sep" model="res.users">
+            <field name="name">Giám Đốc</field>
+            <field name="login">sep</field>
+            <field name="email">sep@applogictics.local</field>
+            <field name="password">lab@2026</field>
+            <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('lab_core.group_director')])]"/>
+        </record>
+
+        <!-- TRƯỞNG NHÓM TÀI XẾ — người PHÂN CÔNG việc cho tài xế trên app.
+             Là Internal User (nhóm mới imply base.group_user), KHÔNG thuộc nhóm
+             tài xế: họ không nhận việc, chỉ gán việc (xem
+             security/lab_core_groups.xml). `tz` để giờ hẹn/`ngay_giao` hiện đúng
+             giờ Việt Nam khi xem trên app; `email` để `message_post` lúc gán
+             việc không raise (cùng lỗi đã gặp với các user demo khác — xem
+             comment ở trên). -->
+        <record id="demo_user_nhomtruong" model="res.users">
+            <field name="name">Nguyễn Văn Long (trưởng nhóm tài xế)</field>
+            <field name="login">nhomtruong01</field>
+            <field name="email">nhomtruong01@applogictics.local</field>
+            <field name="password">lab@2026</field>
+            <field name="tz">Asia/Ho_Chi_Minh</field>
+            <field name="groups_id" eval="[(6, 0, [ref('base.group_user'), ref('lab_core.group_driver_leader')])]"/>
+        </record>
+
+    </data>
+</odoo>

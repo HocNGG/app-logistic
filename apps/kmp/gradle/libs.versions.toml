@@ -1,0 +1,49 @@
+# Phiên bản được KHOÁ TUYỆT ĐỐI — không dùng dấu "+" hay "latest".
+# Lý do: demo không được vỡ vì một bản vá tự động (ADR-006).
+# Nguồn version: docs/04-kmp-app.md §2 (đã kiểm chứng 10/2026).
+#
+# Wave B (2026-10-28): thêm Ktor để nối Odoo THẬT (`/web/session/authenticate` + `/lab/api/v1/*`).
+#   - `ktor` 3.6.0 — bản 3.x ổn định, có sẵn `HttpCookies` + `ContentNegotiation` trong `ktor-client-core`.
+#   - Plugin `kotlin.plugin.serialization` dùng CHUNG version `kotlin` (2.4.21) — từ Kotlin 2.x
+#     plugin này phát hành cùng version compiler, khai version riêng là mời lỗi lệch.
+#
+# Wave C (Android target — APK test trên AVD Pixel_7):
+#   - `agp` 9.4.1 — bản STABLE mới nhất của dòng 9.4 trên Google Maven
+#     (đã kiểm bằng maven-metadata.xml: 9.0.0 … 9.3.3, 9.4.0, 9.4.1; 9.5.0 chỉ có tới -rc02).
+#     Lý do khớp máy này:
+#       · AGP 9.4.1 khai `SdkConstants.GRADLE_LATEST_VERSION = 9.6.0` ⇒ Gradle 9.8.2 (wrapper) nằm
+#         TRÊN mức tối thiểu/đã test, không bị chặn phiên bản.
+#       · AGP 9.4.1 khai `SdkConstants.CURRENT_BUILD_TOOLS_VERSION = 36.0.0` ⇒ đúng bản build-tools
+#         DUY NHẤT đã cài (`Sdk/build-tools/36.0.0`), không phải tải thêm.
+#       · `AndroidVersion.getPlatformHashString()` của tools 32.4.1 chỉ đặc cách API 36 ⇒ với
+#         compileSdk 37 hash là "android-37.0" — ĐÚNG tên thư mục đã cài (`Sdk/platforms/android-37.0`).
+#     AGP 8.x KHÔNG dùng được: dòng đó không hỗ trợ Gradle 9 (Gradle 9 đã bỏ API mà AGP 8 dựa vào).
+#   - `androidx-activityCompose` 1.13.0 — bản stable mới nhất (1.14.0 mới chỉ alpha01..03);
+#     cần cho `ComponentActivity.setContent`, `enableEdgeToEdge`, `registerForActivityResult`.
+#   - `ktor-client-okhttp` — engine HTTP cho Android (bản `actual` của `newOdooHttpClient`).
+
+[versions]
+kotlin = "2.4.21"
+composeMultiplatform = "1.12.2"
+ktor = "3.6.0"
+agp = "9.4.1"
+androidxActivityCompose = "1.13.0"
+
+[libraries]
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
+# Engine cho Android — desktop dùng CIO, Android dùng OkHttp (xem OdooHttp.android.kt).
+ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
+ktor-client-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidxActivityCompose" }
+
+[plugins]
+kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
+# Compose compiler đi theo version KOTLIN (từ Kotlin 2.0 không còn artifact riêng)
+composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+# Kotlin serialization: sinh `serializer()` cho các DTO `@Serializable` của lab_api.
+kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+# Android application plugin (AGP) — chỉ dùng ở `:composeApp`, root chỉ `apply false`.
+androidApplication = { id = "com.android.application", version.ref = "agp" }

@@ -1,0 +1,121 @@
+PAGES: 4
+
+===== PAGE 1 594.95996x841.91998 =====
+SƠ ĐỒ LUỒNG NGHIỆP VỤ ERP
+Công ty gom hàng lẻ xuất khẩu · 5 phòng ban · 19 bước · vẽ theo mức độ Odoo 17 native làm được
+Đề số 4 · Odoo 17 Lab · database odoo17_lab
+19 10 3 6 3
+BƯỚC ODOO CÓ SẴN CHỈ CẦN CẤU HÌNH PHẢI VIẾT CODE MODULE TỰ VIẾT
+Ba bản sơ đồ trong tài liệu này
+Trang Bản Dùng khi nào
+2 GỘP Tổng thể một trang: luồng chính + cột NGOẠI LỆ bên phải — dùng khi trình bày toàn cảnh.
+3 TÁCH Sáu nhánh ngoại lệ, mỗi nhánh 5 bước — dùng khi bàn sâu từng tình huống.
+4 Bản đồ model Model nào đảm nhận việc gì, cái nào phải viết mới.
+Cách đọc
+Cột dọc = phòng ban. Cột trái = 10 pha nghiệp vụ, đi từ trên xuống theo thời gian thực. Mỗi ô là một bước; dòng chữ nhỏ
+dưới tiêu đề là model Odoo đảm nhận bước đó.
+Hai đường vào kho (đề bài cho phép cả hai):
+Đường đi Luồng trên sơ đồ
+Đến lấy tận nơi ① Nhận yêu cầu → ② Tạo yêu cầu lấy hàng → Tài xế đi lấy → ③ Nhận hàng tại kho
+đường xám liền
+Khách tự mang tới kho ① Nhận yêu cầu → bỏ qua bước lấy hàng → ③ Nhận hàng tại kho
+đường cam nét đứt
+Odoo có sẵn — 10 bước Chỉ cần cấu hình — 3 bước Phải viết code — 6 bước
+Ba module phải viết
+Module Làm gì Vì sao Odoo native không có
+lab_chuyen Chuyến gom lô: booking, Odoo không có khái niệm gom nhiều đơn của nhiều khách vào một
+giờ chốt, tải trọng chuyến bay/tàu
+lab_laixe Điều tài xế, lấy hàng tận nơi fleet quản lý xe công ty, không điều phối chuyến đi lấy hàng
+lab_hanhtrinh Hành trình quốc tế: đến kho Stock chỉ quản lý kho của chính mình
+đối tác, đã giao
+Những thứ KHÔNG viết lại: các bước màu xanh dùng model có sẵn — sale.order · stock.picking · stock.move ·
+account.move · account.payment · mail.activity · base_automation · base_tier_validation · ir.rule · portal ·
+spreadsheet_dashboard. Debit chính là account.move; cước theo kg làm được bằng product đơn vị kg + bảng giá.
+Odoo 17 Lab — Sơ đồ luồng nghiệp vụ ERP Trang 1/4
+
+===== PAGE 2 594.95996x841.91998 =====
+LUỒNG NGHIỆP VỤ ERP — bản GỘP (luồng chính + ngoại lệ) Odoo có sẵn — 10 bước Cấu hình — 3 bước Viết code — 6 bước
+6 phòng ban · 19 bước chính · 6 nhánh ngoại lệ · màu = mức độ Odoo native làm được
+CS / SALE TÀI XẾ KHO CHỨNG TỪ KẾ TOÁN · SALE ADMIN NGOẠI LỆ
+Chăm sóc khách hàng Lấy hàng tận nơi Kho hàng bay · Kho hàng tàu Booking · AWB/HBL · hải quan Debit · công nợ · báo cáo Nhánh xử lý đặc biệt
+1 Sh . o T p I Ế gử P i N yê H u Ậ cầ N u ① Nhận yêu cầu từ shop
+sale.order · báo giá hoặc khách tự mang tới kho
+lấy tận nơi
+2 Tậ . n L n Ấ ơ Y i / H tự À m N a G ng ② Tạo yêu cầu lấy hàng Tài xế đi lấy hàng
+lab_laixe app: ̉anh · ký · xác nhận
+3 C . â n N đ H o ẬN TẠI KHO ③ Nhận hàng tại kho Hàng chưa rõ khách
+stock.picking chờ đối chiếu · gán khách sau
+Cân · đo · dán mã kiện
+stock.move.quantity
+4 G . o m Đ Ó ki N ện G GÓI ④ Đóng gói
+stock.package
+5 B . o o M ki Ở ng C · d H uy U ệ Y t ẾN Gom đơn vào chuyến ⑤ Mở chuyến · booking Rớt chuyến / giảm tải
+lab_chuyen lab_chuyen gỡ đơn · về chờ chuyến sau
+⑥ Duyệt đơn vào chuyến
+tier validation
+6 Ph . i X ếu U x Ấ uấ T t KHO ⑦ Xuất kho ⑧ AWB · HBL · manifest Xuất thiếu kiện
+stock.picking mail.thread + QWeb đánh dấu · bổ sung / bồi thường
+7 Đ . ế n H n À ư N ớ H c n T g R oà Ì i NH ⑨ Hàng đi → ⑩ Đến nơi Chuyển kho bay ↔ tàu
+lab_hanhtrinh phiếu chuyển kho
+⑪ Đại lý giao khách Khiếu nại · trả hàng
+lab_hanhtrinh ticket + phiếu xuất trả
+8 Th . e T o Í N kg H CƯỚC ⑫ Tính cước theo kg ⑬ Lập Debit
+sale.order.line · kg account.move
+9 D . e b K it I Ể · c M ôn & g n T ợ HU TIỀN ⑭ Kiểm & khoá Debit Mở khoá Debit
+tier validation duyệt mở khoá · credit note
+⑮ Hoá đơn · thu tiền
+account.payment
+⑯ Đối soát · khoá tháng
+period_lock_date
+10. BÁO CÁO
+Doanh thu · sản lượng Báo cáo · dashboard
+pivot · spreadsheet
+Ba module phải viết:
+① lab_chuyen — chuyến gom lô · ② lab_laixe — điều tài xế và lấy hàng tận nơi · ③ lab_hanhtrinh — trạng thái hành trình quốc tế
+Bản GỘP — luồng chính + cột NGOẠI LỆ bên phải (mũi tên nét đứt nâu chỉ từ bước phát sinh sang nhánh xử lý)
+Odoo 17 Lab — Sơ đồ luồng nghiệp vụ ERP Trang 2/4
+
+===== PAGE 3 841.91998x594.95996 =====
+SÁU NHÁNH NGOẠI LỆ — chi tiết cách xử lý
+Phần bị bỏ qua nhiều nhất khi làm phần mềm · mỗi nhánh đều phải quay được về luồng chính
+① Hàng chưa rõ khách ② Rớt chuyến / giảm tải
+Nhận hàng nhưng chưa biết của shop nào Chuyến quá tải hoặc hãng đổi lịch
+Bước 1 Bước 2 Bước 3 Bước 1 Bước 2 Bước 3
+Kho nhận hàng Dán mã kiện tạm Đưa vào KHO CHỜ Phát hiện quá tải Đề xuất giảm tải Trưởng nhóm duyệt
+Bước 4 Bước 5 Bước 4 Bước 5
+Đối chiếu với shop Gán khách · về luồng chính Gỡ đơn khỏi chuyến Đơn về chờ chuyến sau
+Công cụ Odoo: kho KCHO · sale.order Công cụ Odoo: tier validation
+③ Đơn thiếu thông tin ④ Xuất thiếu kiện
+Thiếu người nhận / địa chỉ / cân nặng Xuất kho xong mới phát hiện thiếu kiện
+Bước 1 Bước 2 Bước 3 Bước 1 Bước 2 Bước 3
+Kiểm thông tin lô Đánh dấu thiếu Báo CS bổ sung Lập phiếu xuất Kiểm đếm kiện Phát hiện thiếu
+Bước 4 Bước 5 Bước 4 Bước 5
+CS cập nhật Quay lại duyệt chuyến Tìm / bổ sung Bồi thường nếu mất
+Công cụ Odoo: mail.activity Công cụ Odoo: stock.picking
+⑤ Chuyển kho bay ↔ tàu ⑥ Khiếu nại · trả hàng
+Đổi phương án vận chuyển Hàng hỏng, khách không nhận
+Bước 1 Bước 2 Bước 3 Bước 1 Bước 2 Bước 3
+Yêu cầu chuyển Duyệt chuyển kho Phiếu chuyển kho Khách báo sự cố Mở ticket Kho kiểm tra
+Bước 4 Bước 5 Bước 4 Bước 5
+Kho đích nhận Cập nhật chuyến mới Xử lý / xuất trả Đóng ticket
+Công cụ Odoo: stock.warehouse Công cụ Odoo: helpdesk_mgmt
+Bản TÁCH — sáu nhánh ngoại lệ, mỗi nhánh 5 bước, cuối nhánh quay về luồng chính
+Odoo 17 Lab — Sơ đồ luồng nghiệp vụ ERP Trang 3/4
+
+===== PAGE 4 841.91998x594.95996 =====
+BẢN ĐỒ MODEL — cái nào Odoo có sẵn, cái nào phải viết
+Đường liền = quan hệ có sẵn · vùng đỏ = 3 model tự viết
+res.partner sale.order stock.picking stock.move
+Khách · đại lý · tài x́ê Đơn hàng · báo giá Nhận · xúât kho Cân nặng thực t́ê
+Odoo có sẵn Odoo có sẵn Odoo có sẵn Odoo có sẵn
+lab_chuyen lab_laixe lab_hanhtrinh
+Chuýên gom lô · booking Yêu cầu ĺây hàng Hành trình qúôc t́ê
+Phải viết code Phải viết code Phải viết code
+account.move account.payment base_tier_validation mail.activity
+Debit · hoá đơn Thu tiền · đ́ôi soát Duyệt nhiều ćâp Việc cần làm · nh́ăc hạn
+Odoo có sẵn Odoo có sẵn Chỉ cần cấu hình Odoo có sẵn
+spreadsheet_dashboard ir.rule + res.groups portal (access_token) base_automation
+Dashboard cho śêp Phân quyền Khách tra cứu Tự động hoá · chặn
+Odoo có sẵn Odoo có sẵn Odoo có sẵn Odoo có sẵn
+Bản đồ model — xanh liền = Odoo có sẵn · đỏ = 3 model tự viết
+Odoo 17 Lab — Sơ đồ luồng nghiệp vụ ERP Trang 4/4

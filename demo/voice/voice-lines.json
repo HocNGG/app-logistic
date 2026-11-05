@@ -1,0 +1,42 @@
+[
+  {
+    "id": "01-mo-dau",
+    "at": "00:00",
+    "text": "Công ty gom hàng lẻ xuất khẩu này đang chạy bằng Zalo và Excel. Mỗi chuyến bay là một cuộc gọi điện. Mỗi đơn hàng là một dòng Excel dễ sai."
+  },
+  {
+    "id": "02-dinh-vi",
+    "at": "00:15",
+    "text": "Bài toán có mười chín bước, sáu phòng ban. Mười bước Odoo mười bảy đã làm được, chỉ cần cấu hình. Tôi viết thêm ba module: chuyến gom lô, điều tài xế, và hành trình quốc tế."
+  },
+  {
+    "id": "03-cs",
+    "at": "00:30",
+    "text": "Đây là màn hình làm việc của chăm sóc khách hàng. Bên trái là yêu cầu mới. Bên phải là chuyến sắp chốt. Không cần mở thêm tab nào."
+  },
+  {
+    "id": "04-qua-tai",
+    "at": "01:00",
+    "text": "Chuyến này vượt tải một trăm hai mươi phần trăm. Hệ thống không cho gỡ đơn ngay, phải có trưởng nhóm duyệt. Đơn bị gỡ quay về danh sách chờ chuyến sau, không biến mất."
+  },
+  {
+    "id": "05-wow",
+    "at": "01:15",
+    "text": "Cùng lúc đó, tài xế nhận việc trên app. Chụp ảnh, ký biên nhận, nhập số kiện thực tế. Không cần gọi điện xác nhận. Mất mạng vẫn làm được, có mạng thì tự đồng bộ."
+  },
+  {
+    "id": "06-hanh-trinh",
+    "at": "01:45",
+    "text": "Khách hàng tự mở đường dẫn tra cứu. Hàng đã lên máy bay, đã đến, đại lý đã giao. Bộ phận chăm sóc khách hàng không phải nghe điện thoại hỏi hàng đang ở đâu nữa."
+  },
+  {
+    "id": "07-tien",
+    "at": "02:10",
+    "text": "Cước tính theo ki lô gam, lấy từ cân thực tế ở kho. Phiếu ghi nợ được duyệt và khoá lại. Sau khi khoá, không ai sửa được. Muốn sửa phải mở khoá và có lý do."
+  },
+  {
+    "id": "08-ket",
+    "at": "02:35",
+    "text": "Ba module. Mười bước Odoo đã có sẵn. Sáu nhánh ngoại lệ. Đây là phần mềm chạy được, không phải slide."
+  }
+]

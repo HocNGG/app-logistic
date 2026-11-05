@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  =====================================================================================
+  DANH SÁCH ĐƠN BÁN — thêm cột "Tạo lúc" và sắp CŨ NHẤT LÊN ĐẦU (N1/N2, chốt 2026-11-02).
+
+  VÌ SAO CẦN:
+    Odoo mặc định sắp `sale.order` theo `_order = 'date_order desc, id desc'` ⇒ đơn MỚI NHẤT nằm
+    trên. Nghiệp vụ gom hàng lẻ cần ngược lại: đơn nào vào hệ thống SỚM thì xử lý trước (FIFO),
+    và phải nhìn thấy NÓ ĐƯỢC TẠO LÚC NÀO để biết đơn nào đang chờ lâu.
+
+  CÁCH LÀM — CHỈ ĐỔI VIEW, KHÔNG ĐỔI MODEL:
+    * `default_order` trên `<tree>` chỉ ảnh hưởng thứ tự HIỂN THỊ của màn danh sách này.
+      KHÔNG đổi `_order` của `sale.order`: `_order` là hợp đồng của cả hệ thống (báo cáo, RPC,
+      đối soát kế toán, màn khác) — đổi nó là đổi hành vi ngoài phạm vi quyết định.
+    * Inherit view chuẩn `sale.view_order_tree` (primary view của "Sales Orders"), KHÔNG tạo view
+      riêng thay thế: view chuẩn của Odoo vẫn là nguồn, ta chỉ thêm 1 cột + 1 attribute.
+
+  ⚠️ Nếu `xpath` trên view gốc fail khi cài (Odoo đổi cấu trúc view ở bản sau): DỪNG, báo lại,
+  KHÔNG gỡ view chuẩn — thà thiếu cột còn hơn phá màn "Đơn bán" của toàn hệ thống.
+  =====================================================================================
+-->
+<odoo>
+
+    <record id="view_lab_sale_order_tree_tao_luc" model="ir.ui.view">
+        <field name="name">lab.sale.order.tree (tạo lúc + cũ nhất lên đầu)</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_tree"/>
+        <field name="arch" type="xml">
+            <!-- 1) Thứ tự hiển thị: đơn TẠO SỚM nằm trên. `id asc` làm khoá phụ để hai đơn cùng
+                    giây vẫn có thứ tự ổn định. -->
+            <xpath expr="//tree" position="attributes">
+                <attribute name="default_order">create_date asc, id asc</attribute>
+            </xpath>
+
+            <!-- 2) Cột "Tạo lúc" — widget mặc định (datetime) để còn GIỜ: giờ tạo là thứ dùng để
+                    biết đơn chờ lâu hay không. Đặt ngay sau cột "Ngày đặt" của Odoo. -->
+            <xpath expr="//field[@name='date_order'][1]" position="after">
+                <field name="create_date" string="Tạo lúc" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

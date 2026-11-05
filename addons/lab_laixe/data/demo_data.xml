@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SEED DATA DEMO cho lab_laixe — nguồn: infra/scripts/seed-users.md (bảng tài khoản).
+  noupdate="1": upgrade không ghi đè dữ liệu người dùng đã sửa tay.
+
+  Vì sao user + hr.employee + yêu cầu lấy hàng nằm ở module này (không phải lab_core):
+  lab_core KHÔNG depends lab_laixe (docs/02 §1) nên không thể tham chiếu
+  model lab.yeu.cau.lay.hang trong data của nó. Ngược lại lab_laixe tham chiếu
+  `lab_core.demo_shop_*`/`demo_so_*` được vì lab_core là dependency của nó.
+
+  ⚠️ Mật khẩu `lab@2026` là mật khẩu DEMO CÔNG KHAI đã ghi trong
+  infra/scripts/seed-users.md — chỉ dùng cho DB local, không dùng cho môi trường thật.
+  Tài xế là portal (kế thừa base.group_portal) nên KHÔNG vào được backend web.
+-->
+<odoo>
+    <data noupdate="1">
+
+        <!-- ===================== 3 TÀI XẾ (portal + group_driver) =====================
+             ⚠️ `email` BẮT BUỘC — lỗi thật đo được trong E2E 2026-10-29: tài xế không
+             có email thì `message_post` raise "Unable to send message, please
+             configure the sender's email address." ngay sau khi ghi state ->
+             transaction rollback -> tài xế đã chụp ảnh/ký/gửi số kiện mà yêu cầu
+             KHÔNG đổi trạng thái (API trả 409 INVALID_STATE). -->
+        <record id="demo_user_taixe01" model="res.users">
+            <field name="name">Trần Văn Hùng (tài xế)</field>
+            <field name="login">taixe01</field>
+            <field name="email">taixe01@applogictics.local</field>
+            <field name="password">lab@2026</field>
+            <field name="groups_id" eval="[(6, 0, [ref('base.group_portal'), ref('lab_core.group_driver')])]"/>
+        </record>
+
+        <record id="demo_user_taixe02" model="res.users">
+            <field name="name">Lê Minh Tâm (tài xế)</field>
+            <field name="login">taixe02</field>
+            <field name="email">taixe02@applogictics.local</field>
+            <field name="password">lab@2026</field>
+            <field name="groups_id" eval="[(6, 0, [ref('base.group_portal'), ref('lab_core.group_driver')])]"/>
+        </record>
+
+        <record id="demo_user_taixe03" model="res.users">
+            <field name="name">Phan Quốc Việt (tài xế)</field>
+            <field name="login">taixe03</field>
+            <field name="email">taixe03@applogictics.local</field>
+            <field name="password">lab@2026</field>
+            <field name="groups_id" eval="[(6, 0, [ref('base.group_portal'), ref('lab_core.group_driver')])]"/>
+        </record>
+
+        <!-- ============== 3 HỒ SƠ NHÂN VIÊN (tài xế = hr.employee, KHÔNG tạo model) ============== -->
+        <record id="demo_driver_01" model="hr.employee">
+            <field name="name">Trần Văn Hùng</field>
+            <field name="user_id" ref="demo_user_taixe01"/>
+        </record>
+
+        <record id="demo_driver_02" model="hr.employee">
+            <field name="name">Lê Minh Tâm</field>
+            <field name="user_id" ref="demo_user_taixe02"/>
+        </record>
+
+        <record id="demo_driver_03" model="hr.employee">
+            <field name="name">Phan Quốc Việt</field>
+            <field name="user_id" ref="demo_user_taixe03"/>
+        </record>
+
+        <!-- ===================== 5 YÊU CẦU LẤY HÀNG (bước ②) ===================== -->
+        <record id="demo_lay_hang_01" model="lab.yeu.cau.lay.hang">
+            <field name="partner_id" ref="lab_core.demo_shop_sen_da"/>
+            <field name="sale_order_id" ref="lab_core.demo_so_1"/>
+            <field name="dia_chi_lay">18 Nguyễn Trãi, Quận 1, TP.HCM (hẻm 12, cổng xanh)</field>
+            <field name="lien_he_ten">Chị Hạnh</field>
+            <field name="lien_he_sdt">0903 111 222</field>
+            <field name="driver_id" ref="demo_driver_01"/>
+            <field name="so_kien_du_kien">12</field>
+            <field name="state">assigned</field>
+            <field name="khung_gio_tu" eval="datetime.now().replace(hour=1, minute=30, second=0, microsecond=0)"/>
+            <field name="khung_gio_den" eval="datetime.now().replace(hour=3, minute=0, second=0, microsecond=0)"/>
+        </record>
+
+        <record id="demo_lay_hang_02" model="lab.yeu.cau.lay.hang">
+            <field name="partner_id" ref="lab_core.demo_shop_sen_da"/>
+            <field name="sale_order_id" ref="lab_core.demo_so_2"/>
+            <field name="dia_chi_lay">Kho Sen Đá — 45 Cách Mạng Tháng 8, Quận 3, TP.HCM</field>
+            <field name="lien_he_ten">Anh Dũng</field>
+            <field name="lien_he_sdt">0903 111 333</field>
+            <field name="driver_id" ref="demo_driver_01"/>
+            <field name="so_kien_du_kien">8</field>
+            <field name="state">en_route</field>
+        </record>
+
+        <record id="demo_lay_hang_03" model="lab.yeu.cau.lay.hang">
+            <field name="partner_id" ref="lab_core.demo_shop_may_trang"/>
+            <field name="sale_order_id" ref="lab_core.demo_so_3"/>
+            <field name="dia_chi_lay">77 Lê Lợi, Hải Châu, Đà Nẵng</field>
+            <field name="lien_he_ten">Chị Mai</field>
+            <field name="lien_he_sdt">0908 333 444</field>
+            <field name="driver_id" ref="demo_driver_02"/>
+            <field name="so_kien_du_kien">6</field>
+            <field name="state">assigned</field>
+        </record>
+
+        <record id="demo_lay_hang_04" model="lab.yeu.cau.lay.hang">
+            <field name="partner_id" ref="lab_core.demo_shop_binh_minh"/>
+            <field name="sale_order_id" ref="lab_core.demo_so_5"/>
+            <field name="dia_chi_lay">5 Tràng Tiền, Hoàn Kiếm, Hà Nội (tầng 3, không có thang máy)</field>
+            <field name="lien_he_ten">Anh Tuấn</field>
+            <field name="lien_he_sdt">0912 555 666</field>
+            <field name="so_kien_du_kien">20</field>
+            <field name="state">new</field>
+        </record>
+
+        <record id="demo_lay_hang_05" model="lab.yeu.cau.lay.hang">
+            <field name="partner_id" ref="lab_core.demo_shop_may_trang"/>
+            <field name="sale_order_id" ref="lab_core.demo_so_4"/>
+            <field name="dia_chi_lay">Lô B12 KCN Tân Bình, TP.HCM (giao cho bảo vệ)</field>
+            <field name="lien_he_ten">Bảo vệ ca sáng</field>
+            <field name="lien_he_sdt">0908 777 888</field>
+            <field name="driver_id" ref="demo_driver_03"/>
+            <field name="so_kien_du_kien">4</field>
+            <field name="state">assigned</field>
+        </record>
+
+    </data>
+</odoo>

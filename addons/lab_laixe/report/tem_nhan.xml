@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  =====================================================================================
+  TEM NHẬN KIỆN — khổ 100×70 mm (máy in tem nhiệt / in A4 rồi cắt).
+
+  QUYẾT ĐỊNH 2026-11-02 (chốt với khách):
+    * Tem CHỈ sinh tại KHO, khi bấm "Nhận hàng & in tem" — tài xế KHÔNG dán, KHÔNG quét.
+    * Mỗi kiện = 1 tem = 1 `stock.quant.package` (mã `KIEN/26/000123`).
+    * QR trỏ tới trang tra cứu CÔNG KHAI (không cần đăng nhập):
+        <lab.public_base_url>/lab/track/<access_token>/<mã kiện>
+      Dùng dạng PATH (không `?`, không `&`) để QR không bị cắt khi in nhỏ.
+
+  VÌ SAO DÙNG `web.html_container` MÀ KHÔNG `web.basic_layout`:
+    basic_layout chèn header/footer công ty (logo, địa chỉ) — với tem 100×70 thì
+    phần đó ăn hết chỗ. html_container chỉ là khung HTML thô, đúng thứ cần cho tem.
+  =====================================================================================
+-->
+<odoo>
+
+    <!-- Khổ giấy: 100 mm ngang × 70 mm cao. `orientation=Portrait` để Odoo KHÔNG
+         tự xoay lại (landscape sẽ đảo thành 70×100). -->
+    <record id="paperformat_tem_100x70" model="report.paperformat">
+        <field name="name">Tem 100x70mm</field>
+        <field name="format">custom</field>
+        <field name="page_height">70</field>
+        <field name="page_width">100</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">3</field>
+        <field name="margin_bottom">3</field>
+        <field name="margin_left">4</field>
+        <field name="margin_right">4</field>
+        <field name="header_spacing">0</field>
+        <field name="dpi">203</field>
+    </record>
+
+    <record id="action_report_tem_nhan" model="ir.actions.report">
+        <field name="name">Tem nhận kiện (100x70)</field>
+        <field name="model">lab.yeu.cau.lay.hang</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">lab_laixe.report_tem_nhan_doc</field>
+        <field name="report_file">lab_laixe.report_tem_nhan_doc</field>
+        <field name="paperformat_id" ref="paperformat_tem_100x70"/>
+        <field name="print_report_name">'Tem-nhan-%s' % (object.name or '')</field>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_tem_nhan_doc">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-foreach="doc.kien_ids" t-as="kien">
+                    <div class="page" style="page-break-after: always; font-family: Arial, Helvetica, sans-serif; color: #0b0b12;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td style="width: 62%; vertical-align: top; padding-right: 3mm;">
+                                    <div style="font-size: 8pt; letter-spacing: .5px; color: #6b6b78;">TEM NHẬN KIỆN</div>
+                                    <div style="font-size: 15pt; font-weight: bold; line-height: 1.1; margin-top: 1mm;">
+                                        <span t-esc="kien.name"/>
+                                    </div>
+                                    <div style="font-size: 9pt; margin-top: 2mm;">
+                                        <b>YC:</b> <span t-esc="doc.name"/>
+                                        &#160;·&#160; <b>Kiện</b>
+                                        <span t-esc="kien_index + 1"/>/
+                                        <span t-esc="len(doc.kien_ids)"/>
+                                    </div>
+                                    <div style="font-size: 9pt; margin-top: 1mm;">
+                                        <b>Shop:</b> <span t-esc="doc.partner_id.name or ''"/>
+                                    </div>
+                                    <div style="font-size: 9pt; margin-top: 1mm;">
+                                        <b>SĐT:</b> <span t-esc="doc.lien_he_sdt or ''"/>
+                                    </div>
+                                    <div style="font-size: 9pt; margin-top: 1mm;">
+                                        <b>Kg:</b>
+                                        <span t-esc="'%.1f' % (doc.khoi_luong_uoc_kg or 0)"/>
+                                        &#160;·&#160; <b>Nhận:</b>
+                                        <span t-esc="(doc.ngay_xac_nhan or doc.create_date).strftime('%d/%m/%Y %H:%M')"/>
+                                    </div>
+                                </td>
+                                <td style="width: 38%; vertical-align: top; text-align: right;">
+                                    <img t-att-src="'/report/barcode/QR/%s?width=300&amp;height=300' % doc.track_url_kien(kien)"
+                                         style="width: 28mm; height: 28mm;" alt="QR"/>
+                                    <div style="font-size: 6.5pt; color: #6b6b78; word-break: break-all; margin-top: 1mm;">
+                                        Quét để tra cứu
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                        <div style="margin-top: 2mm; border-top: .3mm solid #d5d5dd; padding-top: 1mm; font-size: 7pt; color: #6b6b78;">
+                            <span t-esc="doc.shop_name or ''"/>
+                            &#160;·&#160; Tạo: <span t-esc="doc.create_date.strftime('%d/%m/%Y %H:%M')"/>
+                            &#160;·&#160; <span t-esc="doc.name"/>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+</odoo>

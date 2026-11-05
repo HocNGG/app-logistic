@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<title>PROTOTYPE v3 — DESKTOP (Tổng quan, sidebar) — duyệt thiết kế</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="desktop">
+  <!-- RAIL icon 72px: muc dang chon = o lime -->
+  <div class="rail">
+    <div class="logo"></div>
+    <div class="i on">▦</div>
+    <div class="i">✚</div>
+    <div class="i">☰</div>
+    <div class="i">✈</div>
+    <div class="i">👤</div>
+    <div style="flex:1"></div>
+    <div class="i">⚙</div>
+  </div>
+
+  <div class="main">
+    <div class="topbar" style="border-bottom:0;padding-bottom:6px">
+      <div class="brand"><span class="cube"></span>AppLogictics <span class="sub">Gom hàng lẻ · Odoo 17</span></div>
+      <div class="topbar-right">
+        <span class="pill" style="padding:6px 12px">7 ngày <b>▾</b></span>
+        <span class="icon-btn">🔔</span>
+        <span class="avatar">GĐ</span>
+      </div>
+    </div>
+
+    <div class="page-head" style="padding:6px 22px 0">
+      <h1 class="page-title"><span class="dot"></span>Bảng điều khiển</h1>
+      <div class="right">
+        <button class="btn ghost">Xuất CSV</button>
+        <button class="btn primary">Xem hoạt động</button>
+      </div>
+    </div>
+
+    <div class="stats" style="grid-template-columns:repeat(4,1fr)">
+      <div class="stat hl">
+        <div class="k">Việc chờ gán</div>
+        <div class="v">13</div>
+        <div class="bar"><i style="width:32%"></i></div>
+        <div class="chips"><span class="chip lime">+8% so với hôm qua</span></div>
+      </div>
+      <div class="stat"><div class="k">Đang đi lấy</div><div class="v">36</div><div class="bar"><i style="width:56%"></i></div></div>
+      <div class="stat"><div class="k">Đã về kho hôm nay</div><div class="v">9</div><div class="bar"><i style="width:18%"></i></div><div class="chips"><span class="chip ok">+80%</span></div></div>
+      <div class="stat"><div class="k">Tải TB</div><div class="v">73 <small>%</small></div><div class="bar"><i style="width:73%"></i></div></div>
+    </div>
+
+    <div class="content" style="display:grid;grid-template-columns:1.15fr .85fr;gap:14px">
+      <div class="panel" style="height:auto">
+        <div class="panel-head"><h3>10 việc cập nhật gần nhất</h3><div class="seg"><span class="on">Hôm nay</span><span>7 ngày</span></div></div>
+        <div class="rows">
+          <div class="row"><div class="who"><span class="av">SA</span><div><div class="t">LH/26/4346</div><div class="d">Sách Cũ Sài Gòn</div></div></div><div class="mid">Trần Văn Hùng</div><div class="st on">Mới</div><div class="amt">10:00</div></div>
+          <div class="row"><div class="who"><span class="av">BT</span><div><div class="t">LH/26/4349</div><div class="d">Bếp Từ Tân Tiến</div></div></div><div class="mid">Lê Minh Tâm</div><div class="st">Đã về kho</div><div class="amt">14:11</div></div>
+          <div class="row"><div class="who"><span class="av">LK</span><div><div class="t">LH/26/4326</div><div class="d">Linh Kiện Ô Tô</div></div></div><div class="mid">Phan Quốc Việt</div><div class="st" style="background:#ffe3df;border-color:#ffb9b1;color:#8a2b1f">Thất bại</div><div class="amt">09:40</div></div>
+          <div class="row"><div class="who"><span class="av">TD</span><div><div class="t">LH/26/4303</div><div class="d">Thủy Sản Biển Xanh</div></div></div><div class="mid">Đặng Quốc Bảo</div><div class="st">Đã lấy hàng</div><div class="amt">08:25</div></div>
+        </div>
+      </div>
+
+      <div class="panel" style="height:auto;background:var(--s1);color:var(--ink)">
+        <div class="panel-head"><h3 style="color:var(--ink)">Cơ cấu trạng thái</h3></div>
+        <div style="display:flex;align-items:center;gap:18px;margin-top:6px">
+          <div style="width:132px;height:132px;border-radius:50%;background:conic-gradient(var(--accent) 0 74%, #45d4c4 74% 81%, #6ea8ff 81% 95%, #263245 95% 100%);display:grid;place-items:center">
+            <div style="width:84px;height:84px;border-radius:50%;background:var(--s1);display:grid;place-items:center;text-align:center">
+              <div><div style="font-size:20px;font-weight:800">257</div><div style="font-size:10px;color:var(--ink-3)">việc</div></div>
+            </div>
+          </div>
+          <div style="flex:1;font-size:12px;color:var(--ink-2)">
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px"><span style="width:8px;height:8px;border-radius:2px;background:var(--accent)"></span>Đã về kho 191 · 74%</div>
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px"><span style="width:8px;height:8px;border-radius:2px;background:#45d4c4"></span>Đã lấy 17 · 7%</div>
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px"><span style="width:8px;height:8px;border-radius:2px;background:#6ea8ff"></span>Đang đi lấy 36 · 14%</div>
+            <div style="display:flex;gap:8px;align-items:center"><span style="width:8px;height:8px;border-radius:2px;background:#263245"></span>Chờ gán 13 · 5%</div>
+          </div>
+        </div>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:12px;color:var(--ink-2)">
+          Ngoài vùng cung ứng: <span class="chip bad">Thất bại 29</span> <span class="chip">Huỷ 20</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  =====================================================================================
+  SẢN PHẨM ĐẠI DIỆN "KIỆN GOM LẺ" — dùng làm DÒNG HÀNG cho mọi phiếu kho của nghiệp vụ
+  gom hàng lẻ (WH/IN khi kho nhận, WH/OUT khi xuất chuyến).
+
+  VÌ SAO PHẢI CÓ (đo thật 2026-11-02):
+    `lab_yeu_cau_lay_hang.action_confirm` trước đây chỉ tạo `stock.picking` mà KHÔNG tạo
+    `stock.move` ⇒ 3 phiếu WH/IN (00487, 00486, 00045) đều `draft` + 0 dòng hàng ⇒
+    TỒN KHO KHÔNG TĂNG. Chứng từ chỉ còn là cái số, mất giá trị kho và mất cơ sở đối soát
+    nhập − xuất (AGENTS.md Luật 4: sự kiện kinh tế phải có bút toán/chứng từ THẬT).
+
+  VÌ SAO LÀ MỘT SẢN PHẨM ĐẠI DIỆN, KHÔNG PHẢI TỪNG MÓN CỦA KHÁCH:
+    Hàng trong kiện là của khách gửi (gom hàng lẻ) — mình không mua bán, không quản lý
+    mã hàng của họ. Thứ mình phải quản là SỐ KIỆN đang giữ. Vì vậy:
+      * 1 kiện = 1 đơn vị (`uom.product_uom_unit`) của sản phẩm này
+      * tồn kho = "đang giữ bao nhiêu kiện"
+      * kiện thật vẫn là `stock.quant.package` (native), gắn vào `stock.move.line.result_package_id`
+    Không tạo model `kien` (AGENTS.md Luật 1 + bảng từ vựng cấm).
+
+  tracking = none: không theo serial/lô — mỗi kiện đã là một package có mã riêng
+  (sequence `lab.kien`, xem lab_laixe/data/ir_sequence_data.xml).
+  =====================================================================================
+-->
+<odoo>
+
+    <record id="product_kien_gom_le" model="product.product">
+        <field name="name">KIỆN GOM LẺ</field>
+        <field name="default_code">KIEN-GOM</field>
+        <field name="type">product</field>
+        <field name="tracking">none</field>
+        <field name="uom_id" ref="uom.product_uom_unit"/>
+        <field name="uom_po_id" ref="uom.product_uom_unit"/>
+        <field name="categ_id" ref="product.product_category_all"/>
+        <field name="sale_ok" eval="False"/>
+        <field name="purchase_ok" eval="False"/>
+        <field name="description">Đơn vị đại diện 1 kiện hàng gom lẻ của khách. Dùng làm dòng hàng
+cho phiếu nhập/xuất để tồn kho = số kiện đang giữ. Kiện vật lý là stock.quant.package.</field>
+    </record>
+
+</odoo>

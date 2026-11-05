@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  VÁ PHÂN QUYỀN "CHỨNG TỪ THỪA HƯỞNG KHO" (RV-01 review vòng 2, P0-1).
+
+  Bối cảnh: `group_docs` từng khai `implied_ids = group_warehouse`. Đã bỏ khai báo đó
+  trong `security/lab_core_groups.xml`, NHƯNG Odoo chỉ ghi quan hệ kế thừa vào
+  `res_groups_users_rel` lúc gán; bỏ `implied_ids` KHÔNG gỡ membership đã có.
+
+  Đo trước khi vá (2026-11-03): `chungtu01` → `/auth/login` trả `roles = ["kho"]`
+  (app mở nhầm màn Kho), `GET /kho/cho-xuat` → 200, menu "Yêu cầu lấy hàng" hiện.
+
+  Dùng `<function>` + `noupdate="0"` để chạy MỖI LẦN cài/nâng cấp (idempotent), cùng
+  cơ chế đã dùng cho `demo_users_email.xml` / `demo_users_technical.xml`.
+-->
+<odoo>
+    <data noupdate="0">
+        <function model="res.users" name="_lab_go_nhom_kho_khoi_chung_tu"/>
+    </data>
+</odoo>

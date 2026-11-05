@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  =====================================================================================
+  MANIFEST ANDROID — Wave C (APK test trên AVD Pixel_7).
+
+  Bốn điều đáng chú ý:
+
+  1. CLEARTEXT — máy ảo gọi Odoo ở `http://10.0.2.2:8069` (HTTP thường, không TLS).
+     Android 9+ chặn HTTP plaintext mặc định, nên phải mở bằng HAI lớp:
+       a) `android:networkSecurityConfig="@xml/network_security_config"` — cách hệ điều hành
+          ƯU TIÊN và là cấu hình tường minh (base-config + domain-config cho 10.0.2.2 /
+          localhost / 127.0.0.1). OkHttp đọc chính sách này TRƯỚC khi mở socket.
+       b) `android:usesCleartextTraffic="true"` — cờ cũ, giữ lại cho chắc (belt-and-braces).
+     Thiếu cả hai thì log Odoo sẽ KHÔNG thấy request nào và app chỉ báo "Không kết nối được".
+     Đây là quyết định CHỈ cho bản demo trên máy ảo, không phải cấu hình cho production.
+
+  2. Activity chính khai TÊN ĐẦY ĐỦ `vn.lab.logistics.MainActivity` (không viết `.MainActivity`):
+     `namespace`/`applicationId` của module là `com.applogictics` (theo yêu cầu), còn package
+     Kotlin của toàn bộ app vẫn là `vn.lab.logistics`. Viết `.MainActivity` sẽ bị hiểu thành
+     `com.applogictics.MainActivity` → ClassNotFoundException ngay khi mở app.
+
+  3. `android:configChanges` gồm orientation/screenSize/smallestScreenSize/screenLayout/
+     keyboardHidden/uiMode/density: app có layout duo hai pane tự tính theo bề rộng
+     (`DuoScaffold`), nên khi xoay máy hay vào multi-window ta KHÔNG muốn Activity bị huỷ và
+     dựng lại (mất state đang thao tác: ảnh, chữ ký, số kiện). Compose tự đo lại bề rộng.
+
+  Quyền:
+   - INTERNET + ACCESS_NETWORK_STATE — gọi `/web/session/authenticate` và `/lab/api/v1/*`.
+    - CAMERA — CỐ Ý KHÔNG khai: app chụp ảnh trực tiếp bằng camera hệ thống (TakePicture + FileProvider).
+      Khai CAMERA mà chưa được cấp lúc chạy thì Android ném SecurityException khi mở camera hệ thống;
+      không khai thì app camera tự xin quyền. Chọn ảnh có sẵn vẫn qua SAF (GetContent), không cần quyền.
+     Kèm 2 `uses-feature ... required="false"` để Play/thiết bị không lọc app vì thiếu camera.
+  =====================================================================================
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera.autofocus"
+        android:required="false" />
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.AppLogictics"
+        android:usesCleartextTraffic="true">
+
+        <activity
+            android:name="vn.lab.logistics.MainActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|uiMode|density"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.AppLogictics"
+            android:windowSoftInputMode="adjustResize">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!--
+          FileProvider cấp `content://` cho app camera hệ thống ghi ảnh chụp vào `cache/captures/`
+          (tệp tạm, bị xoá ngay sau khi đọc vào RAM). Không `exported`, chỉ cấp quyền theo Uri.
+        -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+    </application>
+
+</manifest>

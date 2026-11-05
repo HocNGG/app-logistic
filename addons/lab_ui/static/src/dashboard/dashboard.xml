@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  =====================================================================================
+  lab_ui/static/src/dashboard/dashboard.xml — QWeb template của client action "Bảng điều khiển".
+  Người viết: FE-01. Biên giới: addons/lab_ui/static/** (AGENTS.md Luật 10).
+
+  ĐỐI CHIẾU SOURCE THẬT (Odoo 17.0, addons/web/static/lib/owl/owl.js):
+    • `ROOT_SVG_TAGS = {"svg","g","path"}` + `if (ns) ctx.nameSpace = ns;`
+      ⇒ mọi phần tử SVG nằm trong <svg> được tạo bằng createElementNS ⇒ vẽ chart bằng SVG
+      ngay trong template là AN TOÀN, không cần thư viện ngoài, không cần thao tác DOM tay.
+    • `t-attf-class` / `t-foreach` + `t-key` / `t-call` +(t-set) là cú pháp OWL 2 thật của bản này.
+
+  BỐ CỤC (skill ui-dashboard-app-screens §6):
+    [toolbar]  tiêu đề + 3 chip kỳ (Hôm nay · 7 ngày · 30 ngày) + nút Xuất CSV (cố ý tắt)
+    [4 KPI]    Việc chờ gán · Đang đi lấy hàng · Đã về kho hôm nay · Tải chuyến trung bình
+    [2 chart]  trái: area chart xu hướng theo ngày · phải: donut cơ cấu trạng thái
+    [bảng]     10 việc cập nhật gần nhất, chip trạng thái tiếng Việt
+
+  NGUYÊN TẮC:
+    1. Mỗi khối tự có loading / empty / error (skill §7). Không có số 0 giả: thiếu dữ liệu ⇒
+       "Chưa có dữ liệu".
+    2. Không màu nào ngoài token ADR-009 §6 (biến CSS lab-*, khai ở backend.scss khối 1):
+       series chart dùng token c1/c2/c3 + grid; trạng thái dùng ok/warn/bad/info.
+    3. Bàn phím: chip kỳ là <button>, dòng bảng có tabindex + Enter/Space để mở việc.
+    4. KHÔNG đổi payload: RPC `lab_dashboard_kpi` giữ nguyên khoá kpi/trend/byState/recent
+       (app KMP đang parse). Mọi thay đổi ở đây chỉ là TRÌNH BÀY.
+  ===================================================================================== -->
+<templates xml:space="preserve">
+
+    <!-- =============================================================================
+         KHỐI DÙNG CHUNG — trạng thái của MỘT khối (loading | error | empty).
+         `t-call` giữ nguyên `this` là component ⇒ nút "Thử lại" gọi được this.tai().
+         Ba biến truyền vào: trangThai, chiTiet (thông điệp lỗi), goiY (câu gợi ý khi rỗng).
+         ============================================================================= -->
+    <t t-name="lab_ui.Dashboard.State">
+        <div t-if="trangThai === 'loading'" class="o_lab_state o_lab_state--loading" role="status">
+            <span class="o_lab_state__mark" aria-hidden="true"/>
+            <p class="o_lab_state__text">Đang tải số liệu…</p>
+        </div>
+
+        <div t-elif="trangThai === 'error'" class="o_lab_state o_lab_state--error" role="alert">
+            <span class="o_lab_state__mark o_lab_state__mark--error" aria-hidden="true"/>
+            <p class="o_lab_state__text">Không tải được số liệu cho bảng điều khiển</p>
+            <p t-if="chiTiet" class="o_lab_state__hint" t-esc="chiTiet"/>
+            <button type="button" class="o_lab_btn o_lab_btn--ghost o_lab_state__action"
+                    t-on-click="() => this.tai()">Thử lại</button>
+        </div>
+
+        <div t-else="" class="o_lab_state o_lab_state--empty">
+            <span class="o_lab_state__mark" aria-hidden="true"/>
+            <p class="o_lab_state__text">Chưa có dữ liệu</p>
+            <p t-if="goiY" class="o_lab_state__hint" t-esc="goiY"/>
+            <button type="button" class="o_lab_btn o_lab_btn--ghost o_lab_state__action"
+                    t-on-click="() => this.xemBaMuoiNgay()">Xem 30 ngày</button>
+        </div>
+    </t>
+
+    <!-- =============================================================================
+         MÀN HÌNH
+         ============================================================================= -->
+    <t t-name="lab_ui.Dashboard">
+        <div class="o_lab_dash">
+
+            <!-- =================================================================
+                 1. TOOLBAR
+                 ================================================================= -->
+            <header class="o_lab_dash__toolbar">
+                <div class="o_lab_dash__heading">
+                    <h1 class="o_lab_dash__title">Bảng điều khiển</h1>
+                    <p class="o_lab_dash__sub">Tổng quan vận hành gom hàng lẻ · <t t-esc="nhanKy"/></p>
+                </div>
+
+                <div class="o_lab_dash__actions">
+                    <div class="o_lab_ranges" role="group" aria-label="Khoảng thời gian">
+                        <button t-foreach="cacKy" t-as="ky" t-key="ky.value"
+                                type="button"
+                                t-attf-class="o_lab_btn o_lab_btn--range {{ ky.value === state.ky ? 'is-active' : '' }}"
+                                t-att-aria-pressed="ky.value === state.ky ? 'true' : 'false'"
+                                t-on-click="() => this.chonKy(ky.value)">
+                            <t t-esc="ky.nhan"/>
+                        </button>
+                    </div>
+
+                    <!-- Nút xuất CSV: CỐ Ý TẮT. Chưa có backend xuất CSV; bật nút gọi vào
+                         endpoint không tồn tại là hứa tính năng không có (Luật 8/9). -->
+                    <button type="button" class="o_lab_btn o_lab_btn--ghost o_lab_dash__export"
+                            disabled="disabled"
+                            title="Chưa nối backend xuất CSV — nút được giữ đúng vị trí theo mẫu và cố ý tắt">
+                        Xuất CSV
+                    </button>
+                </div>
+            </header>
+
+            <!-- =================================================================
+                 2. BỐN THẺ KPI (skill §3: nhãn nhỏ + số lớn tabular + chip Δ nếu có mốc thật)
+                 ================================================================= -->
+            <section class="o_lab_dash__kpis" aria-label="Chỉ số chính">
+                <t t-if="state.trangThai === 'loading'">
+                    <div t-foreach="[1, 2, 3, 4]" t-as="o" t-key="o" class="o_lab_kpi o_lab_kpi--skeleton">
+                        <p class="o_lab_kpi__label">Đang tải…</p>
+                        <p class="o_lab_kpi__num o_lab_kpi__num--none">—</p>
+                    </div>
+                </t>
+
+                <t t-elif="state.trangThai === 'error'">
+                    <div class="o_lab_dash__wide">
+                        <t t-call="lab_ui.Dashboard.State">
+                            <t t-set="trangThai" t-value="'error'"/>
+                            <t t-set="chiTiet" t-value="state.loi"/>
+                            <t t-set="goiY" t-value="''"/>
+                        </t>
+                    </div>
+                </t>
+
+                <t t-else="">
+                    <!-- Thẻ ĐẦU TIÊN là card hero nền lime (ADR-009 §5.3: dashboard được
+                         phép ĐÚNG 1 vùng lime đặc). Chữ trên lime do CSS ép về
+                         token lab-on-accent (14:1) — không dùng chữ trắng. -->
+                    <div t-foreach="theKpi" t-as="the" t-key="the.khoa"
+                         t-attf-class="o_lab_kpi {{ the_index === 0 ? 'o_lab_kpi--hero' : '' }}">
+                        <p class="o_lab_kpi__label" t-esc="the.nhan"/>
+                        <p class="o_lab_kpi__value">
+                            <t t-if="the.so !== null">
+                                <span class="o_lab_kpi__num" t-esc="the.so"/>
+                                <span class="o_lab_kpi__unit" t-esc="the.donVi"/>
+                            </t>
+                            <t t-else="">
+                                <span class="o_lab_kpi__num o_lab_kpi__num--none">—</span>
+                                <span class="o_lab_kpi__hint">Chưa có dữ liệu</span>
+                            </t>
+                        </p>
+                        <!-- Một dòng MÔ TẢ TĨNH (không phải số liệu). Chọn theo khoá KPI để
+                             không phải đổi hợp đồng `theKpi` của dashboard.js. -->
+                        <p class="o_lab_kpi__desc">
+                            <t t-if="the.khoa === 'pendingAssign'">Chưa gán tài xế</t>
+                            <t t-elif="the.khoa === 'enRoute'">Đang trên đường tới shop</t>
+                            <t t-elif="the.khoa === 'confirmedToday'">Về kho trong kỳ đang chọn</t>
+                            <t t-else="">Trung bình các chuyến đã gán</t>
+                        </p>
+                        <div class="o_lab_kpi__foot">
+                            <span t-if="the.delta" t-attf-class="o_lab_delta o_lab_delta--{{ the.delta.huong }}" t-esc="the.delta.nhan"/>
+                            <span t-if="the.canhBao === 'vuot'" class="o_lab_delta o_lab_delta--xuong">Vượt ngưỡng 100% — cần giảm tải</span>
+                            <span t-elif="the.canhBao === 'sat'" class="o_lab_delta o_lab_delta--canh">Sát ngưỡng 90%</span>
+                        </div>
+                    </div>
+                </t>
+            </section>
+
+            <!-- =================================================================
+                 3. HAI KHỐI CHART
+                 ================================================================= -->
+            <section class="o_lab_dash__charts">
+
+                <!-- 3a. AREA CHART = xu hướng việc theo ngày ===================== -->
+                <article class="o_lab_panel o_lab_panel--trend">
+                    <header class="o_lab_panel__head">
+                        <div>
+                            <h2 class="o_lab_panel__title">Xu hướng việc theo ngày</h2>
+                            <p class="o_lab_panel__meta">Việc tạo mới và việc đã về kho, theo ngày và múi giờ người dùng.</p>
+                        </div>
+                        <p t-if="bieuDo and bieuDo.coSoLieu" class="o_lab_panel__meta">
+                            Hôm nay: <t t-esc="bieuDo.tongHomNay.taoMoi"/> tạo mới ·
+                            <t t-esc="bieuDo.tongHomNay.daLay"/> đã lấy ·
+                            <t t-esc="bieuDo.tongHomNay.veKho"/> về kho
+                        </p>
+                    </header>
+
+                    <div t-if="bieuDo and bieuDo.coSoLieu" class="o_lab_chart__legend">
+                        <span class="o_lab_legend">
+                            <i class="o_lab_legend__dot o_lab_legend__dot--1" aria-hidden="true"/>
+                            Tạo mới
+                        </span>
+                        <span class="o_lab_legend">
+                            <i class="o_lab_legend__dot o_lab_legend__dot--2" aria-hidden="true"/>
+                            Đã về kho
+                        </span>
+                    </div>
+
+                    <t t-set="ttTrend" t-value="state.trangThai !== 'ready' ? state.trangThai : (bieuDo and bieuDo.coSoLieu ? 'ready' : 'empty')"/>
+                    <t t-if="ttTrend !== 'ready'">
+                        <t t-call="lab_ui.Dashboard.State">
+                            <t t-set="trangThai" t-value="ttTrend"/>
+                            <t t-set="chiTiet" t-value="state.loi"/>
+                            <t t-set="goiY" t-value="'Kỳ này chưa có việc nào được tạo hoặc về kho.'"/>
+                        </t>
+                    </t>
+                    <div t-else="" class="o_lab_chart__wrap">
+                        <svg class="o_lab_chart" viewBox="0 0 760 260" role="img"
+                             t-att-aria-label="bieuDo.moTa" preserveAspectRatio="xMidYMid meet">
+                            <!-- Lưới ngang + nhãn trục Y (đơn vị: việc) -->
+                            <g class="o_lab_chart__grid">
+                                <t t-foreach="bieuDo.trucY" t-as="moc" t-key="moc_index">
+                                    <line t-att-x1="bieuDo.trai" t-att-x2="bieuDo.phai"
+                                          t-att-y1="moc.y" t-att-y2="moc.y"/>
+                                    <text class="o_lab_chart__ylabel" text-anchor="end"
+                                          t-att-x="bieuDo.trai - 8" t-att-y="moc.y + 4"
+                                          t-esc="moc.nhan"/>
+                                </t>
+                            </g>
+
+                            <!-- Series 1: vùng + đường "Tạo mới"; Series 2: đường "Đã về kho" -->
+                            <path class="o_lab_chart__area" t-att-d="bieuDo.vungTaoMoi"/>
+                            <path class="o_lab_chart__line o_lab_chart__line--1" t-att-d="bieuDo.duongTaoMoi"/>
+                            <path class="o_lab_chart__line o_lab_chart__line--2" t-att-d="bieuDo.duongVeKho"/>
+
+                            <circle t-foreach="bieuDo.diem" t-as="diem" t-key="diem_index"
+                                    r="2.5" t-att-cx="diem.x" t-att-cy="diem.y"
+                                    t-attf-class="o_lab_chart__dot o_lab_chart__dot--{{ diem.bac }}"/>
+
+                            <!-- Nhãn trục X: dd/MM -->
+                            <text t-foreach="bieuDo.nhanX" t-as="nhan" t-key="nhan_index"
+                                  class="o_lab_chart__xlabel" text-anchor="middle"
+                                  t-att-x="nhan.x" t-att-y="bieuDo.duoi + 24" t-esc="nhan.nhan"/>
+
+                            <!-- Cột bắt chuột: tooltip chữ do browser hiện từ <title> -->
+                            <rect t-foreach="bieuDo.cot" t-as="cot" t-key="cot_index"
+                                  class="o_lab_chart__hit"
+                                  t-att-x="cot.x" t-att-width="cot.rong"
+                                  t-att-y="bieuDo.tren" t-att-height="bieuDo.duoi - bieuDo.tren">
+                                <title t-esc="cot.title"/>
+                            </rect>
+                        </svg>
+                    </div>
+                </article>
+
+                <!-- 3b. DONUT = cơ cấu trạng thái ================================ -->
+                <article class="o_lab_panel o_lab_panel--donut">
+                    <header class="o_lab_panel__head">
+                        <h2 class="o_lab_panel__title">Cơ cấu trạng thái</h2>
+                        <p class="o_lab_panel__meta">Bốn nhóm trạng thái chính.</p>
+                    </header>
+
+                    <t t-set="ttDonut" t-value="state.trangThai !== 'ready' ? state.trangThai : (donut and donut.tongTatCa ? 'ready' : 'empty')"/>
+                    <t t-if="ttDonut !== 'ready'">
+                        <t t-call="lab_ui.Dashboard.State">
+                            <t t-set="trangThai" t-value="ttDonut"/>
+                            <t t-set="chiTiet" t-value="state.loi"/>
+                            <t t-set="goiY" t-value="'Kỳ này chưa có yêu cầu lấy hàng nào để phân loại.'"/>
+                        </t>
+                    </t>
+                    <div t-else="" class="o_lab_donut__wrap">
+                        <svg class="o_lab_donut" viewBox="0 0 180 180" role="img"
+                             t-att-aria-label="donut.moTa">
+                            <circle class="o_lab_donut__track" cx="90" cy="90" r="64"/>
+                            <g transform="rotate(-90 90 90)">
+                                <!-- Chỉ các nhóm có số > 0 mới vẽ cung (JS đã lọc: `vongVe`).
+                                     Không dùng t-if chung với t-foreach trên cùng 1 phần tử:
+                                     OWL 2 không cho hai directive đó cùng một node. -->
+                                <circle t-foreach="donut.vongVe" t-as="vong" t-key="vong.khoa"
+                                        cx="90" cy="90" r="64"
+                                        t-attf-class="o_lab_donut__seg o_lab_donut__seg--{{ vong.bac }}"
+                                        t-att-stroke-dasharray="vong.dash"
+                                        t-att-stroke-dashoffset="vong.offset">
+                                    <title t-esc="vong.title"/>
+                                </circle>
+                            </g>
+                            <text class="o_lab_donut__total" x="90" y="86" text-anchor="middle" t-esc="donut.tong"/>
+                            <text class="o_lab_donut__total-label" x="90" y="106" text-anchor="middle">việc</text>
+                        </svg>
+
+                        <ul class="o_lab_donut__legend">
+                            <li t-foreach="donut.vong" t-as="vong" t-key="vong.khoa" class="o_lab_legend">
+                                <i t-attf-class="o_lab_legend__dot o_lab_legend__dot--{{ vong.bac }}" aria-hidden="true"/>
+                                <span class="o_lab_legend__label" t-esc="vong.nhan"/>
+                                <span class="o_lab_legend__value" t-esc="vong.nhanSo"/>
+                                <span class="o_lab_legend__pct" t-esc="vong.phanTram + '%'"/>
+                            </li>
+                        </ul>
+
+                        <!-- 2 trạng thái nằm ngoài vòng: vẫn phải nhìn thấy, không giấu -->
+                        <ul class="o_lab_donut__offring">
+                            <li class="o_lab_donut__offring-label">Ngoài vòng (không vẽ cung):</li>
+                            <li t-foreach="donut.ngoaiVong" t-as="muc" t-key="muc.khoa" class="o_lab_offring">
+                                <span t-attf-class="o_lab_chip o_lab_chip--{{ muc.khoa }}" t-esc="muc.nhan"/>
+                                <span class="o_lab_offring__value" t-esc="muc.nhanSo"/>
+                            </li>
+                        </ul>
+                    </div>
+                </article>
+            </section>
+
+            <!-- =================================================================
+                 4. BẢNG 10 VIỆC CẬP NHẬT GẦN NHẤT (skill §5/§6)
+                 ================================================================= -->
+            <article class="o_lab_panel o_lab_panel--table">
+                <header class="o_lab_panel__head">
+                    <h2 class="o_lab_panel__title">10 việc cập nhật gần nhất</h2>
+                    <p t-if="bang.length" class="o_lab_panel__meta" t-esc="bang.length + ' việc'"/>
+                </header>
+
+                <t t-set="ttBang" t-value="state.trangThai !== 'ready' ? state.trangThai : (bang.length ? 'ready' : 'empty')"/>
+                <t t-if="ttBang !== 'ready'">
+                    <t t-call="lab_ui.Dashboard.State">
+                        <t t-set="trangThai" t-value="ttBang"/>
+                        <t t-set="chiTiet" t-value="state.loi"/>
+                        <t t-set="goiY" t-value="'Kỳ này chưa có yêu cầu lấy hàng nào. Tạo việc ở menu Yêu cầu lấy hàng.'"/>
+                    </t>
+                </t>
+                <div t-else="" class="o_lab_table__wrap">
+                    <table class="o_lab_table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Mã việc</th>
+                                <th scope="col">Shop</th>
+                                <th scope="col">Trạng thái</th>
+                                <th scope="col" class="o_lab_col--phu">Tài xế</th>
+                                <th scope="col" class="o_lab_col--phu">Khung giờ</th>
+                                <th scope="col" class="o_lab_col--phu o_lab_col--num">Cập nhật</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="bang" t-as="dong" t-key="dong.id"
+                                class="o_lab_table__row" tabindex="0"
+                                t-on-click="() => this.moViec(dong.id)"
+                                t-on-keydown="(ev) => this.onKeydownDong(ev, dong.id)">
+                                <td class="o_lab_table__ref" t-esc="dong.ref"/>
+                                <td t-esc="dong.shop"/>
+                                <td>
+                                    <span t-attf-class="o_lab_chip o_lab_chip--{{ dong.ma }}" t-esc="dong.nhanTrangThai"/>
+                                </td>
+                                <td class="o_lab_col--phu" t-esc="dong.taiXe"/>
+                                <td class="o_lab_col--phu o_lab_col--num" t-esc="dong.khungGio"/>
+                                <td class="o_lab_col--phu o_lab_col--num" t-esc="dong.capNhat"/>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+        </div>
+    </t>
+
+</templates>

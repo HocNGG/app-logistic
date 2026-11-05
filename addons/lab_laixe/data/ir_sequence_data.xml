@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sequence số yêu cầu lấy hàng — docs/02-kien-truc.md §5 (LH/26/0001).
+  noupdate="1": upgrade module không ghi đè bộ đếm.
+  ⚠️ ASSUMPTION: %(y)s của ir.sequence 17.0 cho năm 4 chữ số (LH/2026/0001),
+  docs ghi 2 chữ số. Xem ghi chú trong lab_chuyen/data/ir_sequence_data.xml.
+-->
+<odoo>
+    <data noupdate="1">
+
+        <record id="seq_lab_yeu_cau_lay_hang" model="ir.sequence">
+            <field name="name">Số yêu cầu lấy hàng (LH)</field>
+            <field name="code">lab.yeu.cau.lay.hang</field>
+            <field name="prefix">LH/%(y)s/</field>
+            <field name="padding">4</field>
+            <field name="implementation">standard</field>
+            <field name="company_id" eval="False"/>
+        </record>
+
+        <!-- Số KIỆN (mã tem nhận). Mỗi kiện = 1 stock.quant.package mang mã này.
+             padding 6: KIEN/26/000123 — đủ rộng để đọc trên tem 100×70 và không trùng
+             khi một chuyến có hàng trăm kiện. -->
+        <record id="seq_lab_kien" model="ir.sequence">
+            <field name="name">Số kiện gom lẻ (KIEN)</field>
+            <field name="code">lab.kien</field>
+            <field name="prefix">KIEN/%(y)s/</field>
+            <field name="padding">6</field>
+            <field name="implementation">standard</field>
+            <field name="company_id" eval="False"/>
+        </record>
+
+    </data>
+</odoo>

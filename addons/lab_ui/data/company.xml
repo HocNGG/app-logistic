@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  =====================================================================================
+  lab_ui/data/company.xml  —  Logo công ty cho trang đăng nhập.
+  Cơ chế L0 (dữ liệu chuẩn của Odoo), không hack CSS, không JS:
+    /web/binary/company_logo  phục vụ ảnh này; web.login_layout hiển thị nó trong card.
+    Đo trên ảnh docs/review/odoo-login-before.png: card đang hiện "Your logo" vì
+    res.company.logo rỗng.
+
+  GHI CHÚ:
+    • record id "base.main_company" = công ty gốc do base tạo (id 1), đúng công ty mà
+      env.company trả về cho khách chưa đăng nhập ⇒ đây là logo hiện trên /web/login.
+    • Multi company: nếu DB demo có nhiều công ty và công ty hiển thị KHÔNG phải
+      base.main_company, thêm một <record> nữa trỏ tới công ty đó (hoặc đặt logo qua
+      Settings → Companies). Xem README mục "rủi ro".
+    • Đổi logo = thay file static/img/lab_logo.png rồi chạy lại "-u lab_ui".
+  =====================================================================================
+-->
+<odoo>
+
+    <record id="base.main_company" model="res.company">
+        <field name="logo" type="base64" file="lab_ui/static/img/lab_logo.png"/>
+    </record>
+
+</odoo>

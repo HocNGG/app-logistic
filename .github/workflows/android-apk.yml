@@ -1,0 +1,80 @@
+# =====================================================================================
+# Build APK Android — CHẠY TAY (workflow_dispatch), không tự chạy khi push.
+#
+# VÌ SAO TẮT MẶC ĐỊNH: mỗi lần chạy tốn ~3-6 phút runner; trong lúc phát triển thì build
+# local nhanh hơn nhiều (`cd apps/kmp; .\gradlew.bat :composeApp:assembleDebug`).
+#
+# ⚠️ CẢNH BÁO THẬT (đo 2026-11-03): `apps/kmp/composeApp/build.gradle.kts` đang đặt
+#    compileSdk = 37 / targetSdk = 37 (Android 17). Runner `ubuntu-latest` KHÔNG chắc có
+#    `platforms;android-37`. Job này cài SDK 37 bằng sdkmanager; nếu Google chưa phát hành
+#    bản đó cho CI thì bước build sẽ FAIL — khi đó hạ compileSdk về 35/36 hoặc build local.
+#
+# KHÔNG cần secret: ký bằng debug keystore (cài lên máy thật để demo được).
+# =====================================================================================
+
+name: Build APK (chạy tay)
+
+on:
+  workflow_dispatch:
+    inputs:
+      upload_artifact:
+        description: "Tải APK về tab Actions?"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: JDK 21 (khớp JAVA_HOME máy phát triển)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Bật Gradle cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('apps/kmp/gradle/wrapper/gradle-wrapper.properties', 'apps/kmp/gradle/libs.versions.toml') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      - name: Cài Android SDK 37 (nếu runner chưa có)
+        run: |
+          set -e
+          SDK="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          echo "ANDROID_SDK_ROOT=$SDK"
+          yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null 2>&1 || true
+          "$SDK/cmdline-tools/latest/bin/sdkmanager" "platform-tools" "platforms;android-37" "build-tools;37.0.0" || \
+            echo "::warning::Không cài được android-37 — build có thể fail (xem cảnh báo đầu file)"
+
+      - name: Build APK debug
+        working-directory: apps/kmp
+        run: ./gradlew :composeApp:assembleDebug --no-daemon --console=plain --stacktrace
+
+      - name: Kiểm tra APK tạo ra
+        run: |
+          set -e
+          APK=apps/kmp/composeApp/build/outputs/apk/debug/composeApp-debug.apk
+          ls -la "$APK"
+          echo "Kích thước: $(du -h "$APK" | cut -f1)"
+
+      - name: Upload artifact
+        if: inputs.upload_artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: composeApp-debug-apk
+          path: apps/kmp/composeApp/build/outputs/apk/debug/composeApp-debug.apk
+          retention-days: 14
+
+      - name: Chạy selfCheck (luật tương phản/token) — chặn bản lỗi
+        working-directory: apps/kmp
+        run: ./gradlew :composeApp:selfCheck --no-daemon --console=plain

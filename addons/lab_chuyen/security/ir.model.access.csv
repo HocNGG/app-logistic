@@ -1,0 +1,24 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_lab_chuyen_cs,lab.chuyen — CS đọc/ghi/tạo (GOM CHUYẾN trên web — quyết định D1/D2; KHÔNG xoá),model_lab_chuyen,lab_core.group_cs,1,1,1,0
+access_lab_chuyen_driver,lab.chuyen — Tài xế không thấy,model_lab_chuyen,lab_core.group_driver,0,0,0,0
+access_lab_chuyen_warehouse,lab.chuyen — Kho đọc ghi tạo,model_lab_chuyen,lab_core.group_warehouse,1,1,1,0
+access_lab_chuyen_docs,lab.chuyen — Chứng từ đọc ghi,model_lab_chuyen,lab_core.group_docs,1,1,0,0
+access_lab_chuyen_account,lab.chuyen — Kế toán đọc,model_lab_chuyen,lab_core.group_account,1,0,0,0
+access_lab_chuyen_sale_admin,lab.chuyen — Sale Admin đọc ghi tạo,model_lab_chuyen,lab_core.group_sale_admin,1,1,1,0
+access_lab_chuyen_manager,lab.chuyen — Trưởng phòng đọc ghi tạo,model_lab_chuyen,lab_core.group_manager,1,1,1,0
+access_lab_chuyen_director,lab.chuyen — BGĐ chỉ đọc,model_lab_chuyen,lab_core.group_director,1,0,0,0
+access_lab_chuyen_line_cs,lab.chuyen.line — CS đọc/ghi/tạo (thêm dòng chuyến trên web — D2; KHÔNG xoá),model_lab_chuyen_line,lab_core.group_cs,1,1,1,0
+access_lab_chuyen_line_driver,lab.chuyen.line — Tài xế không thấy,model_lab_chuyen_line,lab_core.group_driver,0,0,0,0
+access_lab_chuyen_line_warehouse,lab.chuyen.line — Kho đọc ghi tạo,model_lab_chuyen_line,lab_core.group_warehouse,1,1,1,0
+access_lab_chuyen_line_docs,lab.chuyen.line — Chứng từ đọc,model_lab_chuyen_line,lab_core.group_docs,1,0,0,0
+access_lab_chuyen_line_account,lab.chuyen.line — Kế toán đọc,model_lab_chuyen_line,lab_core.group_account,1,0,0,0
+access_lab_chuyen_line_sale_admin,lab.chuyen.line — Sale Admin đọc ghi tạo,model_lab_chuyen_line,lab_core.group_sale_admin,1,1,1,0
+access_lab_chuyen_line_manager,lab.chuyen.line — Trưởng phòng đọc ghi tạo,model_lab_chuyen_line,lab_core.group_manager,1,1,1,0
+access_lab_chuyen_line_director,lab.chuyen.line — BGĐ chỉ đọc,model_lab_chuyen_line,lab_core.group_director,1,0,0,0
+access_lab_chuyen_system_admin,"lab.chuyen — QUẢN TRỊ (base.group_system) CHỈ ĐỌC: công cụ test/kiểm dữ liệu, không sửa",model_lab_chuyen,base.group_system,1,0,0,0
+access_lab_chuyen_line_system_admin,"lab.chuyen.line — QUẢN TRỊ (base.group_system) CHỈ ĐỌC: công cụ test/kiểm dữ liệu, không sửa",model_lab_chuyen_line,base.group_system,1,0,0,0
+access_lab_scan_event_kho,"lab.scan.event - Kho doc/ghi (KHONG xoa): nhat ky quet tem, append-only",model_lab_scan_event,lab_core.group_warehouse,1,1,1,0
+access_lab_scan_event_cs,"lab.scan.event - CS doc/ghi (KHONG xoa): doi soat kien lech",model_lab_scan_event,lab_core.group_cs,1,1,1,0
+access_lab_scan_event_manager,"lab.scan.event - Truong phong doc/ghi (KHONG xoa): xem bang tong ket",model_lab_scan_event,lab_core.group_manager,1,1,1,0
+access_lab_scan_event_sale_admin,"lab.scan.event - Sale Admin CHI DOC",model_lab_scan_event,lab_core.group_sale_admin,1,0,0,0
+access_lab_scan_event_system,"lab.scan.event - QUAN TRI CHI DOC: cong cu test/kiem du lieu",model_lab_scan_event,base.group_system,1,0,0,0

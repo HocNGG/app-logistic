@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="AppLogictics">
+  <!--
+    Logo mark — PHẲNG, ba sắc độ forest + một nhấn hổ phách.
+    Nguồn màu: agents/_shared/skills/ui-modern-industrial.md §1–2 (ADR-007) và
+    design-system/lab-logistics/MASTER.md §2.1.
+
+    Vì sao đổi (2026-11-01): bản trước dùng 3 gradient sky/indigo/cyan (#38BDF8 · #4F46E5 ·
+    #22D3EE). Đúng ba mã màu bị `ui-modern-industrial.md` §2 liệt kê là **cấm**, và gradient
+    là *tell* số 1 của "giao diện AI đại trà" (`design-taste-anti-slop.md` §3.12).
+    Ba sắc độ dưới đây KHÔNG phải gradient: chúng là 3 mặt của cùng một khối isometric —
+    cùng một họ màu, ba bước tông, đúng cách một hình khối được tô sáng.
+  -->
+  <g stroke-linejoin="round">
+    <!-- mặt trên: forest sáng -->
+    <path d="M32 6 L56 19 L32 32 L8 19 Z" fill="#2F6B57"/>
+    <!-- mặt trái: forest -->
+    <path d="M8 19 L32 32 L32 58 L8 45 Z" fill="#1F4A3D"/>
+    <!-- mặt phải: forest đậm -->
+    <path d="M56 19 L56 45 L32 58 L32 32 Z" fill="#17392F"/>
+  </g>
+
+  <!-- Mũi tên hành trình vòng qua khối: gom → đi → giao (hổ phách = chặng cần chú ý) -->
+  <path d="M20 46 C 14 40, 14 30, 22 25"
+        fill="none" stroke="#B8761F" stroke-width="2.6"
+        stroke-linecap="round" stroke-dasharray="1 5"/>
+  <circle cx="22" cy="25" r="2.8" fill="#B8761F"/>
+
+  <!-- Dải băng chuyến (band) trên mặt khối: nét mực mờ, không phải màu mới -->
+  <path d="M32 6 L44 12.5 L44 25.5 L32 32 L20 25.5 L20 12.5 Z"
+        fill="none" stroke="#16150F" stroke-width="1.4" opacity="0.22"/>
+</svg>

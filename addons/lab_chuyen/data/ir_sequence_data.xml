@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sequence số chứng từ của lab_chuyen — nguồn: docs/02-kien-truc.md §5.
+  noupdate="1": upgrade module KHÔNG ghi đè bộ đếm hiện có (bắt buộc).
+
+  ⚠️ ASSUMPTION: docs/02 §5 ghi dạng "CH/AIR/26/0001" (năm 2 chữ số). Biến nội
+  suy %(y)s của ir.sequence ở 17.0 trả NĂM 4 CHỮ SỐ, nên thực tế sẽ ra
+  "CH/AIR/2026/0001". Chưa kiểm chứng được bằng runtime (P0 chưa có Docker).
+  Muốn bỏ năm: sửa prefix thành "CH/AIR/" — một dòng, không ảnh hưởng code.
+-->
+<odoo>
+    <data noupdate="1">
+
+        <!-- MÃ TEM XUẤT (chốt M7 2026-11-02: mỗi kiện một tem xuất).
+             padding 6: XUAT/26/000123 -->
+        <record id="seq_lab_xuat" model="ir.sequence">
+            <field name="name">Số tem xuất kiện (XUAT)</field>
+            <field name="code">lab.xuat</field>
+            <field name="prefix">XUAT/%(y)s/</field>
+            <field name="padding">6</field>
+            <field name="implementation">standard</field>
+            <field name="company_id" eval="False"/>
+        </record>
+
+        <record id="seq_lab_chuyen_air" model="ir.sequence">
+            <field name="name">Số chuyến bay (CH/AIR)</field>
+            <field name="code">lab.chuyen.air</field>
+            <field name="prefix">CH/AIR/%(y)s/</field>
+            <field name="padding">4</field>
+            <field name="implementation">standard</field>
+            <!-- company_id = False: dùng chung cho mọi công ty (dự án chốt 1 công ty — OQ-07) -->
+            <field name="company_id" eval="False"/>
+        </record>
+
+        <record id="seq_lab_chuyen_sea" model="ir.sequence">
+            <field name="name">Số chuyến tàu (CH/SEA)</field>
+            <field name="code">lab.chuyen.sea</field>
+            <field name="prefix">CH/SEA/%(y)s/</field>
+            <field name="padding">4</field>
+            <field name="implementation">standard</field>
+            <field name="company_id" eval="False"/>
+        </record>
+
+        <!--
+          Ghi chú: docs/02 §5 chỉ nêu sequence "lab.chuyen" + định dạng
+          "CH/{loai}/{yy}/{seq:04d}". Vì một ir.sequence không nội suy được field
+          nghiệp vụ (loai_van_chuyen), ta tách thành 2 sequence theo loại — vẫn
+          đúng định dạng, không cần field đánh số thủ công trên model.
+          Chuyến tạo khi chưa chọn loại sẽ dùng nhánh mặc định "air" (xem create()).
+        -->
+
+    </data>
+</odoo>

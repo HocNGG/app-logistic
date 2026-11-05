@@ -1,0 +1,22 @@
+# Image Odoo 17 cho dự án AppLogictics.
+#
+# Vì sao cần image riêng thay vì dùng thẳng `odoo:17.0`:
+#   Module OCA `base_tier_validation` có test import `odoo_test_helper` (thư viện của OCA,
+#   không có trong image chính thức). Khi bật `--test-tags`, Odoo dựng test-suite cho MỌI
+#   module trong graph → gặp base_tier_validation → ModuleNotFoundError → CRITICAL
+#   "Failed to initialize database" → test của dự án KHÔNG BAO GIỜ chạy được.
+#
+#   Đã gặp thật ngày 2026-10-28 (log: docs/review/test-run.log).
+#
+# Cách dùng: `docker compose -f infra/docker-compose.yml build odoo` (hoặc `up -d --build`).
+# Thêm dependency test khác về sau thì thêm vào dòng pip dưới đây — KHÔNG cài tay trong container.
+
+FROM odoo:17.0
+
+USER root
+
+# odoo-test-helper: cần cho test của base_tier_validation (OCA)
+# (chỉ phục vụ test; không ảnh hưởng runtime nghiệp vụ)
+RUN pip install --no-cache-dir odoo-test-helper
+
+USER odoo

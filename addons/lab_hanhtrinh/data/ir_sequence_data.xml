@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sequence số hành trình — docs/02-kien-truc.md §5 (HT/26/0001).
+  noupdate="1": upgrade module không ghi đè bộ đếm.
+  ⚠️ ASSUMPTION: %(y)s của ir.sequence 17.0 cho năm 4 chữ số. Xem ghi chú trong
+  lab_chuyen/data/ir_sequence_data.xml.
+-->
+<odoo>
+    <data noupdate="1">
+
+        <record id="seq_lab_hanh_trinh" model="ir.sequence">
+            <field name="name">Số hành trình (HT)</field>
+            <field name="code">lab.hanh.trinh</field>
+            <field name="prefix">HT/%(y)s/</field>
+            <field name="padding">4</field>
+            <field name="implementation">standard</field>
+            <field name="company_id" eval="False"/>
+        </record>
+
+    </data>
+</odoo>

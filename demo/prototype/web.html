@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<title>PROTOTYPE v3 — WEB (Chuyến) — duyệt thiết kế</title>
+<link rel="stylesheet" href="style.css" />
+<style>
+  body { padding: 0; }
+  .frame { width: 1440px; height: 900px; }
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="shell">
+
+    <!-- TOP BAR: segmented tabs, tab đang chọn = pill lime -->
+    <div class="topbar">
+      <div class="brand"><span class="cube"></span>AppLogictics <span class="sub">Gom hàng lẻ · Odoo 17</span></div>
+      <div class="tabs">
+        <span class="tab">Bảng điều khiển</span>
+        <span class="tab new">+ Chuyến</span>
+        <span class="tab active">Chuyến</span>
+        <span class="tab">Yêu cầu lấy hàng</span>
+        <span class="tab">Hành trình</span>
+        <span class="tab">Khách hàng</span>
+      </div>
+      <div class="topbar-right">
+        <span class="icon-btn">▦</span>
+        <span class="icon-btn">✉</span>
+        <span class="icon-btn">🔔</span>
+        <span class="avatar">QT</span>
+      </div>
+    </div>
+
+    <!-- PAGE HEADER -->
+    <div class="page-head">
+      <h1 class="page-title"><span class="dot"></span>Chuyến <span style="font-size:12px;color:var(--ink-3);font-weight:600">AIR / SEA · 26 chuyến</span></h1>
+      <div class="right">
+        <button class="btn ghost">Xuất CSV</button>
+        <button class="btn primary">+ Tạo chuyến</button>
+      </div>
+    </div>
+
+    <!-- STAT ROW 4 thẻ (thẻ 4 = nhấn lime, giống "Available for Instant Payout" trong ảnh) -->
+    <div class="stats">
+      <div class="stat">
+        <div class="k">Đang mở</div>
+        <div class="v">4 <small>chuyến</small></div>
+        <div class="bar"><i style="width:15%"></i></div>
+        <div class="chips"><span class="chip">2 air</span><span class="chip">2 sea</span></div>
+      </div>
+      <div class="stat">
+        <div class="k">Đã chốt booking</div>
+        <div class="v">6 <small>chuyến</small></div>
+        <div class="bar"><i style="width:23%"></i></div>
+        <div class="avatars">
+          <span>VJ</span><span>JL</span><span>KE</span><span>NH</span><span>+2</span>
+        </div>
+      </div>
+      <div class="stat">
+        <div class="k">Đang bay / trên biển</div>
+        <div class="v">7 <small>chuyến</small></div>
+        <div class="bar"><i style="width:27%"></i></div>
+        <div class="chips"><span class="chip warn">1 sắp cut-off</span></div>
+      </div>
+      <div class="stat hl">
+        <div class="k">Tải trung bình đã gán</div>
+        <div class="v">73 <small>%</small></div>
+        <div class="bar"><i style="width:73%"></i></div>
+        <div class="chips"><span class="chip lime">CH/AIR/26/0267 · 164%</span></div>
+      </div>
+    </div>
+
+    <!-- FILTER ROW -->
+    <div class="filters">
+      <span class="lbl"><b>≡</b> Bộ lọc</span>
+      <span class="pill">Tất cả khách <b>▾</b></span>
+      <span class="pill">Mọi trạng thái <b>▾</b></span>
+      <span class="pill">Tháng 10/2026 <b>▾</b></span>
+      <span class="pill">Hãng bay <b>▾</b></span>
+      <span class="search">⌕ Tìm số chuyến, booking, khách…</span>
+      <span class="icon-btn">⚙</span>
+      <span class="icon-btn">↓</span>
+    </div>
+
+    <!-- CONTENT: panel IVORY + card chi tiết NỔI -->
+    <div class="content">
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Chuyến đang xử lý</h3>
+          <div class="seg">
+            <span>Tất cả <span class="n">26</span></span>
+            <span>Nháp <span class="n">2</span></span>
+            <span class="on">Đã chốt <span class="n">6</span></span>
+          </div>
+        </div>
+
+        <div class="rows">
+          <div class="row">
+            <div class="who"><span class="av">JL</span><div><div class="t">CH/AIR/26/0263</div><div class="d">Japan Airlines · SGN → NRT</div></div></div>
+            <div class="mid">6 đơn · 1.595,30 / 2.142,00 kg</div>
+            <div class="st on">Đã chốt booking</div>
+            <div class="amt">74%</div>
+          </div>
+          <div class="row">
+            <div class="who"><span class="av">HP</span><div><div class="t">CH/SEA/26/0107</div><div class="d">Hapag-Lloyd · CAT LAI → HAMBURG</div></div></div>
+            <div class="mid">5 đơn · 2,30 / 18,60 CBM</div>
+            <div class="st">Đang mở</div>
+            <div class="amt">12%</div>
+          </div>
+          <div class="row">
+            <div class="who"><span class="av">VJ</span><div><div class="t">CH/AIR/26/0267</div><div class="d">Vietjet Air · SGN → KIX</div></div></div>
+            <div class="mid">7 đơn · 4.870 / 2.955 kg</div>
+            <div class="st" style="background:#ffe3df;border-color:#ffb9b1;color:#8a2b1f">Quá tải 164%</div>
+            <div class="amt">164%</div>
+          </div>
+          <div class="row">
+            <div class="who"><span class="av">KE</span><div><div class="t">CH/AIR/26/0258</div><div class="d">Korean Air · SGN → ICN</div></div></div>
+            <div class="mid">5 đơn · 1.829,30 / 2.817,00 kg</div>
+            <div class="st">Đang mở</div>
+            <div class="amt">65%</div>
+          </div>
+          <div class="row">
+            <div class="who"><span class="av">VA</span><div><div class="t">CH/AIR/26/0266</div><div class="d">Vietnam Airlines · SGN → NRT</div></div></div>
+            <div class="mid">6 đơn · 3.409 / 2.610 kg</div>
+            <div class="st on">Đã chốt booking</div>
+            <div class="amt">131%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD CHI TIẾT NỔI (đè lên panel, đổ bóng — ngoại lệ duy nhất của ADR-009) -->
+      <div class="float">
+        <div class="fh">
+          <div>
+            <div class="num">CH/AIR/26/0263</div>
+            <div style="font-size:11px;color:var(--ink-2);margin-top:2px">Đã chốt booking · Japan Airlines</div>
+          </div>
+          <span class="close">✕</span>
+        </div>
+
+        <div class="cols">
+          <div class="box3"><div class="k">Ngày đi</div><div class="v">13/09/2026</div></div>
+          <div class="box3"><div class="k">Cut-off</div><div class="v">12/09 · 00:00</div></div>
+          <div class="box3"><div class="k">Booking</div><div class="v">LON-BK-017</div></div>
+        </div>
+
+        <div class="meta">
+          <div class="m"><div class="k">Kho xuất</div><div class="v">Kho bay</div></div>
+          <div class="m"><div class="k">Khách chính</div><div class="v"><span class="avatar" style="width:22px;height:22px;font-size:9px">TS</span> Thủy Sản Biển Xanh</div></div>
+        </div>
+
+        <div class="totals">
+          <div><div class="k">Sức chứa</div><div class="v">2.142,00 kg</div></div>
+          <div><div class="k">Đã dùng</div><div class="v">1.595,30 kg</div></div>
+          <div><div class="k">Tỉ lệ tải</div><div class="v" style="color:var(--accent)">74 %</div></div>
+        </div>
+
+        <div class="actions">
+          <button class="btn ghost">Đơn trong chuyến</button>
+          <button class="btn ghost">Phiếu xuất kho</button>
+          <span class="sp"></span>
+          <button class="btn">Huỷ chuyến</button>
+          <button class="btn primary">Đã chốt booking</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

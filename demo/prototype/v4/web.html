@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>PROTOTYPE v4 — WEB (light ERP)</title>
+<link rel="stylesheet" href="style.css"></head>
+<body style="width:1440px;height:900px;overflow:hidden">
+<div class="shell">
+  <!-- SIDEBAR: nhóm theo phòng ban, mục đang chọn = pill navy -->
+  <div class="side">
+    <div class="brand"><span class="mark">AL</span> AppLogictics</div>
+    <div class="grp">Vận hành <span>⌄</span></div>
+    <div class="navi">
+      <a class="on" href="#"><span class="ic">▦</span> Bảng điều khiển</a>
+      <a href="#"><span class="ic">☰</span> Chuyến</a>
+      <a href="#"><span class="ic">✈</span> Hành trình</a>
+      <a class="soft" href="#"><span class="ic">✚</span> Yêu cầu lấy hàng</a>
+    </div>
+    <div class="grp">Kinh doanh <span>⌄</span></div>
+    <div class="navi">
+      <a href="#"><span class="ic">◉</span> Khách hàng (Shop)</a>
+      <a href="#"><span class="ic">▤</span> Đơn bán</a>
+      <a href="#"><span class="ic">₫</span> Hoá đơn / Debit</a>
+    </div>
+    <div class="grp">Kho <span>⌄</span></div>
+    <div class="navi">
+      <a href="#"><span class="ic">▣</span> Phiếu kho</a>
+      <a href="#"><span class="ic">⟳</span> Chuyển kho</a>
+    </div>
+    <div class="foot">
+      <span class="av">GĐ</span>
+      <div><div style="font-size:12.5px;font-weight:700">Giám Đốc</div><div class="tiny">Ban giám đốc</div></div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="chip">▣ <b>26</b> chuyến hôm nay</div>
+      <div class="chip">17:04 <span style="color:var(--ink-3)">PM</span></div>
+      <div class="search">⌕ Tìm chuyến, khách, mã việc…</div>
+      <div class="icobtn">?</div>
+      <div class="icobtn">⚙</div>
+      <div class="icobtn">🔔</div>
+      <div class="avatar">GĐ</div>
+    </div>
+
+    <div class="content">
+      <!-- KPI: card trắng + glow mềm (5 thẻ như ảnh 1) -->
+      <div class="kpis">
+        <div class="kpi g"><span class="star">☆</span><span class="glow"></span><div class="num">13</div><div class="lbl">Việc chờ gán tài xế</div></div>
+        <div class="kpi b"><span class="star">☆</span><span class="glow"></span><div class="num">36</div><div class="lbl">Đang đi lấy hàng</div></div>
+        <div class="kpi r"><span class="star">☆</span><span class="glow"></span><div class="num">29</div><div class="lbl">Lấy hàng thất bại</div></div>
+        <div class="kpi o"><span class="star">☆</span><span class="glow"></span><div class="num">9</div><div class="lbl">Đã về kho hôm nay</div></div>
+        <div class="kpi n"><span class="star">☆</span><span class="glow"></span><div class="num">7</div><div class="lbl">Chuyến đang bay</div></div>
+      </div>
+
+      <!-- STAT dạng ô tint + nhãn (ảnh 2/3) -->
+      <div class="stats" style="margin-top:12px">
+        <div class="stat g"><span class="box">191</span><span class="txt">Đã về kho<br>75% tổng việc</span></div>
+        <div class="stat b"><span class="box">17</span><span class="txt">Đã lấy được hàng<br>chờ kho nhận</span></div>
+        <div class="stat r"><span class="box">20</span><span class="txt">Việc đã huỷ<br>trong 7 ngày</span></div>
+        <div class="stat o"><span class="box">30</span><span class="txt">Đơn mở<br>chưa vào chuyến</span></div>
+        <div class="stat g"><span class="box">6</span><span class="txt">Chuyến đã chốt<br>booking</span></div>
+      </div>
+
+      <!-- 2 chart -->
+      <div class="grid2">
+        <div class="chart">
+          <div class="head"><h3>Việc theo ngày</h3><span class="sp"></span><span class="chip">7 ngày ⌄</span></div>
+          <div class="val">38 <span class="badge g">▲ +12%</span></div>
+          <div class="bars">
+            <i style="height:38%"></i><i style="height:54%"></i><i style="height:46%"></i><i style="height:68%"></i>
+            <i style="height:58%"></i><i style="height:82%" class="hi"></i><i style="height:64%"></i>
+            <i style="height:74%"></i><i style="height:92%"></i><i style="height:56%"></i><i style="height:78%"></i>
+            <i style="height:100%" class="hi"></i><i style="height:70%"></i><i style="height:88%"></i>
+          </div>
+        </div>
+        <div class="chart">
+          <div class="head"><h3>Tỉ lệ tải theo chuyến</h3><span class="sp"></span><span class="chip">Tháng 10 ⌄</span></div>
+          <div class="val">73% <span class="badge g">▼ -3%</span></div>
+          <div class="bars">
+            <i style="height:42%"></i><i style="height:58%"></i><i style="height:36%"></i><i style="height:66%"></i>
+            <i style="height:52%"></i><i style="height:88%" class="hi"></i><i style="height:74%"></i>
+            <i style="height:62%"></i><i style="height:46%"></i><i style="height:80%"></i><i style="height:58%"></i>
+            <i style="height:70%"></i><i style="height:94%" class="hi"></i><i style="height:64%"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- LIST card -->
+      <div class="listcard">
+        <div class="head"><h3>Chuyến đang xử lý</h3><span class="pill-count">26</span><span style="flex:1"></span><span class="chip">Tất cả ⌄</span></div>
+        <div class="row"><span class="av">JL</span><div style="width:250px"><div class="t">CH/AIR/26/0263</div><div class="d">Japan Airlines · SGN → NRT</div></div><div class="mid">6 đơn · 1.595,30 / 2.142,00 kg</div><span class="st g">Đã chốt booking</span><div class="amt">74%</div></div>
+        <div class="row"><span class="av">HP</span><div style="width:250px"><div class="t">CH/SEA/26/0107</div><div class="d">Hapag-Lloyd · CAT LAI → HAMBURG</div></div><div class="mid">5 đơn · 2,30 / 18,60 CBM</div><span class="st n">Đang mở</span><div class="amt">12%</div></div>
+        <div class="row"><span class="av">VJ</span><div style="width:250px"><div class="t">CH/AIR/26/0267</div><div class="d">Vietjet Air · SGN → KIX</div></div><div class="mid">7 đơn · 4.870 / 2.955 kg</div><span class="st r">Quá tải 164%</span><div class="amt">164%</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</body></html>

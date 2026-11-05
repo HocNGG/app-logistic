@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  BACKFILL `lab.chuyen.access_token` cho chuyến tạo TRƯỚC 2026-11-03.
+
+  VÌ SAO (RV-01 vòng 2): khoá tra cứu công khai trước đây là mã chuyến đổi '/'->'-'
+  (`CH-AIR-26-0257`) ⇒ đoán được. Nay khoá là token ngẫu nhiên; chuyến cũ phải được
+  sinh token, nếu không QR trên tem cũ/trang tra cứu sẽ 404.
+
+  `<function>` trong `<data noupdate="0">` chạy mỗi lần cài/nâng cấp; bản thân hàm
+  `_lab_backfill_access_token` chỉ ghi chuyến CHƯA có token ⇒ chạy lại vô hại.
+-->
+<odoo>
+    <data noupdate="0">
+        <function model="lab.chuyen" name="_lab_backfill_access_token"/>
+    </data>
+</odoo>

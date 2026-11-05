@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  =====================================================================================
+  QUY TẮC ĐỌC `sale.order` CHO NHÓM CS / SALE ADMIN / QUẢN LÝ.
+
+  VẤN ĐỀ ĐO THẬT (2026-11-02):
+    Ở form chuyến, tab "Đơn hàng trong chuyến", cột "Đơn hàng của shop" là many2one
+    bắt buộc tới `sale.order`. Đăng nhập `cs01` hoặc `manager01`, gõ `S0149` chỉ hiện
+    "Create \"S0149\"" và "Create and edit…" — KHÔNG có đơn nào. Đo bằng RPC:
+        search_count(sale.order) = 0   cho cs01 và manager01
+        search_count(sale.order) = 149 cho kho01 / chungtu01 / ketoan01 / admin
+    Nguyên nhân: quyền đọc `sale.order` chỉ đến từ nhóm Sales / Billing / Stock worker.
+    Nhóm lab_core.group_cs (và group_sale_admin / group_manager kế thừa nó) không có
+    ACL nào trên `sale.order` ⇒ ô chọn rỗng, và nếu người dùng bấm "Create" thì tạo
+    một đơn bán TRỐNG không có dòng hàng — sai nghiệp vụ.
+
+  CÁCH SỬA — ĐÚNG THANG NATIVE-FIRST (L1: cấu hình, không model mới):
+    1. `ir.model.access.csv`: 2 dòng ACL CHỈ ĐỌC cho group_cs trên `sale.order` và
+       `sale.order.line`. Không cấp ghi/tạo/xoá: gom chuyến không được sửa đơn bán.
+    2. File này: 2 `ir.rule` cho phép ĐỌC TẤT CẢ đơn.
+       VÌ SAO CẦN RULE RIÊNG: Odoo có sẵn rule "Personal Orders" (nhóm salesman):
+       chỉ thấy đơn của chính mình. Đơn trong bộ dữ liệu demo không thuộc tài khoản CS
+       ⇒ chỉ thêm ACL là vẫn thấy 0 đơn. Rule của nhóm khác được Odoo ghép bằng OR,
+       nên rule domain [(1,'=',1)] mở đúng phạm vi cần — KHÔNG đụng rule gốc của Odoo.
+
+  PHẠM VI: chỉ ĐỌC. Mọi thao tác sửa đơn vẫn phải làm ở phân hệ Bán hàng bằng tài khoản
+  có quyền (admin / nhân viên kinh doanh). Đây là quyết định phân quyền có chủ đích:
+  người gom chuyến cần THẤY đơn để chọn, không cần SỬA giá/điều khoản.
+  =====================================================================================
+-->
+<odoo>
+
+    <record id="rule_sale_order_cs_read_all" model="ir.rule">
+        <field name="name">sale.order — CS/Quản lý ĐỌC TẤT CẢ đơn (để gom vào chuyến)</field>
+        <field name="model_id" ref="sale.model_sale_order"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('lab_core.group_cs'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="rule_sale_order_line_cs_read_all" model="ir.rule">
+        <field name="name">sale.order.line — CS/Quản lý ĐỌC TẤT CẢ dòng đơn (xem đơn đã gom)</field>
+        <field name="model_id" ref="sale.model_sale_order_line"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('lab_core.group_cs'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+</odoo>

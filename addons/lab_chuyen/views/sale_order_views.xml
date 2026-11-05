@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  =====================================================================================
+  INHERIT VIEW `sale.order` — lộ `lab_pickup_mode` (hình thức lấy hàng) trên đơn bán.
+  Người viết: FE-01 (Wave B). Biên giới: addons/**/views/** (AGENTS.md Luật 10).
+
+  ⛔ CHẶN — TOÀN BỘ RECORD DƯỚI ĐÂY ĐANG ĐƯỢC COMMENT, VÌ FIELD CHƯA TỒN TẠI.
+     Bằng chứng (grep `addons/**/models/*.py`, ngày Wave B):
+       * KHÔNG có file nào `_inherit = "sale.order"` ⇒ chưa từng có field `lab_*` trên sale.order.
+       * `lab_pickup_mode` / `lab_shop_ref` / `lab_hanhtrinh_id` KHÔNG xuất hiện ở đâu.
+     docs/02 §2.1 quy định `sale.order` phải có: `lab_pickup_mode`, `lab_shop_ref`,
+     `lab_chargeable_weight`, `lab_volumetric_weight`, `lab_cbm` — nhưng phần đó CHƯA được
+     hiện thực ở Wave A. Đây là việc của BE-01 (Orchestrator đã chuyển: nhiệm vụ B6).
+
+  VÌ SAO KHÔNG CỨ ĐỂ XML HỢP LỆ VỚI FIELD KHÔNG TỒN TẠI:
+     Odoo 17 validate arch view khi upgrade module (`_check_xml`). Một `<field>` không có
+     trong model ⇒ ValidationError ngay ⇒ module lab_chuyen không nâng cấp được ⇒ mất luôn
+     form/lịch/kanban của chuyến (F1 hỏng theo). Một view "sẵn sàng" bị comment an toàn hơn
+     một view làm đỏ 7 module đang cài được.
+
+  CÁCH BẬT (khi BE-01 đã thêm field vào `sale.order`):
+     1) Bỏ 2 dòng mở/đóng comment quanh <record ...> ở dưới. KHÔNG cần sửa manifest —
+        file này an toàn để khai sẵn vì hiện chỉ chứa comment (0 record ⇒ không nạp gì).
+     2) `addons/lab_chuyen/__manifest__.py` → "data" thêm "views/sale_order_views.xml"
+        (đặt SAU "views/lab_chuyen_views.xml", trước "views/menuitems.xml"
+        — vì infra/scripts/check.ps1 mục [8] yêu cầu menuitems.xml ở cuối).
+     3) Nâng cấp module lab_chuyen bằng lệnh nâng cấp thông thường của dự án
+        (xem AGENTS.md §9 — dùng tham số nâng cấp `-u lab_chuyen` rồi `stop after init`).
+
+  ANCHOR: `//field[@name='partner_id']` trong `sale.view_order_form` (17.0) — luôn tồn tại.
+  Không copy view của `sale`, không đổi semantics của đơn bán (L2 = inherit nhẹ).
+  =====================================================================================
+-->
+<odoo>
+
+<!-- ⛔ BẮT ĐẦU KHỐI CHỜ — bỏ dòng này và dòng "KẾT THÚC KHỐI CHỜ" ở cuối file để bật.
+    <record id="view_order_form_lab_chuyen" model="ir.ui.view">
+        <field name="name">sale.order.form.lab.chuyen</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='partner_id']" position="after">
+                <field name="lab_pickup_mode"
+                       groups="lab_core.group_cs,lab_core.group_sale_admin,lab_core.group_manager"
+                       help="Pickup = tài xế tới shop lấy hàng; Drop-off = khách tự mang tới kho."/>
+            </xpath>
+            <xpath expr="//field[@name='partner_id']" position="after">
+                <field name="lab_shop_ref" string="Mã đơn của shop" optional="show"
+                       groups="lab_core.group_cs,lab_core.group_sale_admin,lab_core.group_manager"
+                       placeholder="Mã đơn bên shop, dùng để đối chiếu khi gom hàng…"/>
+            </xpath>
+        </field>
+    </record>
+    KẾT THÚC KHỐI CHỜ — bỏ comment tới đây. -->
+
+</odoo>

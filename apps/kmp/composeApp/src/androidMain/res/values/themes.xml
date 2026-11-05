@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  =====================================================================================
+  THEME CỬA SỔ (chỉ dùng TRƯỚC khi Compose vẽ khung đầu tiên).
+
+  Vì sao cần: `MainActivity` gọi `enableEdgeToEdge()` và `App()` vẽ nội dung. Trong khoảng
+  vài chục ms giữa lúc Activity mở và lúc Compose vẽ xong, cửa sổ hiện `windowBackground`.
+  Đặt nó = `brand_ground` (#080D17, ADR-009 §6) ⇒ máy ảo KHÔNG chớp một khung trắng HAY một
+  khung xanh rừng (nhìn rất rõ trên video demo). Cùng lý do, thanh trạng thái/điều hướng để
+  trong suốt và icon sáng (`windowLightStatusBar=false`) vì nền là màu đêm.
+
+  Parent dùng theme NỀN TẢNG của hệ điều hành (`@android:style/Theme.Material.NoActionBar`)
+  chứ KHÔNG dùng AppCompat/MaterialComponents: `MainActivity` kế thừa `ComponentActivity`
+  (androidx.activity), không cần AppCompat ⇒ không phải kéo thêm dependency nào.
+
+  Màu sắc/typography của app do Compose lo (`design/AppTheme.kt`, Material 2 — ADR-006).
+  =====================================================================================
+-->
+<resources>
+
+    <style name="Theme.AppLogictics" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/brand_ground</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowActionModeOverlay">true</item>
+        <!-- Hiệu ứng "giọt mực" khi chạm = màu nhấn lime (không còn forest của ADR-007). -->
+        <item name="android:colorEdgeEffect">@color/brand_accent</item>
+    </style>
+
+</resources>

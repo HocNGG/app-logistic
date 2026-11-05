@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  GỠ NHÓM KỸ THUẬT KHỎI TÀI KHOẢN DEMO — file RIÊNG, `noupdate="0"`.
+
+  Vì sao cần: `odoo/addons/base/security/base_groups.xml` (17.0) cho
+  `base.group_user` **imply** `base.group_no_one` ("Technical Features"), và
+  `GroupsImplied.write` materialize nhóm implied vào `res_groups_users_rel`.
+  Hệ quả đo được: cs01 · kho01 · chungtu01 · ketoan01 · manager01 · sep ·
+  nhomtruong01 — mọi user nội bộ của dự án — đều có Technical Features (và thấy
+  menu kỹ thuật của Odoo) dù `demo_data.xml` KHÔNG hề khai nhóm đó. DoD của dự án
+  yêu cầu "login user đúng phòng ban thấy đúng dữ liệu" nên tài khoản demo phải
+  sạch nhóm kỹ thuật.
+
+  Vì sao dùng <function> chứ KHÔNG dùng <record ... noupdate="0">:
+  `odoo/tools/convert.py::_tag_record` chỉ bỏ qua record khi *file đang nạp* khai
+  noupdate; sau đó `_load_records` còn kiểm **cờ noupdate đã lưu trên
+  `ir.model.data`** — mà `demo_user_cs` đã được tạo bởi `data/demo_data.xml`
+  (noupdate="1") nên cờ đó = True, tức là `<record>` KHÔNG ghi lại được trên DB
+  đã cài. `<function>` thì chỉ bị bỏ qua khi `noupdate=1` (`_tag_function`), nên
+  đặt trong `<data noupdate="0">` là nó chạy ở CẢ lần cài lẫn mỗi lần `-u` —
+  đúng thứ cần để vá DB cũ và để tự sửa lại nếu Odoo thêm nhóm implied trở lại.
+
+  Logic nằm ở `lab_core/models/res_users.py::_lab_bo_nhom_ky_thuat` (idempotent:
+  gỡ một nhóm mà user không có = no-op).
+-->
+<odoo>
+    <data noupdate="0">
+
+        <function model="res.users" name="_lab_bo_nhom_ky_thuat" eval="[[ref('demo_user_cs'), ref('demo_user_kho'), ref('demo_user_chungtu'), ref('demo_user_ketoan'), ref('demo_user_manager'), ref('demo_user_sep'), ref('demo_user_nhomtruong')]]"/>
+
+    </data>
+</odoo>

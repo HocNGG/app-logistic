@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  =====================================================================================
+  TEM XUẤT KIỆN — khổ 100×70 mm, MỖI KIỆN MỘT TEM (chốt M7 2026-11-02).
+
+  Luồng: kho chốt chuyến (phiếu WH/OUT + mã `XUAT/26/…` được sinh tự động) → bấm
+  "In tem xuất" → dán lên từng kiện → quét từng tem khi đưa kiện ra khỏi kho.
+
+  VÌ SAO KHAI PAPERFORMAT RIÊNG Ở ĐÂY (không ref của lab_laixe):
+    `lab_chuyen` KHÔNG depends `lab_laixe` (hai module cùng depends lab_core) ⇒ không
+    được tham chiếu xmlid chéo module. Khổ giấy giống hệt tem nhận, nhưng là bản khai
+    độc lập để mỗi module tự đứng được.
+
+  VÌ SAO DÙNG `web.html_container`:
+    `web.basic_layout` chèn header/footer công ty — với tem 100×70 thì hết chỗ.
+
+  QR: URL dạng PATH `…/lab/track/<khoá chuyến>/<mã kiện>` (không '?', '&') để in nhỏ
+  vẫn quét được. Khoá tra cứu của chuyến = mã chuyến đổi '/' → '-' (chuyến không có
+  access_token như yêu cầu lấy hàng).
+  =====================================================================================
+-->
+<odoo>
+
+    <record id="paperformat_tem_xuat_100x70" model="report.paperformat">
+        <field name="name">Tem xuất 100x70mm</field>
+        <field name="format">custom</field>
+        <field name="page_height">70</field>
+        <field name="page_width">100</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">3</field>
+        <field name="margin_bottom">3</field>
+        <field name="margin_left">4</field>
+        <field name="margin_right">4</field>
+        <field name="header_spacing">0</field>
+        <field name="dpi">203</field>
+    </record>
+
+    <record id="action_report_tem_xuat" model="ir.actions.report">
+        <field name="name">Tem xuất kiện (100x70)</field>
+        <field name="model">lab.chuyen</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">lab_chuyen.report_tem_xuat_doc</field>
+        <field name="report_file">lab_chuyen.report_tem_xuat_doc</field>
+        <field name="paperformat_id" ref="paperformat_tem_xuat_100x70"/>
+        <field name="print_report_name">'Tem-xuat-%s' % (object.name or '')</field>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_tem_xuat_doc">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-set="diem_den" t-value="doc.thong_tin_diem_den()"/>
+                <t t-set="tong_kien" t-value="len(doc.kien_xuat_ids)"/>
+                <t t-set="kg_moi_kien" t-value="(doc.tai_trong_da_dung_kg / tong_kien) if tong_kien else 0"/>
+                <t t-foreach="doc.kien_xuat_ids" t-as="kien">
+                    <div class="page" style="page-break-after: always; font-family: Arial, Helvetica, sans-serif; color: #0b0b12;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td style="width: 62%; vertical-align: top; padding-right: 3mm;">
+                                    <div style="font-size: 8pt; letter-spacing: .5px; color: #6b6b78;">TEM XUẤT KIỆN</div>
+                                    <div style="font-size: 14pt; font-weight: bold; line-height: 1.1; margin-top: 1mm;">
+                                        <span t-esc="kien.lab_ma_xuat or kien.name"/>
+                                    </div>
+                                    <div style="font-size: 9pt; margin-top: 2mm;">
+                                        <b>Kiện:</b> <span t-esc="kien.name"/>
+                                        &#160;·&#160; <b>Chuyến:</b> <span t-esc="doc.name"/>
+                                    </div>
+                                    <div style="font-size: 9pt; margin-top: 1mm;">
+                                        <b>Đến:</b> <span t-esc="diem_den['diem_den'] or '—'"/>
+                                        <t t-if="diem_den['chung_tu']">
+                                            &#160;·&#160; <b>Vận đơn:</b> <span t-esc="diem_den['chung_tu']"/>
+                                        </t>
+                                    </div>
+                                    <div style="font-size: 9pt; margin-top: 1mm;">
+                                        <b>Kiện</b> <span t-esc="kien_index + 1"/>/<span t-esc="tong_kien"/>
+                                        &#160;·&#160; <b>Kg</b> <span t-esc="'%.1f' % kg_moi_kien"/>
+                                    </div>
+                                    <div style="font-size: 9pt; margin-top: 1mm;">
+                                        <b>Xuất lúc:</b>
+                                        <span t-esc="kien.lab_xuat_luc.strftime('%d/%m/%Y %H:%M') if kien.lab_xuat_luc else 'chưa xuất'"/>
+                                    </div>
+                                </td>
+                                <td style="width: 38%; vertical-align: top; text-align: right;">
+                                    <img t-att-src="'/report/barcode/QR/%s?width=300&amp;height=300' % doc.track_url_kien(kien)"
+                                         style="width: 28mm; height: 28mm;" alt="QR"/>
+                                    <div style="font-size: 6.5pt; color: #6b6b78; margin-top: 1mm;">Quét để tra cứu</div>
+                                </td>
+                            </tr>
+                        </table>
+                        <div style="margin-top: 2mm; border-top: .3mm solid #d5d5dd; padding-top: 1mm; font-size: 7pt; color: #6b6b78;">
+                            <span t-esc="doc.name"/>
+                            &#160;·&#160; Tạo: <span t-esc="doc.create_date.strftime('%d/%m/%Y %H:%M')"/>
+                            &#160;·&#160; <span t-esc="(doc.hang_van_chuyen or '')"/>
+                            <t t-if="doc.so_booking">&#160;·&#160; Booking: <span t-esc="doc.so_booking"/></t>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+</odoo>

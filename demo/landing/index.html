@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>AppLogistics — gom hàng lẻ xuất khẩu trên Odoo 17</title>
+<meta name="description" content="Hệ thống gom hàng lẻ xuất khẩu: 19 bước nghiệp vụ, 6 phòng ban, 6 nhánh ngoại lệ có điểm quay về — trên Odoo 17 CE và app Kotlin Multiplatform."/>
+<meta name="theme-color" content="#F3F2F8"/>
+<!-- favicon: đỉnh hộp lime trên thân MỰC (v5 light) — token --accent / --ink / --ink-2 -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 3 29 10 16 17 3 10Z' fill='%23C2EE2F'/%3E%3Cpath d='M3 10v13l13 7V17Z' fill='%230B0B12'/%3E%3Cpath d='M29 10v13l-13 7V17Z' fill='%236B6B78'/%3E%3C/svg%3E"/>
+<style>
+/* =========================================================================
+   1. TOKEN — v5 LIGHT. Nguồn giá trị DUY NHẤT:
+      addons/lab_ui/static/src/scss/backend.scss §6 (:root) — đã đọc file đó,
+      landing KHÔNG tự đặt màu mới.
+      MỘT nền (lavender nhạt) · MỘT mực (#0B0B12) · MỘT nhấn (lime).
+      LUẬT CỨNG:
+        · CTA/active = PILL ĐEN (--ink, chữ trắng) — không phải lime;
+        · lime (#C2EE2F) CHỈ làm chip / gạch nhấn / thanh tiến độ;
+        · lime KHÔNG BAO GIỜ làm chữ trên nền sáng (1,2:1 — không đọc được);
+          chữ trên nền lime phải là --on-accent (#2B3300, 9,9:1);
+        · trạng thái luôn kèm chữ, không bao giờ chỉ dựa vào màu;
+        · bề mặt phân tầng bằng NỀN, không bóng đổ (trang này không có popover);
+        · không tải font từ CDN — chỉ fallback hệ thống.
+   ========================================================================= */
+:root{
+  color-scheme:light;                /* select/scrollbar của HĐH cũng sang tông sáng */
+
+  --bg:#F3F2F8;                      /* nền trang                      */
+  --s1:#FFFFFF;                      /* bề mặt 1: nav, band, footer    */
+  --s2:#F6F6FB;                      /* bề mặt 2: khung ảnh, input, thead */
+  --card:#FFFFFF;                    /* card                           */
+  --card-2:#F0F0F6;                  /* card nhấn nhẹ (chip trung tính) */
+  --line:rgba(11,11,18,.10);         /* hairline — mọi đường phân tách */
+  --line-2:rgba(11,11,18,.20);       /* viền mạnh — focus, khung chọn  */
+  --ink:#0B0B12;                     /* mực chính + NỀN PILL CTA       */
+  --ink-2:#6B6B78;                   /* mực phụ (4,72:1 trên --bg)     */
+  --ink-3:#9A9AA6;                   /* mực mờ — KHÔNG dùng làm chữ, xem ghi chú §14 */
+  --accent:#C2EE2F;                  /* nhấn: chip / gạch / thanh tiến độ */
+  --accent-2:#D4F84E;                /* nhấn hover                     */
+  --on-accent:#2B3300;               /* chữ TRÊN nền lime (bắt buộc)   */
+  --on-ink:#FFFFFF;                  /* chữ TRÊN pill đen              */
+  --ok:#2F9E5F;                      /* token dự phòng — trang này chưa dùng */
+  --warn:#A06A00;                    /* chip quá tải                   */
+  --bad:#B3261E;                     /* token dự phòng — trang này chưa dùng */
+  --info:#2A6EA8;                    /* token dự phòng — trang này chưa dùng */
+
+  --font:Inter,"Segoe UI",system-ui,sans-serif;
+  --mono:ui-monospace,"Cascadia Mono",Consolas,monospace;
+
+  /* Thang 5 bậc duy nhất của dự án */
+  --t-1:14px; --t-2:16px; --t-3:20px; --t-4:28px; --t-5:44px;
+
+  --gut:48px; --sec:152px;
+  /* 8 input · 10 control · 16 card · 20 panel · 24 hero */
+  --r-1:8px; --r-2:10px; --r-3:16px; --r-4:20px; --r-5:24px;
+  --ease:cubic-bezier(.2,.6,.2,1);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:var(--font); font-size:var(--t-2); line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+img{display:block; height:auto}
+h1,h2,h3,p,dl,dd,figure{margin:0}
+h1,h2,h3{color:var(--ink)}
+ul,ol{margin:0; padding:0}
+b,strong{font-weight:600}
+::selection{background:rgba(194,238,47,.55); color:var(--ink)}
+.wrap{width:100%; max-width:1180px; margin-inline:auto; padding-inline:var(--gut)}
+.skip{position:absolute; left:-9999px; top:0; z-index:60; padding:10px 16px; border-radius:var(--r-2); background:var(--accent); color:var(--on-accent); font-size:var(--t-1); font-weight:600}
+.skip:focus{left:16px; top:16px}
+:focus-visible{outline:2px solid var(--accent); outline-offset:3px}
+/* token monospace (tên model / tên test) có thể dài hơn cột ở 390px -> phải cho phép ngắt,
+   nếu không cả trang bị tràn ngang (đo được: scrollWidth 396 > 390 trước khi thêm dòng này) */
+.m{font-family:var(--mono); font-size:.94em; overflow-wrap:anywhere}
+
+/* --------------------------------------------------- 2. Điều hướng */
+/* Nền đặc, không kính: kính chỉ tồn tại ở .hero-panel */
+.top{position:sticky; top:0; z-index:40; background:var(--s1); border-bottom:1px solid var(--line)}
+.top-in{display:flex; align-items:center; gap:32px; min-height:76px}
+.mark{display:flex; align-items:center; gap:12px; text-decoration:none; color:var(--ink)}
+.mark svg{width:26px; height:28px; flex:none}
+.mark .nm{font-size:var(--t-2); font-weight:600; letter-spacing:-.01em; line-height:1.2; display:block}
+.mark .sub{font-size:var(--t-1); color:var(--ink-2); display:block; line-height:1.3}
+.nav{margin-left:auto; display:flex; align-items:center; gap:24px}
+/* Link nav: mực đậm; hover = gạch nhấn LIME dưới chân (lime không làm màu chữ).
+   "active" của trang này = mục hiện tại trong nav, cùng ngôn ngữ với CTA: pill đen. */
+.nav a:not(.btn){font-size:var(--t-1); color:var(--ink); text-decoration:none; padding:6px 0;
+  border-bottom:2px solid transparent; transition:color .2s var(--ease), border-color .2s var(--ease)}
+.nav a:not(.btn):hover{border-bottom-color:var(--accent)}
+.nav a:not(.btn)[aria-current]{border-bottom-color:var(--ink); font-weight:600}
+
+/* --------------------------------------------------- 3. Control */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:10px;
+  height:44px; padding:0 22px; border:1px solid transparent; border-radius:999px;
+  font:inherit; font-size:var(--t-1); font-weight:600; text-decoration:none; cursor:pointer;
+  transition:background-color .2s var(--ease), color .2s var(--ease), transform .16s var(--ease);
+}
+/* CTA: PILL ĐEN + chữ trắng — cặp duy nhất được tô đặc (v5 light) */
+.btn-pri{background:var(--ink); color:var(--on-ink)}
+.btn-pri:hover{background:#22222E}
+.btn-pri:active{transform:translateY(1px)}
+.tlink{font-size:var(--t-1); color:var(--ink); text-decoration:underline; text-decoration-thickness:1px; text-underline-offset:3px; text-decoration-color:var(--line-2); transition:color .2s var(--ease), text-decoration-color .2s var(--ease)}
+.tlink:hover{color:var(--ink); text-decoration-color:var(--accent)}
+/* Ghi chú dưới CTA: tài khoản demo cho người xem tự đăng nhập */
+.cta-note{margin-top:12px; font-size:var(--t-1); line-height:1.5; color:var(--ink-2); max-width:56ch}
+.cta-note .m{color:var(--ink)}
+
+/* --------------------------------------------------- 4. Hero */
+section{padding-block:calc(var(--sec) / 2); scroll-margin-top:92px}
+.band{background:var(--s1)}
+  /* HERO — giữ NGUYÊN video nền (assets/video/hero.mp4, autoplay/muted/loop/playsinline)
+     và NGUYÊN JS pause/resume + reduced-motion. Ở đây chỉ đổi "da" sang v5 LIGHT:
+       video  : giữ nguyên tệp + đường dẫn; chỉ nâng nhẹ sáng / giảm bão hoà cho hợp nền sáng
+       scrim  : SÁNG, mạnh ở trái (chỗ có panel) → nhạt dần sang phải (ảnh còn thấy)
+       panel  : KÍNH TRẮNG rgba(255,255,255,.86) + blur/saturate; chữ --ink (#0B0B12)
+       CTA    : pill đen + chữ trắng; link phụ: mực + gạch nhấn lime
+     Không fallback trắng đặc tuyệt đối: nếu trình duyệt không có backdrop-filter → .96. */
+  .hero{
+    position:relative; isolation:isolate; overflow:hidden;
+    display:flex; flex-wrap:wrap; align-items:center;
+    min-height:min(92vh, 880px);
+    padding-block:96px 88px;
+    background:var(--bg);
+    /* Biến CSS chỉ ảnh hưởng nơi KHAI báo; chuỗi kế thừa truyền computed value từ body,
+       nên phải khai `color` ngay trên .hero (đã gặp lỗi chữ vô hình trước đây). */
+    color:var(--ink);
+  }
+  /* Nền dự phòng khi video ẩn (reduced-motion) hoặc chưa tải xong: --bg, không bao giờ đen */
+  .hero-media{position:absolute; inset:0; z-index:-1; background:var(--bg)}
+  /* VIDEO: làm TỐI + RÕ hơn (yêu cầu khách 2026-11-03: "vid trắng quá, cho đen hơn, rõ hơn").
+     brightness .58 + contrast 1.14: khung kho vốn gần trắng (đo pixel ~242-252) nay còn ~140-150,
+     chi tiết kệ/thùng hiện rõ; saturate 1.02 giữ màu gần gốc, không bệt. */
+  .hero-video-el{width:100%; height:100%; object-fit:cover; object-position:center; display:block;
+    filter:brightness(.66) contrast(1.12) saturate(1.04)}
+  /* Scrim SÁNG NHƯNG MỎNG HƠN (một lớp, trục ngang): trái .62 nơi có panel chữ → phải .10 để
+     hình hiện rõ. Trước đây .94/.72/.35 làm video gần như trắng. Chữ vẫn an toàn vì nằm trong
+     panel kính trắng (đo lại tương phản ≥ 4,5:1 trên 4 khung hình thật của hero.mp4). */
+  .hero-scrim{position:absolute; inset:0;
+    background:linear-gradient(90deg, rgba(11,11,18,.30) 0%, rgba(11,11,18,.14) 45%, rgba(11,11,18,.02) 100%)}
+  .hero-fade{position:absolute; left:0; right:0; bottom:0; height:18%; pointer-events:none;
+    background:linear-gradient(to bottom, rgba(243,242,248,0) 0%, var(--bg) 100%)}
+  /* KÍNH TRẮNG — khối kính DUY NHẤT của trang. Nền video nay tối hơn nên tăng độ đặc lên .92
+     để chữ mực #0B0B12 luôn đọc rõ bất kể khung hình nào. */
+  .hero-panel{
+    box-sizing:border-box; max-width:100%;
+    -webkit-backdrop-filter:blur(28px) saturate(130%); backdrop-filter:blur(28px) saturate(130%);
+    background:rgba(255,255,255,.92);
+    border:1px solid rgba(11,11,18,.08);
+    border-radius:var(--r-5);
+    padding:32px 32px 30px;
+  }
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    .hero-panel{background:rgba(255,255,255,.96)}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .hero-video-el{display:none}   /* nền .hero-media đã là --bg */
+  }
+  /* link phụ trong panel: mực đậm (KHÔNG dùng lime làm chữ) + gạch chân lime */
+  .hero .hero-panel .tlink{color:var(--ink); text-decoration-color:rgba(194,238,47,.95); text-decoration-thickness:2px}
+  .hero .hero-panel .tlink:hover{color:var(--ink); text-decoration-color:var(--ink)}
+  .hero-grid{position:relative; z-index:1}
+.hero-grid{display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:56px; align-items:center}
+h1{font-size:var(--t-5); line-height:1.03; letter-spacing:-.03em; font-weight:600}
+.lede{margin-top:24px; font-size:var(--t-2); line-height:1.6; max-width:58ch; color:var(--ink)}
+.hero-act{display:flex; align-items:center; gap:24px; margin-top:32px; flex-wrap:wrap}
+/* Mọi chữ trong panel dùng MỰC ĐẦY (--ink #0B0B12), không dùng --ink-2: panel là KÍNH TRẮNG
+   (.86) trên video, nên khung hình SÁNG (tường cuối dãy kho gần như trắng) là ca TỐT, còn
+   khung hình TỐI mới là ca xấu — vẫn đo lại trên pixel thật, xem docs/review §số đo.
+   Với --ink trên nền kính trắng: ≥ 16:1 ở mọi khung hình của hero.mp4. */
+.hero-facts{display:flex; gap:28px; flex-wrap:wrap; margin-top:32px; font-size:var(--t-1); color:var(--ink)}
+.hero-facts b{font-size:var(--t-2); color:var(--ink); margin-right:6px; font-variant-numeric:tabular-nums}
+/* Ảnh app trong hero: đặt trên khung ĐẶC --s2 (cùng ngôn ngữ với khung ảnh ở #man-hinh)
+   để chữ caption không bao giờ nằm trực tiếp trên video — --ink-2 ở đây đạt 5,4:1. */
+.hero-figure{display:flex; flex-direction:column; gap:12px;
+  background:var(--s2); border:1px solid var(--line); border-radius:var(--r-3); padding:8px 8px 12px}
+.hero-figure .phone{border:0; background:transparent; padding:0}
+.hero-figure figcaption{font-size:var(--t-1); line-height:1.5; color:var(--ink-2); max-width:34ch; padding:0 4px}
+
+/* Khung ảnh app: nền --s2 bo 16, viền 10% — ảnh app sáng nằm trên bề mặt sáng, tách bằng viền */
+.phone{border:1px solid var(--line); border-radius:var(--r-3); padding:8px; background:var(--s2)}
+.phone-shot{border:1px solid var(--line); border-radius:var(--r-2); overflow:hidden; background:var(--bg)}
+#heroShot{will-change:transform}
+.phone img{width:100%; border-radius:calc(var(--r-2) - 1px)}
+
+/* --------------------------------------------------- 5. Đầu section */
+.sec-head{max-width:70ch; margin-bottom:40px}
+h2{font-size:var(--t-4); line-height:1.08; letter-spacing:-.02em; font-weight:600}
+.lead{margin-top:14px; font-size:var(--t-2); line-height:1.6; max-width:62ch; color:var(--ink-2)}
+.fine{font-size:var(--t-1); line-height:1.55; color:var(--ink-2); max-width:64ch}
+.mt{margin-top:24px}
+
+/* --------------------------------------------------- 6. Sổ 10 pha / 19 bước */
+/* Một "sổ" đặt trên bề mặt 1; phân tách hàng bằng hairline, không zebra, không card */
+.phases{list-style:none; background:var(--s1); border:1px solid var(--line); border-radius:var(--r-3)}
+.phases li{
+  display:grid; grid-template-columns:60px minmax(0,1fr) 186px 244px;
+  gap:24px; align-items:start; padding:22px 24px; border-top:1px solid var(--line);
+}
+.phases li:first-child{border-top:0}
+.phases .p-step{font-size:var(--t-3); color:var(--ink-2); font-variant-numeric:tabular-nums; line-height:1.3}
+.phases h3{font-size:var(--t-3); font-weight:600; letter-spacing:-.01em; line-height:1.25}
+.phases .p-work{margin-top:6px; font-size:var(--t-2); line-height:1.55; max-width:52ch}
+.phases .p-dept{font-size:var(--t-1); line-height:1.5; color:var(--ink-2)}
+.phases .p-art{font-size:var(--t-1); line-height:1.6; color:var(--ink-2)}
+
+/* --------------------------------------------------- 7. Ba màn hình */
+/* Xen kẽ nền giữa các section: --bg (#F3F2F8 nền trang) ↔ --s1 (#FFFFFF bề mặt 1) */
+#bang-chung{background:var(--s1)}
+.screens{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:48px}
+.screens figure{display:flex; flex-direction:column; gap:20px}
+.screens h3{font-size:var(--t-3); font-weight:600; letter-spacing:-.01em; margin-bottom:8px}
+.screens .p{font-size:var(--t-2); line-height:1.55; color:var(--ink)}
+.screens .fine{margin-top:10px}
+.one-scene{margin-top:56px; padding:28px 28px 30px; background:var(--card); border:1px solid var(--line); border-radius:var(--r-3); max-width:72ch}
+.one-scene h3{font-size:var(--t-3); font-weight:600; letter-spacing:-.01em; margin-bottom:10px}
+.one-scene p{font-size:var(--t-2); line-height:1.6}
+.one-scene .fine{margin-top:14px}
+
+/* --------------------------------------------------- 8. Sáu ngoại lệ */
+/* Giữ dạng danh sách 2 cột (không phải lưới card). "Vào:" là mực phụ,
+   "Về:" là điểm quay về nên được đánh dấu bằng một gạch nhấn lime 2px. */
+.exc{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:44px 64px}
+.exc article{display:flex; flex-direction:column}
+.exc h3{font-size:var(--t-3); font-weight:600; letter-spacing:-.01em; line-height:1.25}
+.exc .ln{margin-top:10px; font-size:var(--t-1); line-height:1.55; color:var(--ink-2)}
+.exc .ln b{color:var(--ink)}
+.exc .ret{margin-top:10px; padding-left:14px; border-left:2px solid var(--accent);
+  font-size:var(--t-2); line-height:1.5; max-width:44ch; color:var(--ink)}
+.exc .ret b{color:var(--ink)}
+.exc .tool{margin-top:12px; font-size:var(--t-1); line-height:1.5; color:var(--ink-2)}
+
+/* --------------------------------------------------- 9. Bằng chứng */
+.evidence{margin-top:8px}
+.evidence dl{display:flex; flex-direction:column; border-top:1px solid var(--line)}
+.evidence .row{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:24px; align-items:baseline;
+  padding:18px 0; border-bottom:1px solid var(--line)}
+.evidence dt{font-size:var(--t-2)}
+/* số liệu nhấn: MỰC ĐẬM (v5 light). Lime không làm chữ — trên nền sáng chỉ ~1,4:1.
+   Nhấn bằng GẠCH LIME 2px dưới con số (đúng luật "lime = chip/gạch/thanh tiến độ"). */
+.evidence dd{font-size:var(--t-4); font-weight:600; letter-spacing:-.02em; font-variant-numeric:tabular-nums; line-height:1; color:var(--ink);
+  padding-bottom:6px; border-bottom:2px solid var(--accent)}
+.evidence .sub{display:block; margin-top:4px; font-size:var(--t-1); color:var(--ink-2)}
+
+/* --------------------------------------------------- 10. Máy tính cước */
+.calc{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:56px; align-items:start}
+.calc-fallback{grid-column:1 / -1}
+.calc-fallback .fine{margin-top:14px}
+.calc-form{display:none; flex-direction:column; gap:26px}
+.calc-on .calc-form{display:flex}
+.calc-on .calc-fallback{display:none}
+.f{display:flex; flex-direction:column; gap:10px}
+.f .lb{font-size:var(--t-1); color:var(--ink)}
+.f output{font-size:var(--t-1); color:var(--ink-2); font-variant-numeric:tabular-nums}
+select{
+  height:40px; max-width:100%; padding:0 12px;
+  border:1px solid var(--line); border-radius:var(--r-2);
+  background:var(--s2); color:var(--ink); font:inherit; font-size:var(--t-1);
+  transition:border-color .2s var(--ease), background-color .2s var(--ease);
+}
+select:hover{background:var(--card)}
+select:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-color:var(--line-2)}
+input[type=range]{
+  -webkit-appearance:none; appearance:none; width:100%; height:22px; margin:0;
+  background:transparent; cursor:pointer; font:inherit;
+}
+input[type=range]::-webkit-slider-runnable-track{height:6px; border-radius:3px; background:var(--s2)}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none; width:18px; height:18px; margin-top:-6px; border:0;
+  border-radius:4px; background:var(--accent); transition:background-color .2s var(--ease), transform .16s var(--ease);
+}
+input[type=range]:hover::-webkit-slider-thumb{background:var(--accent-2)}
+input[type=range]:active::-webkit-slider-thumb{transform:scale(.92)}
+input[type=range]:focus-visible{outline:2px solid var(--accent); outline-offset:6px; border-radius:4px}
+input[type=range]::-moz-range-track{height:6px; border-radius:3px; background:var(--s2)}
+input[type=range]::-moz-range-thumb{width:18px; height:18px; border:0; border-radius:4px; background:var(--accent)}
+input[type=range]:hover::-moz-range-thumb{background:var(--accent-2)}
+
+.calc-out{display:none; padding:28px; background:var(--card); border:1px solid var(--line); border-radius:var(--r-3)}
+.calc-on .calc-out{display:block}
+.out-head{display:flex; align-items:baseline; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:24px}
+.out-head .route{font-size:var(--t-3); font-weight:600; letter-spacing:-.01em}
+/* chip trung tính: nền nhấc 1 bậc, chữ luôn có nghĩa ("28% · còn chỗ") */
+.chip{display:inline-block; padding:3px 9px; border-radius:var(--r-1); background:var(--card-2); color:var(--ink); font-size:var(--t-1); font-variant-numeric:tabular-nums; white-space:nowrap}
+.chip.warn{background:rgba(160,106,0,.12); color:var(--warn)}   /* tint của --warn; chữ --warn 5,1:1 trên tint */
+.calc-out dl{display:flex; flex-direction:column; gap:22px}
+.calc-out .row{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px 20px; align-items:baseline}
+.calc-out dt{font-size:var(--t-1); color:var(--ink-2)}
+.calc-out dd{font-size:var(--t-3); font-weight:600; letter-spacing:-.01em; font-variant-numeric:tabular-nums; text-align:right; color:var(--ink); transition:transform .28s var(--ease)}
+#outMoney{font-size:var(--t-4)}   /* con số sống của máy tính — to nhất trong panel */
+.calc-out dd.note{grid-column:1 / -1; font-size:var(--t-1); font-weight:400; letter-spacing:0; text-align:left; color:var(--ink-2); line-height:1.5}
+.calc-out.pulse dd{transform:translate3d(0,-3px,0)}
+.bar{margin-top:26px; height:8px; border-radius:4px; background:var(--s2); overflow:hidden}
+.bar-fill{display:block; height:100%; background:var(--accent); transform-origin:left center; transform:scaleX(0); transition:transform .55s var(--ease)}
+.bar-legend{display:flex; justify-content:space-between; gap:16px; margin-top:10px; font-size:var(--t-1); color:var(--ink-2); font-variant-numeric:tabular-nums}
+.verdict{margin-top:26px; font-size:var(--t-2); line-height:1.55}
+.verdict b{font-weight:600; color:var(--ink)}
+
+/* bảng dự phòng (khi không có JS) */
+.table-wrap{overflow-x:auto}
+table{border-collapse:collapse; width:100%; min-width:680px}
+caption{text-align:left; font-size:var(--t-1); color:var(--ink-2); padding-bottom:12px}
+th,td{text-align:left; padding:12px 16px; font-size:var(--t-1); vertical-align:baseline; border-bottom:1px solid var(--line)}
+thead th{background:var(--s2); color:var(--ink); font-weight:600; border-bottom:1px solid var(--line-2)}
+tbody td{font-variant-numeric:tabular-nums; color:var(--ink)}
+
+/* --------------------------------------------------- 11. Footer */
+footer{background:var(--s1); border-top:1px solid var(--line); padding-block:96px 40px}
+.wordmark{font-size:var(--t-5); line-height:1; letter-spacing:-.03em; font-weight:600; color:var(--ink)}
+.foot-line{margin-top:20px; font-size:var(--t-2); color:var(--ink-2)}
+/* CTA cuối trang: pill đen + link phụ + ghi chú tài khoản demo (KHÔNG phải section mới) */
+.foot-cta{margin-top:36px; display:flex; align-items:center; gap:24px; flex-wrap:wrap}
+.foot-cta .cta-note{margin-top:0}
+.foot-meta{display:flex; justify-content:space-between; gap:24px; flex-wrap:wrap; margin-top:44px; font-size:var(--t-1); color:var(--ink-2)}
+
+/* =========================================================================
+   12. CHUYỂN ĐỘNG — chỉ transform + opacity.
+       Chỉ bật khi có JS (.js) để nội dung không bao giờ bị giấu khi JS tắt.
+   ========================================================================= */
+.js [data-rv]{
+  opacity:0; transform:translate3d(0,24px,0);
+  transition:opacity .6s var(--ease), transform .6s var(--ease);
+}
+.js [data-rv].in{opacity:1; transform:none}
+/* signature move: hàng sổ "quét làn" — nhãn phòng ban trượt từ trái, chứng từ trượt từ phải */
+.js .phases li .p-dept{transform:translate3d(-18px,0,0); transition:transform .55s var(--ease) .1s}
+.js .phases li .p-art{transform:translate3d(18px,0,0); transition:transform .55s var(--ease) .16s}
+.js .phases li.in .p-dept,
+.js .phases li.in .p-art{transform:none}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:1ms !important; animation-iteration-count:1 !important; transition-duration:1ms !important}
+  .js [data-rv],
+  .js .phases li .p-dept,
+  .js .phases li .p-art{opacity:1 !important; transform:none !important}
+}
+
+/* =========================================================================
+   13. BỀ RỘNG — 1440 / 768 / 390 là ba mốc phải đẹp
+   ========================================================================= */
+@media (max-width:1100px){
+  :root{--sec:132px; --gut:36px}
+  .hero-grid{grid-template-columns:minmax(0,1fr) 260px; gap:40px}
+  .hero-panel{padding:28px 26px 26px}
+  .phases li{grid-template-columns:52px minmax(0,1fr) 170px 210px; gap:20px; padding:20px 18px}
+  .exc{gap:40px 48px}
+}
+@media (max-width:980px){
+  :root{--sec:120px; --gut:28px}
+  .nav{gap:0}
+  .nav a:not(.btn){display:none}
+  .hero-grid{grid-template-columns:minmax(0,1fr) 200px; gap:32px}
+  .hero-panel{padding:24px 22px 22px}
+  .hero-figure figcaption{max-width:none}
+  .phases li{grid-template-columns:48px minmax(0,1fr); gap:10px 20px; padding:20px 18px}
+  .phases .p-dept{grid-column:2}
+  .phases .p-art{grid-column:2}
+  .screens{grid-template-columns:1fr; gap:40px}
+  .screens figure{flex-direction:row; gap:28px; align-items:flex-start}
+  .screens .phone{width:190px; flex:none}
+  .calc{grid-template-columns:1fr; gap:40px}
+  .exc{grid-template-columns:1fr; gap:36px}
+  .exc .ret{max-width:none}
+}
+/* ------------------------------------------------------------------
+   CHỐNG TRÀN NGANG (đo thật trên ảnh 390px: chữ trong hero bị cắt bên phải).
+   Nguyên nhân: .hero là flex, .wrap là flex item width:100% nhưng min-width:auto
+   = min-content → không co lại được; và ở ≤767 grid dùng `1fr` (= minmax(auto,1fr))
+   cũng lấy min-content. Sửa: cho phép co (min-width:0) + đổi sang minmax(0,1fr).
+   ------------------------------------------------------------------ */
+.hero > .wrap{min-width:0; width:100%}
+.hero-grid, .hero-panel{min-width:0}
+@media (max-width:767px){
+  :root{
+    /* 32px (không phải 34) để "Hàng lẻ gom chuyến" vẫn vừa MỘT dòng ở 390px
+       kể cả khi máy có font Inter — hero luôn ≤ 2 dòng */
+    --t-1:13px; --t-2:15px; --t-3:18px; --t-4:24px; --t-5:32px;
+    --sec:88px; --gut:20px;
+  }
+  .top-in{min-height:64px; gap:16px}
+  .hero-grid{grid-template-columns:minmax(0,1fr); gap:40px}
+  .hero{padding-block:64px 56px}
+  /* Ở mobile panel chiếm TOÀN BỘ bề ngang, nên gradient NGANG (.94→.35) sẽ để nửa phải panel
+     nằm trên scrim chỉ .35 → kính trắng thành "sữa" khi khung hình tối. Đổi sang trục DỌC
+     cùng họ --bg sáng: chữ đọc rõ ở mọi khung hình, video vẫn thấy ở dải dưới (sau khung
+     điện thoại). Đây là chỗ duy nhất scrim khác đặc tả. */
+  .hero-scrim{background:linear-gradient(180deg, rgba(11,11,18,.26) 0%, rgba(11,11,18,.12) 46%, rgba(11,11,18,.00) 100%)}
+  .hero-panel{padding:24px 20px 22px}
+  .hero-figure{max-width:300px}
+  .hero-act{gap:18px}
+  h1, .lede, .hero-facts{overflow-wrap:anywhere}
+  .btn{height:48px}
+  select{height:48px}
+  section{padding-block:calc(var(--sec) / 2)}
+  .phases li{grid-template-columns:40px minmax(0,1fr); padding:18px 14px}
+  .screens figure{flex-direction:column; gap:16px}
+  .screens .phone{width:100%; max-width:300px}
+  .calc-out{padding:22px}
+  .calc-out .row{grid-template-columns:1fr}
+  .calc-out dd{text-align:left}
+  .exc .ret{padding-left:12px}
+  footer{padding-block:64px 32px}
+  .foot-meta{flex-direction:column; gap:8px}
+  table{min-width:560px}
+}
+
+/* =========================================================================
+   14. GHI CHÚ AUDIT — v5 LIGHT (token lấy từ addons/lab_ui/.../backend.scss §6)
+   · Token KHAI nhưng trang này KHÔNG dùng: --ink-3 (#9A9AA6), --ok / --bad / --info
+     (landing không có trạng thái đỏ/xanh: trạng thái duy nhất là chip .warn có chữ
+     "120% tải · quá tải").
+   · 0 box-shadow: bề mặt phân tầng bằng nền --bg → --s1 → --s2 → --card.
+   · Lime chỉ ở: --accent làm NỀN chip / GẠCH nhấn (border-bottom .evidence dd,
+     .exc .ret, .nav hover) / THANH TIẾN ĐỘ (.bar-fill) / thumb slider / outline focus.
+     KHÔNG có chỗ nào lime làm màu chữ. Chữ trên nền lime nếu có = --on-accent #2B3300.
+   · CTA = pill đen --ink + chữ trắng (6 nút, xem §16 JS).
+   · Literal duy nhất ngoài khối token, tất cả đều là TOKEN + alpha:
+       rgba(194,238,47,.55/.95)   = --accent  (::selection, gạch chân link hero)
+       rgba(160,106,0,.12)        = --warn    (nền tint của chip cảnh báo)
+       rgba(243,242,248,.94/.72/.35) = --bg    (scrim video hero — desktop, đúng đặc tả)
+       rgba(243,242,248,.95/.86/.62) = --bg    (scrim mobile: trục dọc, xem §13)
+       rgba(255,255,255,.86 / .96)   = KÍNH TRẮNG hero / fallback không blur
+       rgba(11,11,18,.08)         = viền panel hero (mực 8%)
+       rgba(11,11,18,.10/.20)     = --line / --line-2
+       #22222E                    = --ink sáng 1 bậc (hover pill đen)
+   ========================================================================= */
+</style>
+<script>document.documentElement.classList.add('js');</script>
+</head>
+<body>
+<a class="skip" href="#main">Bỏ qua điều hướng</a>
+
+<!-- ============================ ĐIỀU HƯỚNG ============================ -->
+<header class="top">
+  <div class="wrap top-in">
+    <a class="mark" href="#top">
+      <svg viewBox="0 0 32 32" aria-hidden="true">
+        <path d="M16 3 29 10 16 17 3 10Z" fill="#C2EE2F"/>
+        <path d="M3 10v13l13 7V17Z" fill="#0B0B12"/>
+        <path d="M29 10v13l-13 7V17Z" fill="#6B6B78"/>
+      </svg>
+      <span>
+        <span class="nm">AppLogistics</span>
+        <span class="sub">Gom hàng lẻ · Odoo 17</span>
+      </span>
+    </a>
+    <nav class="nav" aria-label="Mục trên trang">
+      <a href="#luong">19 bước</a>
+      <a href="#man-hinh">Ba màn hình</a>
+      <a href="#ngoai-le">Sáu ngoại lệ</a>
+      <a href="#bang-chung">Bằng chứng</a>
+      <a href="#cuoc">Máy tính cước</a>
+      <!-- CTA: href dưới đây là ĐÚNG đích khi JS tắt; §16 JS ghi đè bằng ODOO_URL. -->
+      <a class="btn btn-pri" href="http://localhost:8069/web/login" data-odoo
+         target="_blank" rel="noopener">Vào Odoo (web)</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ============================ HERO ============================ -->
+<section class="hero" id="top">
+  <div class="hero-media" aria-hidden="true">
+    <video class="hero-video-el" autoplay muted loop playsinline preload="metadata"
+           disablepictureinpicture tabindex="-1">
+      <source src="assets/video/hero.mp4" type="video/mp4" />
+    </video>
+    <div class="hero-scrim"></div>
+    <div class="hero-fade"></div>
+  </div>
+
+  <div class="wrap hero-grid">
+
+    <div class="hero-text hero-panel">
+      <h1 data-rv>Hàng lẻ gom chuyến<br>trên Odoo 17</h1>
+      <p class="lede" data-rv data-rv-d="70">
+        AppLogistics là hệ thống gom hàng lẻ xuất khẩu: 19 bước nghiệp vụ đi qua 6 phòng ban,
+        mỗi kiện có ảnh chụp, chữ ký và bút toán. Backend Odoo 17 CE, app Kotlin Multiplatform
+        cho tài xế ngoài đường.
+      </p>
+      <div class="hero-act" data-rv data-rv-d="140">
+        <a class="btn btn-pri" href="http://localhost:8069/web/login" data-odoo
+           target="_blank" rel="noopener">Mở hệ thống Odoo</a>
+        <a class="tlink" href="http://localhost:8069/web/login" data-odoo
+           target="_blank" rel="noopener">Đăng nhập bằng tài khoản demo</a>
+        <a class="tlink" href="#luong">Xem luồng 90 giây</a>
+      </div>
+      <p class="cta-note" data-rv data-rv-d="175">
+        Web: <span class="m">cs01</span> / <span class="m">kho01</span> /
+        <span class="m">manager01</span> … mật khẩu <span class="m">lab@2026</span>.
+        App tài xế/kho chạy riêng trên Android.
+      </p>
+      <p class="hero-facts" data-rv data-rv-d="210">
+        <span><b>19</b> bước nghiệp vụ</span>
+        <span><b>6</b> phòng ban</span>
+        <span><b>6</b> nhánh ngoại lệ</span>
+      </p>
+    </div>
+
+    <figure class="hero-figure" data-rv data-rv-d="280">
+      <div class="phone">
+        <div class="phone-shot" id="heroShot">
+          <img src="assets/img/app-welcome.png" width="720" height="1280" loading="eager"
+               alt="Màn giới thiệu của app AppLogistics bản mới trên Android (giao diện sáng): logo khối hộp, chip Odoo thật, ba tab Giới thiệu, Đăng nhập, Vai trò, tiêu đề “Gom hàng lẻ xuất khẩu, gọn trong một chuyến” và ba thẻ Lấy hàng tại shop, Gom vào một chuyến, Về kho và đối soát."/>
+        </div>
+      </div>
+      <figcaption>Ảnh chụp màn giới thiệu — app Android đang chạy trên máy thật (Samsung), chụp 720×1600 rồi cắt thanh hệ thống.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ============================ 19 BƯỚC / 6 PHÒNG BAN ============================ -->
+<section id="luong">
+  <div class="wrap">
+    <div class="sec-head" data-rv>
+      <h2>Một đơn hàng đi qua sáu phòng ban</h2>
+      <p class="lead">
+        Mười pha, mười chín bước. Mười bước chạy bằng model có sẵn của Odoo, ba bước chỉ cấu hình,
+        sáu bước phải viết code. Cột phải là chứng từ sinh ra ở bước đó — không phải màn hình giả.
+      </p>
+    </div>
+
+    <ol class="phases">
+      <li data-rv>
+        <div class="p-step">①</div>
+        <div>
+          <h3>Tiếp nhận yêu cầu</h3>
+          <p class="p-work">Shop nhắn đơn, sale báo giá và xác nhận. Hội thoại nằm trong chatter của đơn, không trôi trong Zalo.</p>
+        </div>
+        <div class="p-dept">CS / Sale</div>
+        <div class="p-art"><span class="m">sale.order</span></div>
+      </li>
+
+      <li data-rv>
+        <div class="p-step">②</div>
+        <div>
+          <h3>Lấy hàng tận nơi</h3>
+          <p class="p-work">CS tạo yêu cầu và gán tài xế. Tài xế chụp ảnh, ký biên nhận, đếm số kiện trên app — mất mạng vẫn làm được.</p>
+        </div>
+        <div class="p-dept">CS → Tài xế</div>
+        <div class="p-art"><span class="m">lab.yeu.cau.lay.hang</span></div>
+      </li>
+
+      <li data-rv>
+        <div class="p-step">③</div>
+        <div>
+          <h3>Nhận tại kho, cân đo</h3>
+          <p class="p-work">Kho bấm “Nhận hàng” là Odoo sinh phiếu nhập kho; sau đó cân, đo, dán mã kiện. Một nguồn số liệu duy nhất cho mọi bước sau.</p>
+        </div>
+        <div class="p-dept">Kho</div>
+        <div class="p-art"><span class="m">stock.picking</span> · <span class="m">stock.move</span></div>
+      </li>
+
+      <li data-rv>
+        <div class="p-step">④</div>
+        <div>
+          <h3>Đóng gói, dán nhãn</h3>
+          <p class="p-work">Kiện được gom vào gói và gắn mã kiện — mã này theo hàng tới tận đại lý nước ngoài.</p>
+        </div>
+        <div class="p-dept">Kho</div>
+        <div class="p-art"><span class="m">stock.quant.package</span></div>
+      </li>
+
+      <li data-rv>
+        <div class="p-step">⑤ ⑥</div>
+        <div>
+          <h3>Mở chuyến, booking</h3>
+          <p class="p-work">Nhiều đơn của nhiều shop vào một chuyến bay hoặc chuyến tàu. Đơn vào chuyến phải qua duyệt hai cấp.</p>
+        </div>
+        <div class="p-dept">Kho · Chứng từ · Quản lý</div>
+        <div class="p-art"><span class="m">lab.chuyen</span> + tier duyệt</div>
+      </li>
+
+      <li data-rv>
+        <div class="p-step">⑦ ⑧</div>
+        <div>
+          <h3>Xuất kho, phát hành chứng từ</h3>
+          <p class="p-work">Xuất kho lên chuyến; AWB, HBL và manifest in từ chính dữ liệu chuyến — không nhập lại lần hai.</p>
+        </div>
+        <div class="p-dept">Kho · Chứng từ</div>
+        <div class="p-art"><span class="m">stock.picking</span> + QWeb</div>
+      </li>
+
+      <li data-rv>
+        <div class="p-step">⑨ ⑩ ⑪</div>
+        <div>
+          <h3>Hành trình quốc tế</h3>
+          <p class="p-work">Hàng đã rời kho vẫn theo được: đang đi, đến kho đối tác, đại lý giao khách — mỗi mốc có biên nhận.</p>
+        </div>
+        <div class="p-dept">Chứng từ · đại lý</div>
+        <div class="p-art"><span class="m">lab.hanh.trinh</span></div>
+      </li>
+
+      <li data-rv>
+        <div class="p-step">⑫ ⑬</div>
+        <div>
+          <h3>Tính cước, lập Debit</h3>
+          <p class="p-work">Cước theo kg tính trên bảng giá bậc thang; Debit là <span class="m">account.move</span> trên journal riêng — mọi sự kiện kinh tế đều có bút toán.</p>
+        </div>
+        <div class="p-dept">Kế toán</div>
+        <div class="p-art"><span class="m">sale.order.line</span> · <span class="m">account.move</span></div>
+      </li>
+
+      <li data-rv>
+        <div class="p-step">⑭ ⑮ ⑯</div>
+        <div>
+          <h3>Kiểm, khoá, thu tiền</h3>
+          <p class="p-work">Debit bị khoá sau khi duyệt; hoá đơn, thu tiền, đối soát ngân hàng, khoá tháng. Sửa sau khoá phải có người duyệt và lý do.</p>
+        </div>
+        <div class="p-dept">Kế toán → Quản lý</div>
+        <div class="p-art">tier · <span class="m">account.payment</span> · <span class="m">period_lock_date</span></div>
+      </li>
+
+      <li data-rv>
+        <div class="p-step">—</div>
+        <div>
+          <h3>Báo cáo</h3>
+          <p class="p-work">Ban giám đốc mở một trang: doanh thu, sản lượng, chuyến đang chạy, ngoại lệ còn mở.</p>
+        </div>
+        <div class="p-dept">Ban giám đốc</div>
+        <div class="p-art">pivot · spreadsheet</div>
+      </li>
+    </ol>
+
+    <p class="fine mt" data-rv>
+      Đếm đủ 19: mười sáu bước có số ①→⑯ cộng ba bước không số trên sơ đồ gốc
+      (tài xế đi lấy hàng · cân–đo–dán mã kiện · báo cáo). Ba bước đó đã nằm đúng pha của nó.
+    </p>
+  </div>
+</section>
+
+<!-- ============================ BA MÀN HÌNH THẬT ============================ -->
+<section id="man-hinh" class="band">
+  <div class="wrap">
+    <div class="sec-head" data-rv>
+      <h2>Ba màn hình làm thật</h2>
+      <p class="lead">
+        Chụp từ app Android đang chạy trên máy thật (Samsung), cùng codebase Kotlin Multiplatform với
+        bản desktop, cùng gọi API của Odoo. Ảnh dưới là app đang nối <b>Odoo thật</b> — công tắc nguồn
+        dữ liệu trong app bật “Odoo thật”, danh sách việc lấy từ DB <span class="m">odoo17_lab</span>,
+        không phải dữ liệu mẫu.
+      </p>
+    </div>
+
+    <div class="screens">
+      <figure data-rv data-rv-d="0">
+        <div class="phone">
+          <div class="phone-shot">
+            <img src="assets/img/app-welcome.png" width="720" height="1280" loading="lazy"
+                 alt="Màn giới thiệu app bản mới (giao diện sáng): logo khối hộp, tên AppLogistics, chip Odoo thật, ba tab Giới thiệu, Đăng nhập, Vai trò, tiêu đề lớn và ba thẻ Lấy hàng tại shop / Gom vào một chuyến / Về kho và đối soát."/>
+          </div>
+        </div>
+        <div>
+          <h3>Giới thiệu</h3>
+          <p class="p">Một app, ba lối vào. Tài xế chỉ thấy việc của mình, không phải mở backend Odoo.</p>
+          <p class="fine">Thật ở chỗ: tab Giới thiệu · Đăng nhập · Vai trò, không phải ảnh trang trí.</p>
+        </div>
+      </figure>
+
+      <figure data-rv data-rv-d="70">
+        <div class="phone">
+          <div class="phone-shot">
+            <img src="assets/img/app-login.png" width="720" height="1280" loading="lazy"
+                 alt="Màn đăng nhập bản mới (giao diện sáng): nhãn nguồn dữ liệu Odoo thật, ô Máy chủ Odoo http://192.168.1.12:8069, ô Cơ sở dữ liệu odoo17_lab, ô Tên đăng nhập taixe01 và ô mật khẩu hoặc API key."/>
+          </div>
+        </div>
+        <div>
+          <h3>Đăng nhập</h3>
+          <p class="p">Trỏ vào Odoo thật bằng địa chỉ máy chủ và tên cơ sở dữ liệu; công tắc đổi giữa dữ liệu mẫu và DB thật.</p>
+          <p class="fine">Đủ bốn trạng thái: form trống, đang tải, lỗi, thành công — không có màn hình “đang cập nhật”.</p>
+        </div>
+      </figure>
+
+      <figure data-rv data-rv-d="140">
+        <div class="phone">
+          <div class="phone-shot">
+            <img src="assets/img/app-driver-jobs.png" width="720" height="1280" loading="lazy"
+                 alt="Màn việc của tài xế bản mới (giao diện sáng): lời chào “Xin chào Trần Văn Hùng (tài xế)”, dòng phụ tài khoản taixe01 · 9 việc · nguồn Odoo thật, ô tìm shop mã việc, danh sách việc LH/26/4471, 4442, 4363, 4297 với chip Đang đến lấy, Đã lấy được hàng, Đã gán tài xế."/>
+          </div>
+        </div>
+        <div>
+          <h3>Việc của tài xế</h3>
+          <p class="p">Mã việc, shop, địa chỉ, người liên hệ, khung giờ hẹn và trạng thái. Đủ để đi lấy hàng mà không gọi điện hỏi lại.</p>
+          <p class="fine">Thật ở chỗ: <span class="m">LH/26/4471</span> — mã lấy từ sequence của <span class="m">lab_laixe</span>.</p>
+        </div>
+      </figure>
+    </div>
+
+    <div class="one-scene" data-rv>
+      <h3>Một cảnh, ba máy</h3>
+      <p>
+        CS gán việc trên backend. Tài xế mở app, chụp ảnh, ký, nhập số kiện — app gửi kèm một
+        <span class="m">clientUuid</span> nên bấm gửi hai lần không sinh hai bộ ảnh. Kho bấm “Nhận hàng”,
+        Odoo sinh <span class="m">stock.picking</span>: hàng đã vào kho và mọi sự kiện kinh tế đã có bút toán.
+      </p>
+      <p class="fine">
+        Đây là cảnh quay chính của video demo. Chống trùng nằm ở phía server
+        (<span class="m">addons/lab_api/controllers/driver.py</span>): gửi lại cùng <span class="m">clientUuid</span>
+        thì trả về bản ghi cũ thay vì tạo bộ ảnh thứ hai —
+        <span class="m">test_capture_gui_lai_khong_tao_anh_thu_hai</span> giữ đúng hành vi đó.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ SÁU NGOẠI LỆ ============================ -->
+<section id="ngoai-le">
+  <div class="wrap">
+    <div class="sec-head" data-rv>
+      <h2>Sáu ngoại lệ đều có đường về</h2>
+      <p class="lead">
+        Ngoại lệ không được tạo luồng song song vĩnh viễn. Mỗi nhánh dưới đây có một đường vào,
+        một điểm quay về, và một test chứng minh nó quay về được.
+      </p>
+    </div>
+
+    <div class="exc">
+      <article data-rv data-rv-d="0">
+        <h3>Hàng chưa rõ khách</h3>
+        <p class="ln"><b>Vào:</b> hàng đã rời kho nhưng hải quan giữ; mốc hành trình đứng ở “đang đi”.</p>
+        <p class="ret"><b>Về:</b> khai xong thì đóng mốc ⑨, hành trình chạy tiếp, chuyến giữ nguyên.</p>
+        <p class="tool"><span class="m">lab.hanh.trinh</span> · <span class="m">stock.picking</span></p>
+      </article>
+
+      <article data-rv data-rv-d="70">
+        <h3>Rớt chuyến · giảm tải</h3>
+        <p class="ln"><b>Vào:</b> hãng dồn hoặc huỷ chuyến, kiện đã nằm trong chuyến.</p>
+        <p class="ret"><b>Về:</b> dòng hàng chuyển sang chờ chuyến (<span class="m">waitlist</span>), gán chuyến khác — không xoá dòng, không mất dấu vết.</p>
+        <p class="tool"><span class="m">lab.chuyen</span> · <span class="m">base_tier_validation</span></p>
+      </article>
+
+      <article data-rv data-rv-d="0">
+        <h3>Đơn thiếu thông tin</h3>
+        <p class="ln"><b>Vào:</b> chưa có AWB/HBL trước giờ chốt chuyến.</p>
+        <p class="ret"><b>Về:</b> hoạt động nhắc việc gán cho CS; đóng hoạt động là đơn được duyệt vào chuyến ⑥.</p>
+        <p class="tool"><span class="m">mail.activity</span></p>
+      </article>
+
+      <article data-rv data-rv-d="70">
+        <h3>Xuất thiếu kiện</h3>
+        <p class="ln"><b>Vào:</b> tải vượt 100% — chuyến <span class="m">CH/AIR VN-2026-0001</span> trong seed đang ở 120%.</p>
+        <p class="ret"><b>Về:</b> đề xuất giảm tải, trưởng nhóm duyệt, đơn gỡ ra về trạng thái chờ chuyến sau.</p>
+        <p class="tool"><span class="m">lab.chuyen</span> + tier duyệt hai cấp</p>
+      </article>
+
+      <article data-rv data-rv-d="0">
+        <h3>Chuyển kho bay ↔ tàu</h3>
+        <p class="ln"><b>Vào:</b> shop đổi địa chỉ sau khi tài xế đã nhận việc.</p>
+        <p class="ret"><b>Về:</b> sửa địa chỉ trên <span class="m">res.partner</span> rồi phát lại yêu cầu lấy hàng — app gửi kèm <span class="m">clientUuid</span> mới nên không sinh việc trùng.</p>
+        <p class="tool"><span class="m">lab_laixe</span> · <span class="m">res.partner</span></p>
+      </article>
+
+      <article data-rv data-rv-d="70">
+        <h3>Khiếu nại · trả hàng</h3>
+        <p class="ln"><b>Vào:</b> khách nhận hàng và báo hỏng.</p>
+        <p class="ret"><b>Về:</b> mở ticket, kho kiểm, lập phiếu xuất trả, đóng ticket kèm credit note nếu đã gửi hoá đơn.</p>
+        <p class="tool"><span class="m">helpdesk_mgmt</span> · <span class="m">stock.picking</span> (return)</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ BẰNG CHỨNG ============================ -->
+<section id="bang-chung">
+  <div class="wrap">
+    <div class="sec-head" data-rv>
+      <h2>Bằng chứng, đếm được</h2>
+      <p class="lead">
+        Những con số dưới đây đếm từ chính repo này, không phải ước lượng cho đẹp.
+        Đếm lại được bằng cách mở đúng thư mục ghi bên cạnh.
+      </p>
+    </div>
+
+    <div class="evidence">
+      <dl>
+        <div class="row" data-rv data-rv-d="0">
+          <dt>Test Odoo (backend)<span class="sub"><span class="m">addons/lab_*/tests/</span> — 10 file, chạy trong container riêng</span></dt>
+          <dd>69</dd>
+        </div>
+        <div class="row" data-rv data-rv-d="60">
+          <dt>Test app (Kotlin Multiplatform)<span class="sub"><span class="m">apps/kmp/**/*Test.kt</span> — 6 file</span></dt>
+          <dd>66</dd>
+        </div>
+        <div class="row" data-rv data-rv-d="120">
+          <dt>View giao diện Odoo<span class="sub">list · form · kanban · search · calendar — 12 view chính, 3 view kế thừa</span></dt>
+          <dd>12</dd>
+        </div>
+        <div class="row" data-rv data-rv-d="180">
+          <dt>ADR đã chốt<span class="sub"><span class="m">docs/adr/</span> — quyết định có phương án bị loại</span></dt>
+          <dd>7</dd>
+        </div>
+        <div class="row" data-rv data-rv-d="240">
+          <dt>Module tự viết<span class="sub">core · chuyen · laixe · hanhtrinh · api — không fork Odoo</span></dt>
+          <dd>5</dd>
+        </div>
+      </dl>
+      <p class="fine mt" data-rv>
+        69 + 66 = 135 test, tất cả chạy offline trên máy. Phần phải viết code chỉ là sáu bước;
+        mười bước dùng model Odoo có sẵn và ba bước chỉ cấu hình — đó là lý do bộ test còn đọc được.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ MÁY TÍNH CƯỚC (thứ sống) ============================ -->
+<section id="cuoc">
+  <div class="wrap">
+    <div class="sec-head" data-rv>
+      <h2>Máy tính cước gom hàng</h2>
+      <p class="lead">
+        Chọn chuyến, số shop, số kiện và cân nặng. Kg tính cước theo đúng luật của hệ thống: lấy số lớn hơn
+        giữa kg thực và kg thể tích, hệ số 6000 cho đường bay, 1000 cho đường biển. Tải trọng và đơn giá
+        lấy từ seed data thật trong repo.
+      </p>
+    </div>
+
+    <div class="calc" id="calc">
+      <!-- Không có JS: bảng dữ liệu tĩnh vẫn đọc được -->
+      <div class="calc-fallback">
+        <div class="table-wrap">
+          <table>
+            <caption>Hai chuyến trong seed data — số liệu thật của repo (<span class="m">addons/lab_chuyen/data/demo_data.xml</span>).</caption>
+            <thead>
+              <tr>
+                <th scope="col">Chuyến</th>
+                <th scope="col">Hãng</th>
+                <th scope="col">Tải trọng</th>
+                <th scope="col">Đã gom</th>
+                <th scope="col">Tỉ lệ tải</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="m">CH/AIR</span> · VN-2026-0001</td>
+                <td>Vietnam Airlines</td>
+                <td>1.000 kg · 12 m³</td>
+                <td>1.200 kg · 4,5 m³</td>
+                <td><span class="chip warn">120% · quá tải</span></td>
+              </tr>
+              <tr>
+                <td><span class="m">CH/SEA</span> · MAE-2026-0007</td>
+                <td>Maersk</td>
+                <td>5.000 kg · 40 m³</td>
+                <td>1.400 kg · 5,6 m³</td>
+                <td><span class="chip">28% · còn chỗ</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="fine">
+          Máy tính cần JavaScript để chạy. Bảng trên là dữ liệu chuyến thật, đọc được khi JS tắt.
+        </p>
+      </div>
+
+      <form class="calc-form" id="calcForm">
+        <label class="f" for="cTuyen">
+          <span class="lb">Chuyến</span>
+          <select id="cTuyen">
+            <option value="air">CH/AIR · VN-2026-0001 · Vietnam Airlines</option>
+            <option value="sea">CH/SEA · MAE-2026-0007 · Maersk</option>
+          </select>
+        </label>
+
+        <label class="f" for="cShop">
+          <span class="lb">Số shop gửi hàng</span>
+          <input type="range" id="cShop" min="1" max="5" step="1" value="2"/>
+          <output id="cShopOut" for="cShop">2 shop</output>
+        </label>
+
+        <label class="f" for="cKien">
+          <span class="lb">Số kiện</span>
+          <input type="range" id="cKien" min="1" max="40" step="1" value="8"/>
+          <output id="cKienOut" for="cKien">8 kiện</output>
+        </label>
+
+        <label class="f" for="cKg">
+          <span class="lb">Cân nặng thực của cả lô</span>
+          <input type="range" id="cKg" min="20" max="900" step="10" value="320"/>
+          <output id="cKgOut" for="cKg">320 kg</output>
+        </label>
+      </form>
+
+      <div class="calc-out" id="calcOut" aria-live="polite">
+        <div class="out-head">
+          <span class="route" id="outRoute">CH/AIR · VN-2026-0001 · Vietnam Airlines</span>
+          <span class="chip warn" id="outChip">120% tải · quá tải</span>
+        </div>
+        <dl>
+          <div class="row">
+            <dt>Kg tính cước</dt>
+            <dd id="outKg">320 kg</dd>
+            <dd class="note" id="outKgNote"></dd>
+          </div>
+          <div class="row">
+            <dt>Cước ước tính</dt>
+            <dd id="outMoney">57.600.000 đ</dd>
+            <dd class="note" id="outMoneyNote"></dd>
+          </div>
+          <div class="row">
+            <dt>Yêu cầu lấy hàng phải tạo</dt>
+            <dd id="outLay">2 yêu cầu</dd>
+            <dd class="note" id="outLayNote"></dd>
+          </div>
+        </dl>
+        <div class="bar" role="img" aria-labelledby="barLegend">
+          <span class="bar-fill" id="barFill"></span>
+        </div>
+        <p class="bar-legend" id="barLegend">
+          <span id="barLeft"></span>
+          <span id="barRight"></span>
+        </p>
+        <p class="verdict" id="outVerdict"></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ============================ FOOTER ============================ -->
+<footer>
+  <div class="wrap">
+    <p class="wordmark">AppLogistics</p>
+    <p class="foot-line">Odoo 17 CE · Kotlin Multiplatform · dựng bởi FDE</p>
+    <div class="foot-cta">
+      <a class="btn btn-pri" href="http://localhost:8069/web/login" data-odoo
+         target="_blank" rel="noopener">Vào Odoo (web)</a>
+      <p class="cta-note">
+        Web: <span class="m">cs01</span> / <span class="m">kho01</span> /
+        <span class="m">manager01</span> … mật khẩu <span class="m">lab@2026</span>.
+      </p>
+    </div>
+    <div class="foot-meta">
+      <span>Bản dựng tháng 10 · 2026</span>
+      <span>Gom hàng lẻ xuất khẩu · 19 bước · 6 phòng ban · 6 nhánh ngoại lệ</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ==========================================================================
+   16. CTA → ODOO. ĐỔI ĐÚNG MỘT CHỖ Ở DÒNG DƯỚI (đừng đi tìm href trong HTML:
+   mọi href của nút CTA đều bị đoạn này ghi đè, HTML chỉ giữ giá trị dự phòng
+   cho trường hợp JS bị tắt).
+   ========================================================================== */
+var ODOO_URL = 'http://localhost:8069';   // đổi IP LAN khi demo trên máy khác
+
+(function () {
+  var base = String(ODOO_URL).replace(/\/+$/, '');
+  var href = base + '/web/login';
+  var links = document.querySelectorAll('a[data-odoo]');
+  for (var i = 0; i < links.length; i++) {
+    links[i].setAttribute('href', href);
+    /* mở tab mới: người xem không rời landing, Odoo mở song song để so sánh */
+    if (!links[i].getAttribute('target')) links[i].setAttribute('target', '_blank');
+    links[i].setAttribute('rel', 'noopener');
+    links[i].setAttribute('title', href);
+  }
+})();
+</script>
+<script>
+(function () {
+  var root = document.documentElement;
+
+  try {
+    /* ---------- 1. Entrance: mỗi phần tử vào khung một lần, stagger 60–90ms ---------- */
+    var items = [].slice.call(document.querySelectorAll('[data-rv]'));
+
+    function reveal(el) {
+      var d = el.getAttribute('data-rv-d');
+      if (d === null) {
+        /* không khai báo delay: tự lấy thứ tự trong cùng danh sách, tối đa 4 nhịp 60ms */
+        var i = 0, prev = el.previousElementSibling;
+        while (prev) {
+          if (prev.hasAttribute && prev.hasAttribute('data-rv')) i++;
+          prev = prev.previousElementSibling;
+        }
+        d = Math.min(i, 4) * 60;
+      }
+      el.style.transitionDelay = (parseInt(d, 10) || 0) + 'ms';
+      el.classList.add('in');
+    }
+
+    if (!('IntersectionObserver' in window)) {
+      items.forEach(function (el) { el.classList.add('in'); });
+    } else {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (en) {
+          if (!en.isIntersecting) return;
+          reveal(en.target);
+          io.unobserve(en.target);
+        });
+      }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
+      items.forEach(function (el) { io.observe(el); });
+    }
+
+    /* ---------- 2. Ảnh động: ảnh app trôi chậm theo cuộn (chỉ transform) ---------- */
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    var shot = document.getElementById('heroShot');
+    if (shot && !reduce.matches) {
+      var ticking = false;
+      var drift = function () {
+        ticking = false;
+        var vh = window.innerHeight || 1;
+        var p = Math.min(1, Math.max(0, window.pageYOffset / (vh * 0.9)));
+        shot.style.transform = 'translate3d(0,' + (-16 * p).toFixed(2) + 'px,0) scale(' + (1 - 0.025 * p).toFixed(3) + ')';
+      };
+      window.addEventListener('scroll', function () {
+        if (ticking) return;
+        ticking = true;
+        window.requestAnimationFrame(drift);
+      }, { passive: true });
+      drift();
+    }
+
+    /* ---------- 3. Thứ sống: máy tính cước trên dữ liệu chuyến thật ---------- */
+    var calc = document.getElementById('calc');
+    if (calc) {
+      var nf = new Intl.NumberFormat('vi-VN');
+
+      /* Nguồn: addons/lab_chuyen/data/demo_data.xml (tải trọng, dòng hàng) +
+         addons/lab_core/data/demo_data.xml (đơn giá sản phẩm cước). */
+      var CHUYEN = {
+        air: {
+          ma: 'CH/AIR', booking: 'VN-2026-0001', hang: 'Vietnam Airlines',
+          divisor: 6000, maxKg: 1000, maxCbm: 12,
+          loadKg: 1200, loadCbm: 4.5, kien: 26
+        },
+        sea: {
+          ma: 'CH/SEA', booking: 'MAE-2026-0007', hang: 'Maersk',
+          divisor: 1000, maxKg: 5000, maxCbm: 40,
+          loadKg: 1400, loadCbm: 5.6, kien: 24
+        }
+      };
+      var RATE = 180000; /* list_price "Cước vận chuyển (kg)" trong seed lab_core */
+
+      var elTuyen = document.getElementById('cTuyen');
+      var elShop = document.getElementById('cShop');
+      var elKien = document.getElementById('cKien');
+      var elKg = document.getElementById('cKg');
+      var outShop = document.getElementById('cShopOut');
+      var outKien = document.getElementById('cKienOut');
+      var outKgSel = document.getElementById('cKgOut');
+
+      var outPanel = document.getElementById('calcOut');
+      var outRoute = document.getElementById('outRoute');
+      var outChip = document.getElementById('outChip');
+      var outKg = document.getElementById('outKg');
+      var outKgNote = document.getElementById('outKgNote');
+      var outMoney = document.getElementById('outMoney');
+      var outMoneyNote = document.getElementById('outMoneyNote');
+      var outLay = document.getElementById('outLay');
+      var outLayNote = document.getElementById('outLayNote');
+      var barFill = document.getElementById('barFill');
+      var barLeft = document.getElementById('barLeft');
+      var barRight = document.getElementById('barRight');
+      var outVerdict = document.getElementById('outVerdict');
+
+      var n = function (v) { return nf.format(Math.round(v)); };
+      var d2 = function (v) { return nf.format(Math.round(v * 100) / 100); };
+      var pct = function (v) { return Math.round(v * 100) + '%'; };
+
+      function recalc(animate) {
+        var c = CHUYEN[elTuyen.value];
+        var shop = +elShop.value;
+        var kien = +elKien.value;
+        var kg = +elKg.value;
+
+        outShop.textContent = shop + ' shop';
+        outKien.textContent = kien + ' kiện';
+        outKgSel.textContent = n(kg) + ' kg';
+
+        /* thể tích quy đổi: trung bình kiện của chính chuyến trong seed */
+        var cbm = kien * (c.loadCbm / c.kien);
+        /* kg thể tích = m³ × 1.000.000 / hệ số (6000 bay · 1000 tàu) */
+        var volKg = (cbm * 1000000) / c.divisor;
+        var chargeable = Math.max(kg, volKg);
+        var money = chargeable * RATE;
+
+        var loadPct = c.loadKg / c.maxKg;
+        var afterKg = c.loadKg + kg;
+        var afterPct = afterKg / c.maxKg;
+        var cbmOk = c.loadCbm + cbm <= c.maxCbm;
+        var fits = afterKg <= c.maxKg && cbmOk;
+
+        outRoute.textContent = c.ma + ' · ' + c.booking + ' · ' + c.hang;
+        outChip.textContent = loadPct > 1 ? pct(loadPct) + ' tải · quá tải' : pct(loadPct) + ' tải · còn chỗ';
+        outChip.className = 'chip' + (loadPct > 1 ? ' warn' : '');
+
+        outKg.textContent = n(chargeable) + ' kg';
+        outKgNote.textContent =
+          'max(' + n(kg) + ' kg thực, ' + n(volKg) + ' kg thể tích) — thể tích ≈ ' +
+          d2(cbm) + ' m³ (' + d2(c.loadCbm / c.kien) + ' m³/kiện, trung bình chuyến trong seed) ' +
+          '× 1.000.000 ÷ ' + n(c.divisor) + '.';
+
+        outMoney.textContent = '≈ ' + n(money) + ' đ';
+        outMoneyNote.textContent =
+          'Đơn giá ' + n(RATE) + ' đ/kg — list_price của sản phẩm “Cước vận chuyển (kg)” trong seed. ' +
+          'Máy tính chỉ ước lượng; kế toán chốt giá trên product.pricelist rồi mới lập Debit.';
+
+        outLay.textContent = n(shop) + ' yêu cầu';
+        outLayNote.textContent =
+          'Mỗi shop một yêu cầu lấy hàng (lab.yeu.cau.lay.hang) và một sale.order. ' +
+          'Đơn khách tự mang tới kho (drop_off) thì bỏ qua bước ②.';
+
+        barLeft.textContent = 'Tải sau khi thêm: ' + n(afterKg) + ' / ' + n(c.maxKg) + ' kg';
+        barRight.textContent = pct(afterPct);
+        barFill.style.transform = 'scaleX(' + Math.min(1, afterPct).toFixed(4) + ')';
+
+        if (fits) {
+          outVerdict.innerHTML = '<b>Còn chỗ.</b> Lô này vào được ' + c.ma +
+            ', nhưng vẫn phải qua duyệt cấp hai (bước ⑥) trước khi chốt chuyến.';
+        } else if (c.loadKg > c.maxKg) {
+          outVerdict.innerHTML = '<b>Chuyến đã ' + pct(loadPct) + ' tải.</b> ' +
+            'Ngoại lệ ②: đề xuất giảm tải, trưởng nhóm duyệt, dòng hàng gỡ khỏi chuyến về trạng thái ' +
+            'chờ chuyến sau rồi gán chuyến khác — không xoá dòng, không mất dấu vết.';
+        } else {
+          outVerdict.innerHTML = '<b>Vượt tải trọng.</b> ' +
+            'Phải giảm tải có duyệt (ngoại lệ ②) trước khi chuyến chốt.';
+        }
+
+        if (animate) {
+          outPanel.classList.add('pulse');
+          window.setTimeout(function () { outPanel.classList.remove('pulse'); }, 220);
+        }
+      }
+
+      ['input', 'change'].forEach(function (ev) {
+        elTuyen.addEventListener(ev, function () { recalc(true); });
+        elShop.addEventListener(ev, function () { recalc(true); });
+        elKien.addEventListener(ev, function () { recalc(true); });
+        elKg.addEventListener(ev, function () { recalc(true); });
+      });
+
+      recalc(false);
+      barFill.style.transform = 'scaleX(0)';
+      /* chỉ thay bảng tĩnh khi máy tính đã dựng xong */
+      calc.classList.add('calc-on');
+      /* thanh tải chạy từ 0 lên đúng giá trị ở lần hiện đầu tiên */
+      window.requestAnimationFrame(function () {
+        window.requestAnimationFrame(function () { recalc(false); });
+      });
+    }
+  } catch (err) {
+    /* có lỗi script: bỏ hết trạng thái ẩn, giữ nguyên nội dung và bảng tĩnh */
+    root.classList.remove('js');
+  }
+})();
+</script>
+<script>
+/* Hero video: tiet kiem pin + ton trong "giam chuyen dong".
+   - Bat reduce-motion -> huy video, chi giu nen toi (CSS da an .hero-video-el).
+   - Tam dung khi hero ra khoi khung nhin (IntersectionObserver).
+   Khong co JS thi <video autoplay muted loop> van chay: day chi la toi uu. */
+(function () {
+  var v = document.querySelector('.hero-video-el');
+  if (!v) return;
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+  function apply() { if (reduce.matches) { v.pause(); } else { var p = v.play(); if (p && p.catch) p.catch(function () {}); } }
+  apply();
+  if (reduce.addEventListener) reduce.addEventListener('change', apply);
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        if (e.isIntersecting && !reduce.matches) { var p = v.play(); if (p && p.catch) p.catch(function () {}); }
+        else { v.pause(); }
+      });
+    }, { threshold: 0.15 }).observe(v);
+  }
+})();
+</script>
+</body>
+</html>

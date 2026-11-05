@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SEED DATA DEMO cho lab_hanhtrinh — dùng cho cảnh quay "khách tra cứu vận đơn"
+  (`GET /lab/api/v1/track/<access_token>`, docs/02 §6.2).
+
+  ⚠️ Token dưới đây là token DEMO CÔNG KHAI (hiện trên video, không phải bí mật
+  của môi trường thật). Mọi hành trình tạo trên UI đều được model sinh token
+  ngẫu nhiên (xem lab_hanh_trinh.create).
+-->
+<odoo>
+    <data noupdate="1">
+
+        <record id="demo_hanh_trinh_01" model="lab.hanh.trinh">
+            <field name="chuyen_id" ref="lab_chuyen.demo_chuyen_air_01"/>
+            <field name="sale_order_id" ref="lab_core.demo_so_1"/>
+            <field name="loai_chung_tu">awb</field>
+            <field name="so_awb">VN-157-12345678</field>
+            <field name="so_manifest">MAN-2026-0001</field>
+            <field name="stage">in_transit</field>
+            <field name="cang_di">SGN — Tân Sơn Nhất</field>
+            <field name="cang_den">NRT — Narita (Tokyo)</field>
+            <field name="ngay_bay" eval="datetime.now()"/>
+            <field name="ngay_den" eval="datetime.now()"/>
+            <field name="dai_ly_giao_id" ref="lab_core.demo_dai_ly_sakura"/>
+            <field name="access_token">a1b2c3d4e5f60718293a4b5c6d7e8f90</field>
+            <field name="line_ids" eval="[
+                (0, 0, {'moc': 'Đã lấy hàng tại shop', 'dia_diem': 'Quận 1, TP.HCM', 'thoi_diem': datetime.now()}),
+                (0, 0, {'moc': 'Đã nhập kho và đóng gói', 'dia_diem': 'Kho chính', 'thoi_diem': datetime.now()}),
+                (0, 0, {'moc': 'Đã lên máy bay VN-157', 'dia_diem': 'SGN', 'thoi_diem': datetime.now()}),
+                (0, 0, {'moc': 'Đang trên đường tới NRT', 'dia_diem': 'In transit', 'thoi_diem': datetime.now()})
+            ]"/>
+        </record>
+
+    </data>
+</odoo>

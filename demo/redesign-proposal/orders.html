@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="vi"><head><meta charset="utf-8"><title>Đơn hàng — redesign</title>
+<style>
+:root{--paper:#F4F0E6;--paper2:#EAE3D4;--card:#FBF8F1;--elev1:#EFEADF;--elev2:#FFFDF8;
+ --ink:#16150F;--ink2:#5A5647;--line:#D6CEBC;--red:#D92D20;--red2:#B42318;--red3:#9B1C14;
+ --danger:#9F1239;--amberInk:#7F4E12;--moss:#3F6B4A;--rail:#151A22;
+ --font:"Segoe UI Variable Display","Segoe UI",Inter,system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#CFC7B6;font-family:var(--font);color:var(--ink);padding:26px}
+.lbl{font-size:12px;font-weight:600;color:#3a3730;margin-bottom:6px}
+.art{width:1440px;border-radius:12px;overflow:hidden;box-shadow:0 10px 30px rgba(20,18,12,.18);background:var(--paper)}
+.shell{display:grid;grid-template-columns:236px 1fr;min-height:760px}
+.rail{background:var(--rail);color:#FBF8F1;padding:18px 12px;display:flex;flex-direction:column;gap:20px}
+.wm{display:flex;align-items:center;gap:10px;padding:0 6px}
+.mk{width:26px;height:26px;position:relative}.mk i{position:absolute;border-radius:2px;display:block}
+.mk i:nth-child(1){width:12px;height:12px;background:#F04438}.mk i:nth-child(2){width:12px;height:12px;right:0;background:#B8761F}
+.mk i:nth-child(3){width:26px;height:4px;bottom:2px;background:rgba(251,248,241,.42)}
+.t1{font-size:14px;font-weight:700}.t2{font-size:11px;color:rgba(251,248,241,.6)}
+.grp{font-size:11px;font-weight:600;color:rgba(251,248,241,.45);padding:0 10px 6px}
+.it{display:flex;align-items:center;gap:9px;height:36px;padding:0 10px;border-radius:8px;font-size:13px;color:rgba(251,248,241,.78)}
+.it.on{background:rgba(217,45,32,.18);color:#fff;font-weight:600;box-shadow:inset 3px 0 0 var(--red)}
+.dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.7}
+.foot{margin-top:auto;border-top:1px solid rgba(251,248,241,.16);padding:12px 10px 0;font-size:11px;color:rgba(251,248,241,.55)}
+.main{display:flex;flex-direction:column;min-width:0}
+.top{height:54px;display:flex;align-items:center;gap:14px;padding:0 20px;border-bottom:1px solid var(--line)}
+.crumb{font-size:13px;color:var(--ink2)}.crumb b{color:var(--ink);font-weight:600}.grow{flex:1}
+.srch{display:flex;align-items:center;gap:8px;height:36px;width:300px;padding:0 11px;border:1px solid rgba(22,21,15,.10);
+ border-radius:8px;background:var(--elev2);font-size:13px;color:#8B8471}
+.av{width:26px;height:26px;border-radius:50%;background:var(--red);color:#fff;font-size:11px;display:grid;place-items:center;font-weight:600}
+.c{padding:18px 20px;display:flex;flex-direction:column;gap:14px}
+.h1{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.sub{font-size:13px;color:var(--ink2);margin-top:2px}
+.btn{height:34px;padding:0 13px;border-radius:8px;border:1px solid rgba(22,21,15,.16);background:transparent;color:var(--ink);
+ font-size:13px;font-weight:600;letter-spacing:-.01em;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.btn.pri{background:var(--red);border-color:var(--red);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 1px 2px rgba(22,21,15,.18)}
+.seg{display:inline-flex;background:var(--elev1);border:1px solid rgba(22,21,15,.07);border-radius:9px;padding:3px;gap:2px}
+.seg span{padding:5px 11px;font-size:12.5px;color:var(--ink2);border-radius:7px}
+.seg span.on{background:var(--elev2);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(22,21,15,.12)}
+.tabs{display:flex;gap:18px;border-bottom:1px solid var(--line);padding-bottom:0}
+.tab{font-size:13px;color:var(--ink2);padding:0 0 10px;position:relative}
+.tab.on{color:var(--ink);font-weight:600;box-shadow:0 2px 0 0 var(--red)}
+.tab b{font-variant-numeric:tabular-nums;color:var(--ink2);font-weight:600;margin-left:5px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.kpi .lb{font-size:12px;color:var(--ink2)}.kpi .nm{font-size:24px;font-weight:650;letter-spacing:-.02em;margin-top:6px;font-variant-numeric:tabular-nums}
+.kpi .nm small{font-size:11.5px;font-weight:500;color:var(--ink2);margin-left:4px}
+.chips{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.fchip{font-size:12px;padding:5px 9px;border-radius:6px;border:1px dashed rgba(22,21,15,.22);color:var(--ink2);background:transparent}
+.bulk{display:flex;align-items:center;gap:10px;background:#FDF3F1;border:1px solid rgba(217,45,32,.22);border-radius:8px;padding:8px 12px;font-size:12.5px}
+.bulk b{font-variant-numeric:tabular-nums}
+.tbl{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.hd,.rw{display:grid;grid-template-columns:34px 1.05fr 1.25fr 1.05fr .55fr .65fr .85fr 1fr 1fr .9fr;align-items:center}
+.hd{background:var(--paper2);height:34px;font-size:11px;font-weight:600;color:var(--ink2)}
+.rw{height:42px;border-top:1px solid var(--line);font-size:12.5px}
+.hd>div,.rw>div{padding:0 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.r{text-align:right;font-variant-numeric:tabular-nums}
+.mono{font-variant-numeric:tabular-nums;font-weight:600}
+.ck{width:14px;height:14px;border:1px solid #B9B2A0;border-radius:3px;display:inline-block}
+.ck.on{background:var(--red);border-color:var(--red);position:relative}
+.ck.on::after{content:"";position:absolute;left:4px;top:1px;width:4px;height:8px;border:2px solid #fff;border-top:0;border-left:0;transform:rotate(42deg)}
+.chip{font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:4px}
+.c-new{background:rgba(184,118,31,.16);color:var(--amberInk)}
+.c-go{background:rgba(217,45,32,.12);color:#9B1C14}
+.c-ok{background:rgba(63,107,74,.18);color:var(--moss)}
+.c-wait{background:var(--paper2);color:var(--ink2)}
+.rw.bad{box-shadow:inset 2px 0 0 var(--danger)}
+.pager{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--ink2);padding:2px 2px 0}
+.pbtn{display:inline-flex;gap:6px}.pbtn span{border:1px solid var(--line);border-radius:6px;padding:4px 9px;background:var(--card);font-variant-numeric:tabular-nums}
+.pbtn span.on{background:var(--red);border-color:var(--red);color:#fff;font-weight:600}
+/* ===== v5 — bổ sung theo ui-ux-pro-max (domain ux + chart) =====
+   1) "Table Handling: use horizontal scroll or card layout" -> .tblwrap{overflow-x:auto}
+   2) "Empty States: helpful message and action"             -> .empty (chữ + 1 CTA)
+   3) Hover + focus-visible cho MỌI phần tử bảng ngoài button (trước đó chỉ button có).
+   4) Chart: không phân biệt series chỉ bằng màu -> thêm nhãn trực tiếp + nét đứt (dashboard).
+*/
+.tbl{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.hd,.rw{min-width:1180px}
+.rw:hover{background:rgba(22,21,15,.035)}
+.rw:focus-visible{outline:2px solid var(--red);outline-offset:-2px}
+.tab:hover{color:var(--ink)}
+.tab:focus-visible{outline:2px solid var(--red);outline-offset:3px;border-radius:3px}
+.fchip:hover{border-color:rgba(217,45,32,.55);color:var(--ink)}
+.fchip:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+.ck:hover{border-color:var(--red)}
+.srch:focus-within{border-color:var(--red);box-shadow:0 0 0 3px rgba(217,45,32,.15)}
+.skel{height:10px;border-radius:4px;background:linear-gradient(90deg,#E7E0D2,#F2ECDF,#E7E0D2);background-size:200% 100%}
+.empty{display:grid;place-items:center;gap:10px;padding:34px 20px;text-align:center}
+.empty .g{width:40px;height:40px;border:2px solid #C6BEA9;border-radius:4px;transform:rotate(45deg)}
+.empty .t{font-size:14px;font-weight:600}
+.empty .h{font-size:12.5px;color:var(--ink2);max-width:34ch;line-height:1.55}</head>
+<body>
+<div class="lbl">WEB 04 · Quản lý đơn hàng — 1440×760 — palette v4 (graphite + signal red) + hệ button v4</div>
+<div class="art"><div class="shell">
+  <div class="rail">
+    <div class="wm"><div class="mk"><i></i><i></i><i></i></div>
+      <div><div class="t1">AppLogictics</div><div class="t2">Gom hàng lẻ · Odoo 17</div></div></div>
+    <div><div class="grp">VẬN HÀNH</div>
+      <div class="it"><span class="dot"></span>Bảng điều khiển</div>
+      <div class="it on"><span class="dot"></span>Đơn hàng</div>
+      <div class="it"><span class="dot"></span>Yêu cầu lấy hàng</div>
+      <div class="it"><span class="dot"></span>Chuyến</div>
+      <div class="it"><span class="dot"></span>Hành trình</div></div>
+    <div><div class="grp">ĐỐI TÁC</div>
+      <div class="it"><span class="dot"></span>Khách hàng (Shop)</div>
+      <div class="it"><span class="dot"></span>Đại lý nước ngoài</div></div>
+    <div><div class="grp">HỆ THỐNG</div>
+      <div class="it"><span class="dot"></span>Chứng từ</div>
+      <div class="it"><span class="dot"></span>Kế toán</div></div>
+    <div class="foot">Giám đốc · Vũ Trưởng Nhóm<br>Dữ liệu: Odoo thật</div>
+  </div>
+
+  <div class="main">
+    <div class="top"><div class="crumb">Gom hàng lẻ / <b>Đơn hàng</b></div><div class="grow"></div>
+      <div class="srch">⌕ Tìm mã đơn, shop, số vận đơn…</div><div class="av">VT</div></div>
+
+    <div class="c">
+      <div style="display:flex;align-items:flex-end;gap:12px">
+        <div><div class="h1">Đơn hàng</div>
+          <div class="sub">128 đơn trong kỳ · 4 shop có đơn mới · cập nhật 12:44</div></div>
+        <div class="grow"></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div class="seg"><span>Hôm nay</span><span class="on">7 ngày</span><span>30 ngày</span></div>
+          <button class="btn">Xuất CSV</button>
+          <button class="btn pri">＋ Tạo đơn</button>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab on">Tất cả<b>128</b></div>
+        <div class="tab">Chờ lấy hàng<b>13</b></div>
+        <div class="tab">Đang giao<b>36</b></div>
+        <div class="tab">Đã về kho<b>79</b></div>
+        <div class="tab" style="color:#9F1239">Sự cố<b>6</b></div>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi"><div class="lb">Tổng cước trong kỳ</div><div class="nm">12.480.000<small>₫</small></div></div>
+        <div class="kpi"><div class="lb">Tổng cân nặng</div><div class="nm">1.245<small>kg</small></div></div>
+        <div class="kpi"><div class="lb">Số kiện</div><div class="nm">412<small>kiện</small></div></div>
+        <div class="kpi"><div class="lb">Đúng hẹn lấy hàng</div><div class="nm">96<small>%</small></div></div>
+      </div>
+
+      <div class="chips">
+        <span class="fchip">Shop: tất cả ▾</span>
+        <span class="fchip">Chuyến: CH/AIR/26/0001 ▾</span>
+        <span class="fchip">Tài xế: tất cả ▾</span>
+        <span class="fchip">Có sự cố</span>
+        <div class="grow"></div>
+        <span style="font-size:12px;color:#8B8471;font-variant-numeric:tabular-nums">1–20 / 128</span>
+      </div>
+
+      <div class="bulk"><span class="ck on"></span>Đã chọn <b>3</b> đơn
+        <div class="grow"></div>
+        <button class="btn">Gán tài xế</button>
+        <button class="btn">In phiếu lấy hàng</button>
+        <button class="btn" style="border-color:rgba(159,18,57,.28);color:#9F1239;background:rgba(159,18,57,.08)">Huỷ đơn</button>
+      </div>
+
+      <div class="tbl" style="overflow-x:auto">
+        <div class="hd"><div></div><div>Mã đơn</div><div>Shop</div><div>Chuyến</div><div class="r">Kiện</div><div class="r">Cân (kg)</div><div class="r">Cước</div><div>Trạng thái</div><div>Tài xế</div><div>Cập nhật</div></div>
+
+        <div class="rw"><div><span class="ck on"></span></div><div class="mono">ĐH/26/1042</div><div>Sen Đá Shop</div><div>CH/AIR/26/0001</div><div class="r">3</div><div class="r">12,40</div><div class="r">186.000 ₫</div><div><span class="chip c-new">Chờ lấy</span></div><div>Chưa gán</div><div>29/10 17:41</div></div>
+        <div class="rw"><div><span class="ck on"></span></div><div class="mono">ĐH/26/1041</div><div>Mây Trắng Store</div><div>CH/AIR/26/0001</div><div class="r">2</div><div class="r">8,15</div><div class="r">124.500 ₫</div><div><span class="chip c-go">Đang giao</span></div><div>Trần Văn Hùng</div><div>29/10 16:20</div></div>
+        <div class="rw bad"><div><span class="ck on"></span></div><div class="mono">ĐH/26/1040</div><div>Bao Bì Nhựa Tiến Đạt</div><div>CH/SEA/26/0001</div><div class="r">5</div><div class="r">24,80</div><div class="r">342.000 ₫</div><div><span class="chip" style="background:rgba(159,18,57,.12);color:#9F1239">Lấy thất bại</span></div><div>Đặng Quốc Bảo</div><div>29/10 14:11</div></div>
+        <div class="rw"><div><span class="ck"></span></div><div class="mono">ĐH/26/1039</div><div>Bình Gốm Sứ Bát Tràng</div><div>CH/SEA/26/0001</div><div class="r">1</div><div class="r">6,30</div><div class="r">95.000 ₫</div><div><span class="chip c-ok">Đã về kho</span></div><div>Đặng Quốc Bảo</div><div>29/10 11:02</div></div>
+        <div class="rw"><div><span class="ck"></span></div><div class="mono">ĐH/26/1038</div><div>Trà Sữa Trân Châu Milly</div><div>CH/AIR/26/0001</div><div class="r">4</div><div class="r">15,75</div><div class="r">236.250 ₫</div><div><span class="chip c-ok">Đã về kho</span></div><div>Lê Minh Tâm</div><div>29/10 09:48</div></div>
+        <div class="rw"><div><span class="ck"></span></div><div class="mono">ĐH/26/1037</div><div>Nội Thất Gỗ Việt</div><div>—</div><div class="r">2</div><div class="r">31,20</div><div class="r">—</div><div><span class="chip c-wait">Chưa vào chuyến</span></div><div>—</div><div>28/10 18:30</div></div>
+        <div class="rw"><div><span class="ck"></span></div><div class="mono">ĐH/26/1036</div><div>Vợt Cầu Lông ProSport</div><div>CH/AIR/26/0001</div><div class="r">1</div><div class="r">3,05</div><div class="r">61.000 ₫</div><div><span class="chip c-ok">Đã về kho</span></div><div>Lý Thanh Hà</div><div>28/10 17:04</div></div>
+      
+
+      <div class="pager"><span>Hiện 1–20 trên 128 đơn · cước cộng dồn 4.921.750 ₫</span>
+        <div class="pbtn"><span>‹</span><span class="on">1</span><span>2</span><span>3</span><span>…</span><span>7</span><span>›</span></div></div>
+    </div>
+  </div>
+</div></body></html>

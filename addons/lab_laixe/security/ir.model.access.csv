@@ -1,0 +1,16 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_lab_lay_hang_cs,lab.yeu.cau.lay.hang — CS đọc ghi tạo,model_lab_yeu_cau_lay_hang,lab_core.group_cs,1,1,1,0
+access_lab_lay_hang_driver,lab.yeu.cau.lay.hang — Tài xế đọc ghi tạo (chỉ bản ghi của mình),model_lab_yeu_cau_lay_hang,lab_core.group_driver,1,1,1,0
+access_lab_lay_hang_driver_leader,lab.yeu.cau.lay.hang — Trưởng nhóm tài xế đọc ghi (phân công),model_lab_yeu_cau_lay_hang,lab_core.group_driver_leader,1,1,0,0
+access_lab_lay_hang_warehouse,lab.yeu.cau.lay.hang — Kho đọc/ghi/TẠO (nhận tại quầy cho khách tự mang tới — N14; KHÔNG xoá),model_lab_yeu_cau_lay_hang,lab_core.group_warehouse,1,1,1,0
+access_lab_lay_hang_docs,lab.yeu.cau.lay.hang — Chứng từ đọc,model_lab_yeu_cau_lay_hang,lab_core.group_docs,1,0,0,0
+access_lab_lay_hang_account,lab.yeu.cau.lay.hang — Kế toán không thấy,model_lab_yeu_cau_lay_hang,lab_core.group_account,0,0,0,0
+access_lab_lay_hang_sale_admin,lab.yeu.cau.lay.hang — Sale Admin đọc ghi tạo,model_lab_yeu_cau_lay_hang,lab_core.group_sale_admin,1,1,1,0
+access_lab_lay_hang_manager,lab.yeu.cau.lay.hang — Trưởng phòng đọc ghi tạo,model_lab_yeu_cau_lay_hang,lab_core.group_manager,1,1,1,0
+access_lab_lay_hang_director,lab.yeu.cau.lay.hang — BGĐ chỉ đọc,model_lab_yeu_cau_lay_hang,lab_core.group_director,1,0,0,0
+access_lab_lay_hang_system_admin,"lab.yeu.cau.lay.hang — QUẢN TRỊ (base.group_system) CHỈ ĐỌC: công cụ test/kiểm dữ liệu, không sửa",model_lab_yeu_cau_lay_hang,base.group_system,1,0,0,0
+access_lab_gan_tai_xe_cs,lab.yeu.cau.lay.hang.gan.tai.xe - CS dung wizard gan tai xe (D1/D2: CS lam tren web),model_lab_yeu_cau_lay_hang_gan_tai_xe,lab_core.group_cs,1,1,1,0
+access_lab_gan_tai_xe_manager,lab.yeu.cau.lay.hang.gan.tai.xe - Truong phong dung wizard,model_lab_yeu_cau_lay_hang_gan_tai_xe,lab_core.group_manager,1,1,1,0
+access_lab_gan_tai_xe_sale_admin,lab.yeu.cau.lay.hang.gan.tai.xe - Sale Admin dung wizard,model_lab_yeu_cau_lay_hang_gan_tai_xe,lab_core.group_sale_admin,1,1,1,0
+access_lab_gan_tai_xe_leader,lab.yeu.cau.lay.hang.gan.tai.xe - Truong nhom tai xe dung wizard (cung nut voi app),model_lab_yeu_cau_lay_hang_gan_tai_xe,lab_core.group_driver_leader,1,1,1,0
+access_lab_gan_tai_xe_system,"lab.yeu.cau.lay.hang.gan.tai.xe - QUAN TRI CHI DOC: cong cu test",model_lab_yeu_cau_lay_hang_gan_tai_xe,base.group_system,1,0,0,0

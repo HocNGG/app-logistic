@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SEED DATA DEMO cho lab_chuyen — nguồn: infra/scripts/seed-users.md (bảng dữ liệu nền).
+  noupdate="1": upgrade không ghi đè chuyến người dùng đã sửa tay.
+
+  Mục đích demo:
+  * CH/AIR (chuyến bay) nạp 1.200/1.000 kg = 120% tải -> demo nhánh ngoại lệ ②
+    (cảnh báo quá tải + giảm tải). ti_le_tai là compute của model, không nhập tay.
+  * CH/SEA (chuyến tàu) còn chỗ -> demo luồng chuẩn ⑤⑥⑦.
+  * Dùng warehouse mặc định `stock.warehouse0` vì seed-users.md có nhắc KHO BAY /
+    KHO TÀU nhưng P0 chưa tạo warehouse riêng; đổi `kho_xuat_id` trên UI là đủ.
+  * `datetime.now()` dùng được trong eval của data XML (bằng chứng: OCA
+    base_tier_validation/data/cron_data.xml dùng cùng cú pháp và đã cài thành công).
+-->
+<odoo>
+    <data noupdate="1">
+
+        <!-- ===================== CHUYẾN BAY (quá tải 120%) ===================== -->
+        <record id="demo_chuyen_air_01" model="lab.chuyen">
+            <field name="loai_van_chuyen">air</field>
+            <field name="hang_van_chuyen">Vietnam Airlines</field>
+            <field name="so_booking">VN-2026-0001</field>
+            <field name="kho_xuat_id" ref="stock.warehouse0"/>
+            <field name="ngay_di" eval="datetime.now()"/>
+            <field name="ngay_den_du_kien" eval="datetime.now()"/>
+            <field name="cut_off_datetime" eval="datetime.now().replace(hour=7, minute=0, second=0, microsecond=0)"/>
+            <field name="tai_trong_max_kg">1000.0</field>
+            <field name="the_tich_max_cbm">12.0</field>
+            <field name="state">booking_confirmed</field>
+        </record>
+
+        <record id="demo_chuyen_line_air_1" model="lab.chuyen.line">
+            <field name="chuyen_id" ref="demo_chuyen_air_01"/>
+            <field name="sale_order_id" ref="lab_core.demo_so_1"/>
+            <field name="khoi_luong_kg">500.0</field>
+            <field name="the_tich_cbm">2.0</field>
+            <field name="so_kien">12</field>
+            <field name="state">booked</field>
+        </record>
+
+        <record id="demo_chuyen_line_air_2" model="lab.chuyen.line">
+            <field name="chuyen_id" ref="demo_chuyen_air_01"/>
+            <field name="sale_order_id" ref="lab_core.demo_so_2"/>
+            <field name="khoi_luong_kg">400.0</field>
+            <field name="the_tich_cbm">1.5</field>
+            <field name="so_kien">8</field>
+            <field name="state">booked</field>
+        </record>
+
+        <record id="demo_chuyen_line_air_3" model="lab.chuyen.line">
+            <field name="chuyen_id" ref="demo_chuyen_air_01"/>
+            <field name="sale_order_id" ref="lab_core.demo_so_3"/>
+            <field name="khoi_luong_kg">300.0</field>
+            <field name="the_tich_cbm">1.0</field>
+            <field name="so_kien">6</field>
+            <field name="state">booked</field>
+        </record>
+
+        <!-- ===================== CHUYẾN TÀU (còn chỗ) ===================== -->
+        <record id="demo_chuyen_sea_01" model="lab.chuyen">
+            <field name="loai_van_chuyen">sea</field>
+            <field name="hang_van_chuyen">Maersk</field>
+            <field name="so_booking">MAE-2026-0007</field>
+            <field name="kho_xuat_id" ref="stock.warehouse0"/>
+            <field name="ngay_di" eval="datetime.now()"/>
+            <field name="ngay_den_du_kien" eval="datetime.now()"/>
+            <field name="cut_off_datetime" eval="datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)"/>
+            <field name="tai_trong_max_kg">5000.0</field>
+            <field name="the_tich_max_cbm">40.0</field>
+            <field name="state">open</field>
+        </record>
+
+        <record id="demo_chuyen_line_sea_1" model="lab.chuyen.line">
+            <field name="chuyen_id" ref="demo_chuyen_sea_01"/>
+            <field name="sale_order_id" ref="lab_core.demo_so_4"/>
+            <field name="khoi_luong_kg">800.0</field>
+            <field name="the_tich_cbm">3.2</field>
+            <field name="so_kien">4</field>
+            <field name="state">booked</field>
+        </record>
+
+        <record id="demo_chuyen_line_sea_2" model="lab.chuyen.line">
+            <field name="chuyen_id" ref="demo_chuyen_sea_01"/>
+            <field name="sale_order_id" ref="lab_core.demo_so_5"/>
+            <field name="khoi_luong_kg">600.0</field>
+            <field name="the_tich_cbm">2.4</field>
+            <field name="so_kien">20</field>
+            <field name="state">booked</field>
+        </record>
+
+    </data>
+</odoo>

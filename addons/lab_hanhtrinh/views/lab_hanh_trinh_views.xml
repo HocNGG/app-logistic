@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  =====================================================================================
+  VIEW XML — model `lab.hanh.trinh` + `lab.hanh.trinh.line` (bước ⑨⑩⑪ — docs/02 §2.4, §3.3).
+  Người viết: FE-01 (Wave B). Biên giới: addons/**/views/** (AGENTS.md Luật 10).
+
+  ĐỐI CHIẾU SOURCE THẬT (`addons/lab_hanhtrinh/models/`):
+    lab.hanh.trinh      : name, chuyen_id, sale_order_id, loai_chung_tu, so_awb, so_hbl,
+                          so_manifest, stage (11 mã), ngay_bay, ngay_den, cang_di, cang_den,
+                          dai_ly_giao_id, pod_date, pod_attachment_ids, access_token, line_ids
+    lab.hanh.trinh.line : hanhtrinh_id, moc, thoi_diem, dia_diem, nguoi_cap_nhat_id
+    mixin               : lab_is_exception, lab_exception_type, lab_exception_note,
+                          lab_return_step, lab_exception_user_id, lab_exception_date
+    method              : ⛔ KHÔNG CÓ method `action_*` / `_stage_*` nào (P0 chỉ khai field).
+
+  VÌ SAO KHÔNG CÓ NÚT CHUYỂN MỐC: cùng lý do với `lab.yeu.cau.lay.hang` — không gắn nút vào
+  method không tồn tại. Cần BE-01 nếu muốn có nút (mỗi mốc 1 method, có UserError khi sai
+  thứ tự theo docs/02 §3 "không được nhảy cóc state").
+
+  FIELD TRẠNG THÁI TÊN LÀ `stage` (KHÔNG phải `state`) — widget statusbar gắn vào `stage`.
+  statusbar_visible liệt kê ĐỦ 11 MỐC theo yêu cầu, kể cả 3 nhánh kết thúc
+  (exception / returned / compensated) để người dùng thấy trước mọi đích có thể tới.
+  ⚠️ RỦI RO THẨM MỸ: 11 nhãn tiếng Việt trên một statusbar là khá dài; nếu RV-01 thấy chật
+  khi demo trên 1366px thì rút statusbar_visible còn 8 mốc chính — 3 mốc ngoại lệ vẫn
+  hiển thị khi bản ghi đang ở đúng mốc đó (Odoo tự hiện giá trị hiện tại).
+
+  ⚠️ CẦN BE-01 KHAI VÀO MANIFEST:
+      addons/lab_hanhtrinh/__manifest__.py → "data" thêm
+          "views/lab_hanh_trinh_views.xml"   ← trước
+          "views/menuitems.xml"              ← sau (CUỐI)
+  =====================================================================================
+-->
+<odoo>
+
+    <!-- =================================================================================
+         1. FORM — statusbar 11 mốc + timeline inline + POD.
+         ================================================================================= -->
+    <record id="view_lab_hanh_trinh_form" model="ir.ui.view">
+        <field name="name">lab.hanh.trinh.form</field>
+        <field name="model">lab.hanh.trinh</field>
+        <field name="arch" type="xml">
+            <form string="Hành trình">
+                <header>
+                    <!-- ★ CHỖ ĐẶT NÚT khi BE-01 thêm method chuyển mốc (xem đầu file). -->
+                    <field name="stage" widget="statusbar"
+                           statusbar_visible="draft,booked,departed,in_transit,arrived,handed_to_agent,delivered,closed,exception,returned,compensated"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" string="Số hành trình"/>
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Chuyến &amp; đơn hàng">
+                            <field name="chuyen_id"
+                                   options="{'no_create': False}"
+                                   placeholder="Chuyến chứa lô hàng này…"/>
+                            <field name="sale_order_id"
+                                   placeholder="Hành trình theo từng lô (một chuyến có nhiều lô)"/>
+                            <field name="dai_ly_giao_id"
+                                   placeholder="Đại lý nước ngoài giao hàng…"/>
+                        </group>
+                        <group string="Chứng từ vận tải (bước ⑧)">
+                            <field name="loai_chung_tu" widget="radio"/>
+                            <field name="so_awb" invisible="loai_chung_tu == 'hbl'"/>
+                            <field name="so_hbl" invisible="loai_chung_tu == 'awb'"/>
+                            <field name="so_manifest"/>
+                        </group>
+                    </group>
+
+                    <group string="Hành trình">
+                        <group>
+                            <field name="cang_di" placeholder="Sân bay / cảng đi…"/>
+                            <field name="cang_den" placeholder="Sân bay / cảng đến…"/>
+                        </group>
+                        <group>
+                            <field name="ngay_bay"/>
+                            <field name="ngay_den"/>
+                            <field name="access_token" password="True"
+                                   groups="lab_core.group_docs,lab_core.group_sale_admin,lab_core.group_manager"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="Dòng thời gian" name="timeline">
+                            <field name="line_ids"
+                                   readonly="stage in ('closed', 'cancelled')">
+                                <tree editable="bottom" string="Dòng thời gian hành trình">
+                                    <field name="thoi_diem"
+                                           placeholder="Thời điểm xảy ra mốc…"/>
+                                    <field name="moc"
+                                           placeholder="Đã lên máy bay · Đã hạ cánh Tân Sơn Nhất · Đại lý đã nhận…"/>
+                                    <field name="dia_diem" placeholder="Sân bay / kho / địa điểm…"/>
+                                    <field name="nguoi_cap_nhat_id" readonly="1"/>
+                                </tree>
+                            </field>
+                            <div class="text-muted">
+                                Dòng thời gian là nhật ký khách nhìn thấy khi tra cứu — không
+                                phải sự kiện kinh tế, nên không sinh bút toán (docs/02 §11).
+                            </div>
+                        </page>
+                        <page string="Giao hàng (POD)" name="pod">
+                            <group>
+                                <group string="Mốc giao khách">
+                                    <field name="pod_date"/>
+                                </group>
+                            </group>
+                            <field name="pod_attachment_ids">
+                                <tree string="Chứng từ giao hàng (POD)">
+                                    <field name="name" string="Tên tệp"/>
+                                    <field name="mimetype" optional="show"/>
+                                    <field name="create_date" string="Ngày tải" readonly="1"/>
+                                </tree>
+                                <form string="Chứng từ POD">
+                                    <group>
+                                        <field name="name"/>
+                                        <field name="datas" filename="name" widget="binary"/>
+                                    </group>
+                                </form>
+                            </field>
+                            <div class="text-muted">
+                                POD (proof of delivery) là bằng chứng đại lý đã giao hàng cho
+                                khách — thiếu POD thì chưa được đóng hành trình.
+                            </div>
+                        </page>
+                        <page string="Ngoại lệ" name="exceptions">
+                            <group>
+                                <group string="Đánh dấu ngoại lệ"
+                                       groups="lab_core.group_docs,lab_core.group_manager">
+                                    <field name="lab_is_exception"/>
+                                    <field name="lab_exception_type" invisible="not lab_is_exception"/>
+                                    <field name="lab_return_step" invisible="not lab_is_exception"
+                                           placeholder="vd: backorder done → ⑦"/>
+                                    <field name="lab_exception_note" invisible="not lab_is_exception"/>
+                                </group>
+                                <group string="Dấu vết">
+                                    <field name="lab_exception_user_id" readonly="1"/>
+                                    <field name="lab_exception_date" readonly="1"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- =================================================================================
+         2. TREE — bảng theo dõi hành trình của Chứng từ.
+         ================================================================================= -->
+    <record id="view_lab_hanh_trinh_tree" model="ir.ui.view">
+        <field name="name">lab.hanh.trinh.tree</field>
+        <field name="model">lab.hanh.trinh</field>
+        <field name="arch" type="xml">
+            <tree string="Hành trình"
+                  decoration-danger="stage == 'exception'"
+                  decoration-muted="stage in ('closed', 'cancelled')"
+                  decoration-success="stage == 'delivered'">
+                <field name="name" string="Số hành trình"/>
+                <field name="chuyen_id" string="Chuyến"/>
+                <field name="sale_order_id" optional="show"/>
+                <field name="loai_chung_tu" optional="show"/>
+                <field name="so_awb" optional="show"/>
+                <field name="so_hbl" optional="hide"/>
+                <field name="so_manifest" optional="hide"/>
+                <field name="cang_di" optional="show"/>
+                <field name="cang_den" optional="show"/>
+                <field name="ngay_bay" optional="show"/>
+                <field name="ngay_den" optional="hide"/>
+                <field name="dai_ly_giao_id" optional="hide"/>
+                <field name="pod_date" optional="show"/>
+                <field name="stage" widget="badge"
+                       decoration-info="stage == 'draft'"
+                       decoration-primary="stage in ('booked', 'departed', 'in_transit')"
+                       decoration-success="stage in ('delivered', 'closed')"
+                       decoration-warning="stage in ('handed_to_agent', 'arrived', 'returned', 'compensated')"
+                       decoration-danger="stage == 'exception'"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- =================================================================================
+         3. SEARCH — lọc theo 11 mốc, theo loại vận đơn (AWB/HBL), groupby.
+         ================================================================================= -->
+    <record id="view_lab_hanh_trinh_search" model="ir.ui.view">
+        <field name="name">lab.hanh.trinh.search</field>
+        <field name="model">lab.hanh.trinh</field>
+        <field name="arch" type="xml">
+            <search string="Tìm hành trình">
+                <field name="name" string="Số hành trình"/>
+                <field name="so_awb"/>
+                <field name="so_hbl"/>
+                <field name="so_manifest"/>
+                <field name="chuyen_id"/>
+                <field name="dai_ly_giao_id"/>
+
+                <filter name="f_awb" string="Vận đơn hàng không (AWB)"
+                        domain="[('loai_chung_tu', '=', 'awb')]"/>
+                <filter name="f_hbl" string="Vận đơn đường biển (HBL)"
+                        domain="[('loai_chung_tu', '=', 'hbl')]"/>
+                <separator/>
+                <filter name="f_draft" string="Nháp" domain="[('stage', '=', 'draft')]"/>
+                <filter name="f_booked" string="Đã book" domain="[('stage', '=', 'booked')]"/>
+                <filter name="f_departed" string="Đã khởi hành" domain="[('stage', '=', 'departed')]"/>
+                <filter name="f_in_transit" string="Đang trên đường" domain="[('stage', '=', 'in_transit')]"/>
+                <filter name="f_arrived" string="Đã đến nơi" domain="[('stage', '=', 'arrived')]"/>
+                <filter name="f_handed" string="Đã giao đại lý" domain="[('stage', '=', 'handed_to_agent')]"/>
+                <filter name="f_delivered" string="Đã giao khách" domain="[('stage', '=', 'delivered')]"/>
+                <filter name="f_closed" string="Đã đóng" domain="[('stage', '=', 'closed')]"/>
+                <filter name="f_exception" string="Có sự cố (khiếu nại)" domain="[('stage', '=', 'exception')]"/>
+                <filter name="f_returned" string="Đã trả hàng" domain="[('stage', '=', 'returned')]"/>
+                <filter name="f_compensated" string="Đã bồi thường" domain="[('stage', '=', 'compensated')]"/>
+                <separator/>
+                <filter name="f_pod_missing" string="Thiếu POD"
+                        domain="[('stage', '=', 'delivered'), ('pod_date', '=', False)]"/>
+
+                <group expand="0" string="Nhóm theo">
+                    <filter name="g_stage" string="Mốc hành trình" context="{'group_by': 'stage'}"/>
+                    <filter name="g_chuyen" string="Chuyến" context="{'group_by': 'chuyen_id'}"/>
+                    <filter name="g_loai_ct" string="Loại vận đơn" context="{'group_by': 'loai_chung_tu'}"/>
+                    <filter name="g_daily" string="Đại lý giao" context="{'group_by': 'dai_ly_giao_id'}"/>
+                    <filter name="g_month" string="Tháng khởi hành"
+                            context="{'group_by': 'ngay_bay:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- =================================================================================
+         4. ACTION + empty state.
+         ================================================================================= -->
+    <record id="action_lab_hanh_trinh" model="ir.actions.act_window">
+        <field name="name">Hành trình</field>
+        <field name="res_model">lab.hanh.trinh</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_lab_hanh_trinh_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Chưa có hành trình nào</p>
+            <p>
+                <b>Hành trình</b> theo dõi phần <b>sau khi hàng đã rời kho</b>: lên máy bay/tàu,
+                đến kho đối tác, đại lý giao khách (POD). Đây là thực thể riêng — không nhồi
+                trạng thái vào <code>stock.picking</code>, vì phiếu kho đã <i>done</i> khi hàng ra khỏi kho.
+            </p>
+            <p>
+                Khách tra cứu bằng link có <b>token</b> (không cần tài khoản). Mỗi mốc trên dòng
+                thời gian là một dòng khách nhìn thấy, không phải bút toán.
+            </p>
+        </field>
+    </record>
+
+    <!-- Cùng model, lọc sẵn hành trình đang CÓ SỰ CỐ (nhánh ⑥) — đường vào ≤ 2 click. -->
+    <record id="action_lab_hanh_trinh_exception" model="ir.actions.act_window">
+        <field name="name">Hành trình có sự cố</field>
+        <field name="res_model">lab.hanh.trinh</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[('stage', 'in', ('exception', 'returned', 'compensated'))]</field>
+        <field name="search_view_id" ref="view_lab_hanh_trinh_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Không có hành trình nào gặp sự cố</p>
+            <p>
+                Gồm 3 mốc kết thúc của nhánh khiếu nại: <b>Có sự cố</b> → <b>Đã trả hàng</b>
+                hoặc <b>Đã bồi thường</b>. Điểm quay về luồng chính: ghi rõ
+                <b>Bước quay về</b> trong tab Ngoại lệ rồi đóng hành trình — không để hồ sơ
+                khiếu nại thành luồng song song vĩnh viễn (AGENTS.md Luật 5).
+            </p>
+        </field>
+    </record>
+
+</odoo>

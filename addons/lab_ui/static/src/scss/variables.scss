@@ -1,0 +1,204 @@
+// =====================================================================================
+// lab_ui/static/src/scss/variables.scss  —  TẦNG BIẾN của theme "Dark Premium + Lime"
+//
+// NGUỒN DUY NHẤT CỦA MÀU: docs/adr/ADR-009-dark-premium-lime.md **§6** (bảng token chốt
+// 2026-10-30). Mọi giá trị màu dưới đây CHÉP NGUYÊN từ §6 — file này KHÔNG tự nghĩ màu mới.
+// ADR-007 (giấy ấm + forest) đã bị THAY THẾ: không còn token giấy ấm/hổ phách-nâu/rêu.
+//
+// DARK LÀ CHẾ ĐỘ DUY NHẤT: tầng CSS custom property `--lab-*` (backend.scss khối 1) khai
+// dark ngay trên `:root` nên áp thẳng, KHÔNG cần thuộc tính nào trên <html>/<body>.
+// KHÔNG có nhánh light, không có fallback sáng, không có cơ chế đổi theme — ADR-009 §8.
+//
+// Bundle khai báo: "web._assets_primary_variables" (+ "web.assets_backend" và
+// "web.assets_frontend" — xem __manifest__.py). Ở 17.0 bundle này = primary_variables.scss
+// + web/static/src/**/*.variables.scss (web/__manifest__.py:327).
+//
+// -------------------------------------------------------------------------------------
+// CƠ CHẾ "FILE CỦA TA NẠP SAU TRONG CÙNG BUNDLE NÊN THẮNG"
+// -------------------------------------------------------------------------------------
+// 1) lab_ui depends ["web"]  →  Odoo nối asset theo thứ tự phụ thuộc: asset của web đứng
+//    TRƯỚC asset của lab_ui. Vậy file này nằm SAU primary_variables.scss, đúng chỗ có
+//    $o-community-color mặc định (tím) của Odoo.
+// 2) SCSS: hai khai báo cùng một biến trong cùng scope, khai báo SAU thắng.
+//    ⇒ Mọi biến dưới đây ghi đè được mà KHÔNG cần `!default`.
+//    ⇒ Cũng vì thế TUYỆT ĐỐI không viết `!default` trong file này: nếu có, khai báo tím
+//      phía trước sẽ thắng và theme "không ăn" mà không báo lỗi.
+// 3) Các file TIÊU THỤ đều nạp sau bundle này (bootstrap_overridden.scss,
+//    secondary_variables.scss, rồi *.scss của từng view) ⇒ chúng đọc giá trị của ta.
+//
+// ⚠️ BẪY ĐÃ ĐO (đừng bỏ mục 2): primary_variables.scss không chỉ KHAI BÁO biến, nó còn
+//    TÍNH SẴN một số biến/map từ $o-brand-primary tại thời điểm nạp (= màu tím). Ghi đè
+//    biến gốc về sau không làm các giá trị phái sinh đó đổi. Đó là lý do có mục 2.
+//
+// ⚠️ BẪY THỨ HAI (đã trả giá ở trang /web/login): nút "Log in" mặc định lấy
+//    `$o-enterprise-color`, KHÔNG đi qua `$primary`/`$o-brand-primary`/`$o-btns-bs-override`.
+//    Đo pixel trên ảnh chụp thật: nút vẫn là màu enterprise dù mọi biến khác đã đổi.
+//    ⇒ Khai tường minh $o-enterprise-color ở mục 1 + giữ rule CSS `body.o_login .btn-primary`
+//    trong backend.scss (hai lớp bảo hiểm, rẻ hơn debug lại).
+// =====================================================================================
+
+
+// -------------------------------------------------------------------------------------
+// 0. TOKEN — bảng ADR-009 §6 (bản SCSS; bản CSS custom property ở backend.scss khối 1)
+//
+// Hai bản phải LUÔN khớp nhau: §6 là nguồn, đây là bản dùng lúc BIÊN DỊCH (map Bootstrap,
+// $o-*, $primary…), backend.scss là bản dùng lúc CHẠY (rule + theme login/dashboard).
+// Tương phản (WCAG 2.1, ĐO LẠI 2026-11-02 trên đúng các hex v5 — ADR-009 §7):
+//   ink   trên bg   = 17,62:1     ink-2 trên bg  = 4,72:1  (đạt AA cho chữ thường)
+//   ink-3 trên bg   =  2,50:1     ⇒ CHỈ dùng cho nét/đường, KHÔNG dùng làm chữ thường
+//   on-accent trên accent (lime) = 9,87:1
+//   trắng trên ink  = 19,61:1     ok/warn/bad/info trên trắng = 3,40 / 4,61 / 6,54 / 5,39
+//                                  (ok 3,40 < 4,5 ⇒ chip "Đã về kho" phải là pill nền nhạt + chữ đậm,
+//                                   xem theme-v5.scss khối CHIP)
+// -------------------------------------------------------------------------------------
+$lab-bg:        #F3F2F8;   // nền trang (lavender rất nhạt)
+$lab-s1:        #FFFFFF;   // bề mặt 1: card, panel, nav
+$lab-s2:        #F6F6FB;   // bề mặt 2: ô input, header bảng
+$lab-card:      #FFFFFF;   // card, bảng, panel
+$lab-card-2:    #F0F0F6;   // hover dòng/card, chip trung tính
+$lab-line:      rgba(11, 11, 18, .10);   // mọi đường phân tách
+$lab-line-2:    rgba(11, 11, 18, .20);   // input focus, khung chọn
+$lab-ink:       #0B0B12;   // chữ chính + NÚT CHÍNH (pill đen)
+$lab-ink-2:     #6B6B78;   // nhãn, mô tả (4,72:1 trên bg)
+$lab-ink-3:     #9A9AA6;   // nét mờ, viền phụ — KHÔNG dùng làm chữ
+$lab-accent:    #C2EE2F;   // lime: chip, thanh tiến độ, gạch nhấn (KHÔNG dùng làm chữ trên nền sáng)
+$lab-accent-2:  #D4F84E;   // lime hover
+$lab-on-accent: #2B3300;   // CHỮ TRÊN NỀN LIME (9,87:1)
+$lab-ok:        #2F9E5F;   // "Đã về kho"
+$lab-warn:      #A06A00;   // "Chờ gán", sát ngưỡng
+$lab-bad:       #B3261E;   // "Thất bại", huỷ
+$lab-info:      #2A6EA8;   // "Đang đi lấy"
+$lab-c1:        #6F9600;   // series 1 — olive đậm (3,48:1 trên trắng; lime #C2EE2F chỉ 1,35:1 nên KHÔNG dùng làm nét chart)
+$lab-c2:        #12857A;   // series 2 — teal đậm (4,50:1 trên trắng)
+$lab-c3:        #2A6EA8;   // series 3 (blue)
+$lab-grid:      rgba(11, 11, 18, .07);   // trục, gridline của chart
+// Chữ/đường "hành động": v5 dùng MỰC, không dùng lime (lime trên nền sáng chỉ ~1,2:1)
+$lab-action:    #0B0B12;
+
+
+// -------------------------------------------------------------------------------------
+// 1. BIẾN ODOO — ghi đè KHÔNG `!default` (bắt buộc: xem cơ chế ở đầu file)
+// -------------------------------------------------------------------------------------
+$o-community-color: $lab-action;
+$o-brand-odoo: $lab-action;
+$o-brand-primary: $lab-action;
+$o-action: $lab-action;
+
+// MÀU SEMANTIC — 4 màu mặc định của Odoo là bảng màu "web demo", không thuộc dự án.
+// bootstrap_overridden.scss đọc lại ĐÚNG 4 biến này để sinh $success/$info/$warning/
+// $danger ⇒ ghi đè ở đây là đủ cho `.text-*` / `.bg-*` / `.table-*` của Bootstrap.
+// ⚠️ Dù vậy rule `decoration-*` của tree KHÔNG được phép nhuộm chữ trong dòng dữ liệu —
+//    xem backend.scss §13.1 (chữ ô dữ liệu luôn về --lab-ink, màu chỉ còn ở chip).
+$o-success: $lab-ok;
+$o-info: $lab-info;
+$o-warning: $lab-warn;
+$o-danger: $lab-bad;
+
+// Nút "Đăng nhập" của /web/login lấy màu này (bẫy thứ hai ở đầu file).
+// v5: CTA = đen, không phải lime.
+$o-enterprise-color: $lab-action;
+
+$o-main-text-color: $lab-ink;
+$o-main-headings-color: $lab-ink;
+$o-main-color-muted: $lab-ink-2;            // màu ĐẶC (không rgba) để đạt 7:1 trên bg
+$o-main-bg-color: $lab-bg;
+$o-body-bg: $lab-bg;                        // xem ghi chú (a) bên dưới
+$o-webclient-background-color: $lab-bg;     // nền backend THẬT của 17.0 ($body-bg lấy từ đây)
+$o-view-background-color: $lab-card;        // nền sheet/list/kanban
+$o-border-color: $lab-line;                 // viền mảnh duy nhất -> $border-color của Bootstrap
+
+// Trạng thái active (nav, dòng chọn, segmented): nền card, chữ ink, viền nhấn lime.
+$o-component-active-bg: $lab-card;
+$o-component-active-color: $lab-ink;
+$o-component-active-border: $lab-action;    // phái sinh từ $o-action (tím) -> phải khai lại
+$o-main-link-color: $lab-action;            // phái sinh = darken($o-brand-primary) -> khai lại
+$o-input-border-required: $lab-bad;         // phái sinh từ $o-brand-primary -> khai lại
+
+// Bo góc: §6 cho 5 bậc 8/10/16/20/24 — control 10, input 8, card 16 (panel dùng CSS var).
+$o-border-radius: 10px;                     // nút, badge, dropdown (gốc .25rem)
+$o-border-radius-sm: 8px;                   // gốc .1875rem
+$o-border-radius-lg: 16px;                  // gốc .375rem (card — dùng ở backend.scss)
+
+// (a) $o-body-bg: 17.0 KHÔNG đọc biến này nữa — bootstrap_overridden.scss đặt
+//     $body-bg: $o-webclient-background-color. Vẫn khai để giữ đúng hợp đồng và để bản
+//     sau (nếu đổi tên ngược lại) không bị hụt màu. Giá trị trùng token --lab-bg.
+
+// Typography: MỘT họ chữ cho toàn UI (§6: Inter, "Segoe UI", system-ui). Không nạp font
+// từ CDN — không thêm asset ngoài; máy không có Inter thì rơi xuống Segoe UI/system-ui.
+$lab-font-stack: (Inter, "Segoe UI", system-ui, sans-serif);
+$o-system-fonts: $lab-font-stack;
+$o-font-family-sans-serif: $lab-font-stack;
+$o-headings-font-family: $o-font-family-sans-serif;   // bỏ "SF Pro Display" của mặc định
+$font-family-sans-serif: $o-font-family-sans-serif;   // để cả bundle frontend dùng cùng stack
+
+
+// -------------------------------------------------------------------------------------
+// 2. GIÁ TRỊ PHÁI SINH BỊ "ĐÓNG BĂNG" Ở primary_variables.scss (tính bằng màu tím)
+//    Không khai lại thì còn tím: link, nút primary, text-action, bg-action...
+// -------------------------------------------------------------------------------------
+$o-text-colors-custom: (
+    "action": $lab-action,
+    "favourite": $o-main-favorite-color,
+);
+$o-bg-colors-custom: (
+    "action": $lab-action,
+    "view": $lab-card,
+    "favourite": $o-main-favorite-color,
+);
+
+// .btn-primary / .btn-secondary sinh từ 2 map này (bootstrap_review_backend.scss), KHÔNG
+// sinh từ $primary của Bootstrap ⇒ phải khai lại đủ 9 khóa cho mỗi entry (Odoo yêu cầu
+// "all states must be defined").
+// Primary: nền ĐEN + chữ trắng (19,61:1) — v5: CTA là pill đen, lime không làm CTA.
+// Secondary: nền trắng, viền 1px line, chữ ink; hover nền card-2.
+$o-btns-bs-override: map-merge($o-btns-bs-override, (
+    "primary": (
+        background: $lab-ink,
+        border: $lab-ink,
+        color: #FFFFFF,
+        hover-background: #1B1B26,
+        hover-border: #1B1B26,
+        hover-color: #FFFFFF,
+        active-background: #1B1B26,
+        active-border: #1B1B26,
+        active-color: #FFFFFF,
+    ),
+    "secondary": (
+        background: transparent,
+        border: $lab-line,
+        color: $lab-ink,
+        hover-background: $lab-s2,
+        hover-border: $lab-line-2,
+        hover-color: $lab-ink,
+        active-background: $lab-s2,
+        active-border: $lab-ink,
+        active-color: $lab-ink,
+    ),
+));
+
+$o-btns-bs-outline-override: map-merge($o-btns-bs-outline-override, (
+    "secondary": (
+        background: transparent,
+        border: $lab-line,
+        color: $lab-ink,
+        hover-background: $lab-s2,
+        hover-border: $lab-line-2,
+        hover-color: $lab-ink,
+        active-background: $lab-s2,
+        active-border: $lab-ink,
+        active-color: $lab-ink,
+    ),
+));
+
+
+// -------------------------------------------------------------------------------------
+// 3. ÁNH XẠ BOOTSTRAP NGAY TẠI ĐÂY — không đợi bootstrap_overridden*.scss
+//    bootstrap_overridden.scss CHỈ có trong bundle BACKEND. Trang /web/login đi qua
+//    bundle FRONTEND (web.frontend_layout -> web.assets_frontend) và ở đó
+//    $primary = $blue (#0d6efd của Bootstrap) / $body-bg = #fff
+//    (bootstrap_overridden_frontend.scss) ⇒ nền login vẫn SÁNG nếu không khai ở đây.
+//    ⇒ Khai tường minh: cả 2 bundle cùng nền tối, cùng một màu nhấn lime.
+// -------------------------------------------------------------------------------------
+$primary: $lab-action;
+$body-bg: $lab-bg;
+$body-color: $lab-ink;

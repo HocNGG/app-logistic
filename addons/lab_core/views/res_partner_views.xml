@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  =====================================================================================
+  KHÁCH HÀNG / SHOP (res.partner) — chỗ TẠO KHÁCH MỚI của bước ① (CS nhận yêu cầu lấy hàng).
+
+  VÌ SAO CẦN: đo thật 2026-10-29 trên DB `odoo17_lab` — `cs01` KHÔNG tạo được khách:
+    * ACL `res.partner` chỉ cấp `perm_create` cho nhóm "Contact Creation"
+      (`base.group_partner_manager`); nhóm CS chỉ kế thừa `sales_team.group_sale_salesman`
+      (đọc, KHÔNG tạo) ⇒ bấm "Tạo và chỉnh sửa" trong ô Shop là bị chặn.
+    * Không có menu nào trỏ tới `res.partner` ⇒ CS không có chỗ quản lý khách.
+  Cách sửa (native-first, không model mới):
+    * thêm 1 dòng ACL cho `lab_core.group_cs` (đọc/ghi/tạo, KHÔNG xoá) —
+      xem `security/ir.model.access.csv`, KHÔNG cấp `base.group_partner_manager` (quá rộng);
+    * file này: list + form + search cho khách hàng và menu **Khách hàng (Shop)**.
+
+  PHẠM VI: chỉ hiện khách đã phát sinh giao dịch (`customer_rank > 0`) để danh sách không lẫn
+  127 partner demo (nhà cung cấp, đại lý, người dùng…). Tạo mới từ đây tự đặt `customer_rank = 1`
+  (nhờ context `default_customer_rank`) nên khách mới hiện ngay trong danh sách.
+  =====================================================================================
+-->
+<odoo>
+
+    <!-- ============================================================= -->
+    <!-- DANH SÁCH                                                     -->
+    <!-- ============================================================= -->
+    <record id="view_lab_partner_list" model="ir.ui.view">
+        <field name="name">lab.res.partner.list</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <tree string="Khách hàng / Shop" sample="1">
+                <field name="name"/>
+                <field name="phone"/>
+                <field name="email"/>
+                <field name="street"/>
+                <field name="city"/>
+                <field name="country_id"/>
+                <field name="customer_rank" optional="hide"/>
+                <field name="create_date" optional="show" string="Ngày tạo"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- ============================================================= -->
+    <!-- FORM: đủ thông tin để CS nhận hàng và tài xế tìm được điểm lấy -->
+    <!-- ============================================================= -->
+    <record id="view_lab_partner_form" model="ir.ui.view">
+        <field name="name">lab.res.partner.form</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <form string="Khách hàng / Shop">
+                <header>
+                    <button name="%(base.action_partner_form)d" type="action"
+                            string="Mở form liên hệ đầy đủ" class="oe_highlight"
+                            groups="base.group_partner_manager"
+                            help="Form đầy đủ của Odoo (tab Nội bộ, Kế toán…) — chỉ nhóm Contact Creation thấy nút này."/>
+                </header>
+                <sheet>
+                    <field name="image_1920" widget="image" class="oe_avatar"
+                           options="{'preview_image': 'image_128'}"/>
+                    <div class="oe_title">
+                        <label for="name" string="Tên khách / Shop"/>
+                        <h1><field name="name" placeholder="VD: Nội Thất Gỗ Việt"/></h1>
+                        <!-- NHÃN CHO CÔNG TẮC is_company (sửa 2026-11-03 — khách hỏi
+                             "nút này là nút gì"): trước đây là toggle trơ, không nhãn,
+                             người dùng không biết bật/tắt cái gì. Nay có nhãn + gợi ý ngắn. -->
+                        <div class="d-flex align-items-center gap-2 mt-1">
+                            <label for="is_company" string="Là công ty"
+                                   class="mb-0 text-muted"
+                                   style="font-size:12px; letter-spacing:.02em;"/>
+                            <field name="is_company" widget="boolean_toggle"
+                                   help="Bật: khách là CÔNG TY/PHÁP NHÂN — có mã số thuế, hoá đơn xuất theo tên công ty. Tắt: khách là CÁ NHÂN/HỘ SHOP LẺ — hoá đơn theo tên người."/>
+                        </div>
+                        <div class="text-muted" style="font-size:11.5px; max-width:52ch;">
+                            <b>Bật</b> = khách là <b>công ty / pháp nhân</b> (có MST, xuất hoá đơn
+                            theo công ty). <b>Tắt</b> = khách <b>cá nhân / hộ shop lẻ</b>.
+                        </div>
+                    </div>
+                    <group>
+                        <group string="Liên hệ">
+                            <field name="phone" widget="phone" placeholder="09xx xxx xxx"/>
+                            <field name="email" widget="email"/>
+                            <field name="vat" placeholder="Mã số thuế"/>
+                        </group>
+                        <group string="Địa chỉ lấy hàng">
+                            <field name="street" placeholder="Số nhà + đường"/>
+                            <field name="street2"/>
+                            <field name="city"/>
+                            <field name="state_id" options="{'no_create': True}"/>
+                            <field name="country_id" options="{'no_create': True}"/>
+                            <field name="zip"/>
+                        </group>
+                    </group>
+                    <group string="Ghi chú cho điều phối">
+                        <field name="comment" nolabel="1" placeholder="Giờ mở cửa, người liên hệ, yêu cầu đóng gói…"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ============================================================= -->
+    <!-- TÌM KIẾM                                                      -->
+    <!-- ============================================================= -->
+    <record id="view_lab_partner_search" model="ir.ui.view">
+        <field name="name">lab.res.partner.search</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <search string="Tìm khách hàng">
+                <field name="name" string="Tên / Shop"/>
+                <field name="phone"/>
+                <field name="email"/>
+                <field name="city"/>
+                <filter name="f_shop" string="Khách đã có giao dịch"
+                        domain="[('customer_rank', '&gt;', 0)]"/>
+                <separator/>
+                <filter name="f_company" string="Công ty" domain="[('is_company', '=', True)]"/>
+                <group expand="0" string="Nhóm theo">
+                    <filter name="g_country" string="Quốc gia"
+                            context="{'group_by': 'country_id'}"/>
+                    <filter name="g_city" string="Thành phố" context="{'group_by': 'city'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ============================================================= -->
+    <!-- ACTION + MENU                                                 -->
+    <!-- ============================================================= -->
+    <record id="action_lab_khach_hang" model="ir.actions.act_window">
+        <field name="name">Khách hàng (Shop)</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_lab_partner_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'tree', 'view_id': ref('view_lab_partner_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_lab_partner_form')})]"/>
+        <!-- Chỉ khách đã có giao dịch; tạo mới từ đây tự thành khách (customer_rank = 1). -->
+        <field name="domain">[('customer_rank', '&gt;', 0)]</field>
+        <field name="context">{'default_customer_rank': 1, 'default_is_company': True}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Chưa có khách hàng nào</p>
+            <p>Bấm <b>Tạo</b> để thêm shop / khách hàng mới. Sau đó tạo <b>Yêu cầu lấy hàng</b>
+               và chọn khách này ở ô <i>Shop</i>.</p>
+        </field>
+    </record>
+
+    <record id="menu_lab_khach_hang" model="ir.ui.menu">
+        <field name="name">Khách hàng (Shop)</field>
+        <field name="sequence">5</field>
+        <field name="parent_id" ref="lab_core.menu_lab_root"/>
+        <field name="action" ref="action_lab_khach_hang"/>
+        <!-- CS tạo khách; Sale Admin/Manager duyệt & sửa; BGĐ chỉ đọc. -->
+        <field name="groups_id" eval="[
+            (4, ref('lab_core.group_cs')),
+            (4, ref('lab_core.group_sale_admin')),
+            (4, ref('lab_core.group_manager')),
+            (4, ref('lab_core.group_director')),
+        ]"/>
+    </record>
+
+</odoo>

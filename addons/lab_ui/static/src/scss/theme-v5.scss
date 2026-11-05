@@ -1,0 +1,573 @@
+// =====================================================================================
+// theme-v5.scss — LỚP OVERRIDE "v5 LIGHT ERP" (duyệt 2026-10-30)
+// -------------------------------------------------------------------------------------
+// Vì sao chỉ là lớp override: backend.scss + dashboard.scss (≈98 KB) đã 100% dùng
+// var(--lab-*), nên đổi giá trị token ở :root là đổi cả sản phẩm sang light. File này
+// khai CUỐI bundle nên thắng, và chỉ sửa những chỗ dark được giả định cứng
+// (nav active lime, nút primary lime, login panel tối, list header tối).
+//
+// Bộ dark v3 vẫn backup ở .tmp\backup-ui-v3-dark (revert = copy lại + xoá file này khỏi
+// manifest). Không sửa odoo/addons/web.
+// =====================================================================================
+
+:root {
+    color-scheme: light;
+
+    /* nền & bề mặt */
+    --lab-bg: #f3f2f8;
+    --lab-s1: #ffffff;
+    --lab-s2: #fafafd;
+    --lab-card: #ffffff;
+    --lab-card-2: #f6f6fb;
+
+    /* đường kẻ */
+    --lab-line: rgba(16, 16, 32, 0.07);
+    --lab-line-2: rgba(16, 16, 32, 0.12);
+
+    /* mực */
+    --lab-ink: #0b0b12;
+    --lab-ink-2: #6b6b78;
+    --lab-ink-3: #9a9aa6;
+
+    /* nhấn = LIME (dùng cho chip/tooltip/nhấn nhỏ), CTA chính = ĐEN như ảnh mẫu */
+    --lab-accent: #c2ee2f;
+    --lab-accent-2: #d4f84e;
+    --lab-accent-rgb: 194, 238, 47;
+    --lab-on-accent: #2b3300;
+
+    /* trạng thái (chữ đậm + nền pastel) */
+    --lab-ok: #2f9e5f;
+    --lab-warn: #a06a00;
+    --lab-bad: #b3261e;
+    --lab-info: #2a6ea8;
+    --lab-ok-rgb: 47, 158, 95;
+    --lab-warn-rgb: 160, 106, 0;
+    --lab-bad-rgb: 179, 38, 30;
+    --lab-info-rgb: 42, 110, 168;
+
+    /* chart */
+    --lab-c1: #6F9600;
+    --lab-c2: #12857A;
+    --lab-c3: #2a6ea8;
+    --lab-grid: rgba(16, 16, 32, 0.07);
+
+    /* bóng mềm kiểu ảnh mẫu */
+    --lab-shadow-1: 0 1px 2px rgba(16, 16, 32, 0.04), 0 12px 28px rgba(16, 16, 32, 0.06);
+    --lab-row-hover: #f7f7fc;
+    --lab-row-selected: #f6fbe8;
+    --lab-neutral-tint: rgba(16, 16, 32, 0.05);
+    --lab-selection: rgba(194, 238, 47, 0.45);
+}
+
+/* ---------------------------------------------------------------- NAVBAR */
+.o_web_client .o_main_navbar {
+    background-color: var(--lab-s1) !important;
+    border-bottom: 1px solid var(--lab-line);
+}
+
+/* mục đang chọn = PILL ĐEN chữ trắng (theo ảnh mẫu), không phải lime */
+.o_web_client .o_main_navbar .o_nav_entry.o_nav_entry_active,
+.o_web_client .o_main_navbar .o_nav_entry.active {
+    background-color: var(--lab-ink) !important;
+    color: #ffffff !important;
+    border-radius: 999px !important;
+    font-weight: 700;
+}
+
+.o_web_client .o_main_navbar .o_nav_entry.o_nav_entry_active:hover,
+.o_web_client .o_main_navbar .o_nav_entry.active:hover {
+    background-color: #1b1b26 !important;
+    color: #ffffff !important;
+}
+
+.o_web_client .o_main_navbar .o_nav_entry {
+    color: var(--lab-ink-2);
+    border-radius: 999px;
+}
+
+.o_web_client .o_main_navbar .o_nav_entry:hover {
+    background-color: var(--lab-card-2);
+    color: var(--lab-ink);
+}
+
+.o_web_client .o_main_navbar .o_menu_brand,
+.o_web_client .o_main_navbar .o_navbar_apps_menu .dropdown-toggle,
+.o_web_client .o_main_navbar .o_menu_sections .dropdown-toggle {
+    color: var(--lab-ink) !important;
+}
+
+/* ---------------------------------------------------------------- CONTROL PANEL / TITLE */
+.o_web_client .o_control_panel {
+    background-color: var(--lab-bg) !important;
+    border-bottom: 0;
+}
+
+.o_web_client .o_control_panel .o_breadcrumb,
+.o_web_client .o_control_panel .o_breadcrumb .active,
+.o_web_client .o_control_panel .o_breadcrumb .o_last_breadcrumb_item {
+    color: var(--lab-ink) !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.035em !important;
+}
+
+.o_web_client .o_control_panel .o_breadcrumb {
+    font-size: 30px !important;
+}
+
+.o_web_client .o_control_panel .o_searchview {
+    background-color: var(--lab-s1) !important;
+    border: 1px solid var(--lab-line) !important;
+    border-radius: 999px !important;
+    box-shadow: none !important;
+}
+
+.o_web_client .o_control_panel .o_searchview:focus-within {
+    border-color: var(--lab-line-2) !important;
+    box-shadow: 0 0 0 3px rgba(194, 238, 47, 0.30) !important;
+}
+
+.o_web_client .o_control_panel .o_searchview_facet,
+.o_web_client .o_control_panel .o_searchview_facet .o_facet_values {
+    background-color: var(--lab-card-2) !important;
+    color: var(--lab-ink) !important;
+    border-radius: 999px !important;
+}
+
+/* ---------------------------------------------------------------- NÚT CHÍNH = ĐEN, PHỤ = TRẮNG VIỀN */
+.o_web_client .btn-primary,
+.o_web_client .o_control_panel .o_cp_buttons .btn-primary,
+.o_web_client .o_control_panel .o_cp_left .btn-primary {
+    background-color: var(--lab-ink) !important;
+    background-image: none !important;
+    border-color: var(--lab-ink) !important;
+    border-radius: 999px !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+}
+
+.o_web_client .btn-primary:hover,
+.o_web_client .btn-primary:focus-visible {
+    background-color: #1b1b26 !important;
+    border-color: #1b1b26 !important;
+    color: #ffffff !important;
+}
+
+.o_web_client .btn-secondary,
+.o_web_client .btn-outline-secondary {
+    background-color: var(--lab-s1) !important;
+    background-image: none !important;
+    border: 1px solid var(--lab-line) !important;
+    border-radius: 999px !important;
+    color: var(--lab-ink-2) !important;
+    font-weight: 600 !important;
+}
+
+.o_web_client .btn-secondary:hover,
+.o_web_client .btn-outline-secondary:hover {
+    background-color: var(--lab-card-2) !important;
+    color: var(--lab-ink) !important;
+}
+
+/* accent (lime) giữ cho chip/tooltip/thanh tiến độ — không dùng làm nút chính nữa */
+.btn-link,
+.o_web_client .o_field_widget .btn-link {
+    color: var(--lab-ink) !important;
+}
+
+/* ---------------------------------------------------------------- LIST */
+.o_web_client .o_list_view,
+.o_web_client .o_content {
+    background-color: var(--lab-bg) !important;
+}
+
+.o_web_client .o_list_view .o_list_table {
+    background-color: var(--lab-card) !important;
+    border-radius: 20px !important;
+    overflow: hidden;
+    border: 1px solid var(--lab-line);
+}
+
+.o_web_client .o_list_view .o_list_table thead th {
+    background-color: var(--lab-card-2) !important;
+    color: var(--lab-ink-2) !important;
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.05em !important;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--lab-line) !important;
+}
+
+.o_web_client .o_list_view .o_list_table > tbody > tr.o_data_row > td {
+    background-color: var(--lab-card) !important;
+    border-bottom: 1px solid var(--lab-line) !important;
+    color: var(--lab-ink) !important;
+}
+
+.o_web_client .o_list_view .o_list_table > tbody > tr.o_data_row:hover > td {
+    background-color: var(--lab-row-hover) !important;
+}
+
+.o_web_client .o_list_view .o_list_table > tbody > tr.o_data_row.o_data_row_selected > td {
+    background-color: var(--lab-row-selected) !important;
+    color: var(--lab-ink) !important;
+}
+
+.o_web_client .o_list_view .o_list_table > tbody > tr.o_data_row.o_data_row_selected > td:first-child {
+    box-shadow: inset 2px 0 0 var(--lab-accent-2);
+}
+
+.o_web_client .o_list_view .o_data_cell .o_field_widget,
+.o_web_client .o_list_view .o_data_cell span {
+    color: inherit;
+}
+
+/* ---------------------------------------------------------------- FORM = CARD TRẮNG */
+.o_web_client .o_form_view {
+    background-color: var(--lab-bg) !important;
+}
+
+.o_web_client .o_form_view .o_form_sheet {
+    background-color: var(--lab-card) !important;
+    border: 1px solid var(--lab-line) !important;
+    border-radius: 20px !important;
+    box-shadow: var(--lab-shadow-1) !important;
+}
+
+.o_web_client .o_form_view .o_group .o_form_label,
+.o_web_client .o_form_view .o_form_label {
+    color: var(--lab-ink-2) !important;
+}
+
+.o_web_client .o_form_view .o_horizontal_separator {
+    color: var(--lab-ink) !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.02em;
+}
+
+.o_web_client .o_form_view .o_field_widget input,
+.o_web_client .o_form_view .o_field_widget textarea,
+.o_web_client .o_form_view .o_field_widget select {
+    background-color: var(--lab-card-2) !important;
+    border: 1px solid var(--lab-line) !important;
+    border-radius: 12px !important;
+    color: var(--lab-ink) !important;
+}
+
+/* statusbar: bước hiện tại = pill đen (giống nav active), các bước khác = trắng viền */
+.o_web_client .o_form_statusbar {
+    background-color: transparent !important;
+    border-bottom: 1px solid var(--lab-line) !important;
+}
+
+.o_web_client .o_form_statusbar .o_statusbar_status .btn.o_arrow_button {
+    background-color: var(--lab-s1) !important;
+    border: 1px solid var(--lab-line) !important;
+    border-radius: 999px !important;
+    color: var(--lab-ink-2) !important;
+    font-weight: 600 !important;
+}
+
+.o_web_client .o_form_statusbar .o_statusbar_status .btn.o_arrow_button_current,
+.o_web_client .o_form_statusbar .o_statusbar_status .btn.o_arrow_button_current:hover {
+    background-color: var(--lab-ink) !important;
+    border-color: var(--lab-ink) !important;
+    color: #ffffff !important;
+}
+
+/* notebook tab = pill */
+.o_web_client .o_form_view .o_notebook .nav-tabs .nav-link.active {
+    background-color: var(--lab-ink) !important;
+    border-color: var(--lab-ink) !important;
+    color: #ffffff !important;
+    border-radius: 999px !important;
+}
+
+.o_web_client .o_form_view .o_notebook .nav-tabs .nav-link {
+    border-radius: 999px !important;
+    color: var(--lab-ink-2) !important;
+}
+
+/* smart button = card trắng viền mềm */
+.o_web_client .o_form_view .oe_button_box .oe_stat_button {
+    background-color: var(--lab-card) !important;
+    border: 1px solid var(--lab-line) !important;
+    border-radius: 16px !important;
+    color: var(--lab-ink-2) !important;
+}
+
+.o_web_client .o_form_view .oe_button_box .oe_stat_button .o_stat_value {
+    color: var(--lab-ink) !important;
+}
+
+/* ---------------------------------------------------------------- KANBAN / MODAL / CHATTER */
+.o_web_client .o_kanban_view .o_kanban_record {
+    background-color: var(--lab-card) !important;
+    border: 1px solid var(--lab-line) !important;
+    border-radius: 20px !important;
+    box-shadow: none !important;
+}
+
+.o_web_client .modal-content {
+    background-color: var(--lab-s1) !important;
+    border-radius: 24px !important;
+    border: 1px solid var(--lab-line) !important;
+}
+
+.o_web_client .dropdown-menu {
+    background-color: var(--lab-s1) !important;
+    border: 1px solid var(--lab-line) !important;
+    border-radius: 16px !important;
+    box-shadow: var(--lab-shadow-1) !important;
+}
+
+.o_web_client .dropdown-item {
+    color: var(--lab-ink-2);
+}
+
+.o_web_client .dropdown-item:hover,
+.o_web_client .dropdown-item:focus {
+    background-color: var(--lab-card-2) !important;
+    color: var(--lab-ink) !important;
+}
+
+.o_web_client .o_form_view .o_chatter,
+.o_web_client .o_form_view .o-mail-Chatter {
+    background-color: var(--lab-s1) !important;
+    border: 1px solid var(--lab-line) !important;
+    border-radius: 20px !important;
+}
+
+/* ---------------------------------------------------------------- LOGIN (bundle frontend) */
+body.o_login,
+body.o_login .o_background {
+    background-color: var(--lab-bg) !important;
+}
+
+body.o_login .lab_login_brand {
+    background-color: var(--lab-s1) !important;
+    border-right: 1px solid var(--lab-line) !important;
+}
+
+body.o_login .lab_login_mark_unit {
+    background-color: var(--lab-ink) !important;
+}
+
+body.o_login .lab_login_mark_unit + .lab_login_mark_unit {
+    background-color: var(--lab-accent) !important;
+}
+
+body.o_login .lab_login_mark_base {
+    background-color: var(--lab-line-2) !important;
+}
+
+body.o_login .lab_login_title,
+body.o_login .lab_login_wordmark,
+body.o_login dl.lab_login_proof dt {
+    color: var(--lab-ink) !important;
+}
+
+body.o_login .lab_login_claim,
+body.o_login dl.lab_login_proof dd,
+body.o_login .lab_login_foot {
+    color: var(--lab-ink-2) !important;
+}
+
+body.o_login .card {
+    background-color: var(--lab-s1) !important;
+    border: 1px solid var(--lab-line) !important;
+    border-radius: 24px !important;
+    box-shadow: var(--lab-shadow-1) !important;
+}
+
+body.o_login .form-control {
+    background-color: var(--lab-card-2) !important;
+    border: 1px solid var(--lab-line) !important;
+    border-radius: 12px !important;
+    color: var(--lab-ink) !important;
+}
+
+body.o_login .btn-primary {
+    background-color: var(--lab-ink) !important;
+    border-color: var(--lab-ink) !important;
+    border-radius: 999px !important;
+    color: #ffffff !important;
+}
+
+/* ---------------------------------------------------------------- FIX v5.1 */
+/* (a) Odoo gan .text-muted len cell => chu cot Tai xe/Khung gio bi nhat tren nen trang.
+       Ep moi cell ve mau muc, chi giu mau o chip/badge. */
+.o_web_client .o_list_view .o_data_cell,
+.o_web_client .o_list_view .o_data_cell .text-muted,
+.o_web_client .o_list_view .o_data_cell .text-body,
+.o_web_client .o_list_view .o_data_cell a {
+    color: var(--lab-ink) !important;
+}
+
+.o_web_client .o_list_view .o_data_cell .o_field_badge,
+.o_web_client .o_list_view .o_data_cell .badge,
+.o_web_client .o_list_view .o_data_cell .o_field_statusbar {
+    color: inherit !important;
+}
+
+/* (a2) CHIP TRẠNG THÁI trên nền SÁNG — đo 2026-11-02 trên ảnh `v53-web-jobs-1440.png`:
+       chip "Đã lấy được hàng" / "Đã gán tài xe" ra CHỮ LIME trên nền tint lime ⇒ ~1,2:1,
+       gần như không đọc được. Nguyên nhân: backend.scss §5 đặt `color: var(--lab-accent)`
+       (đúng cho nền TỐI cũ). v5 = nền sáng ⇒ chữ phải là MỰC ĐẬM cùng hệ, nền là tint nhạt.
+       Đặc tả selector phải ≥ bản cũ (có `.o_badge_cell`) thì mới thắng `!important`. */
+.o_web_client .o_list_view .o_badge_cell .badge,
+.o_web_client .o_list_view .o_data_cell .o_badge_cell .badge {
+    border-radius: 999px !important;
+    font-weight: 700 !important;
+    padding: 3px 10px !important;
+}
+
+.o_web_client .o_list_view .o_badge_cell .badge.text-bg-primary {
+    background-color: var(--lab-accent-tint-2) !important;
+    color: var(--lab-accent-ink) !important;
+}
+
+.o_web_client .o_list_view .o_badge_cell .badge.text-bg-info {
+    background-color: var(--lab-warn-tint) !important;
+    color: var(--lab-warn-ink) !important;
+}
+
+.o_web_client .o_list_view .o_badge_cell .badge.text-bg-success {
+    background-color: var(--lab-ok-tint) !important;
+    color: var(--lab-ok-ink) !important;
+}
+
+.o_web_client .o_list_view .o_badge_cell .badge.text-bg-warning {
+    background-color: var(--lab-neutral-tint) !important;
+    color: var(--lab-ink-2) !important;
+}
+
+.o_web_client .o_list_view .o_badge_cell .badge.text-bg-danger {
+    background-color: var(--lab-bad-tint) !important;
+    color: var(--lab-bad-ink) !important;
+}
+
+/* (a3) Vòng focus: lime trên nền sáng ~1,2:1 — vô hình. Dùng mực. */
+.o_web_client a:focus-visible,
+.o_web_client button:focus-visible,
+.o_web_client .btn:focus-visible,
+.o_web_client .o_data_row:focus-visible,
+.o_web_client .o_switch_view:focus-visible,
+.o_web_client input:focus-visible,
+.o_web_client select:focus-visible {
+    outline: 2px solid var(--lab-ink) !important;
+    outline-offset: 2px !important;
+}
+
+/* (b) Tieu de trang: 17.0 dat ten man trong .o_breadcrumb > .o_last_breadcrumb_item;
+       them selector con + do rong de len 2 dong nhu anh mau. */
+.o_web_client .o_control_panel .o_breadcrumb,
+.o_web_client .o_control_panel .o_breadcrumb .o_last_breadcrumb_item,
+.o_web_client .o_control_panel .o_breadcrumb .o_last_breadcrumb_item > *,
+.o_web_client .o_control_panel .o_breadcrumb > *:last-child {
+    font-size: 30px !important;
+    line-height: 1.15 !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.035em !important;
+    color: var(--lab-ink) !important;
+}
+
+.o_web_client .o_control_panel .o_breadcrumb .o_last_breadcrumb_item + * {
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    color: var(--lab-ink-2) !important;
+}
+
+/* (c) Khung KPI strip (do kpi_strip.js chen vao) */
+.lab-kpi-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 4px 22px 10px; }
+.lab-kpi { position: relative; overflow: hidden; background: var(--lab-card); border: 1px solid var(--lab-line); border-radius: 20px; padding: 14px 16px; }
+.lab-kpi .glow { position: absolute; left: -26px; top: -26px; width: 118px; height: 118px; border-radius: 50%; }
+.lab-kpi.g .glow { background: radial-gradient(circle, rgba(194,238,47,.38) 0%, rgba(255,255,255,0) 70%); }
+.lab-kpi.b .glow { background: radial-gradient(circle, rgba(99,216,198,.32) 0%, rgba(255,255,255,0) 70%); }
+.lab-kpi.r .glow { background: radial-gradient(circle, rgba(255,86,86,.18) 0%, rgba(255,255,255,0) 70%); }
+.lab-kpi.mint { background: #cbe7da; border-color: transparent; }
+.lab-kpi .k { position: relative; font-size: 11.5px; font-weight: 600; color: var(--lab-ink-2); }
+.lab-kpi.mint .k { color: #2f5c4a; }
+.lab-kpi .v { position: relative; margin-top: 8px; font-size: 30px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; color: var(--lab-ink); }
+.lab-kpi .v small { font-size: 11.5px; font-weight: 600; color: var(--lab-ink-2); margin-left: 3px; }
+.lab-kpi .d { position: relative; display: inline-block; margin-top: 9px; padding: 3px 8px; border-radius: 8px; font-size: 10.5px; font-weight: 800;
+                background: var(--lab-accent); color: var(--lab-on-accent); }
+.lab-kpi .d.grey { background: rgba(16,16,32,.06); color: var(--lab-ink-2); }
+.lab-kpi .d.bad { background: rgba(179,38,30,.10); color: var(--lab-bad); }
+
+/* ----------------------------------------------------------------- FIX v5.2
+   NÚT LƯU / HUỶ CỦA FORM — "thiếu cái nút" (đo 2026-11-02, cs01, Khách hàng (Shop)).
+
+   Sự thật đo được (probe DOM, không đoán):
+     Odoo 17 vẽ nút Lưu/Huỷ thành HAI ICON 26x18 nằm trong
+     `.o_form_status_indicator_buttons`, và khối đó mang class `invisible` cho tới khi
+     form bị sửa. Đo trên form khách hàng khi đã gõ tên: khối vẫn `invisible`, nút chỉ còn
+     `<i class="fa fa-cloud-upload">` — người dùng không có chỗ nào bấm "Lưu".
+   Cách sửa: thuần CSS — luôn hiện, đổi thành pill có CHỮ ("Lưu" / "Huỷ") theo ngôn ngữ v5
+   (nút chính = đen). Không sửa Odoo, không patch view.
+
+   Vì sao dùng ::after thay vì sửa template: template nằm trong `odoo/addons/web` (Luật 1 — L4 cấm).
+   ::after chỉ trang trí, giữ nguyên hành vi hotkey s / j và aria-label gốc. */
+.o_web_client .o_form_status_indicator {
+    margin-left: 10px;
+}
+
+.o_web_client .o_form_status_indicator_buttons {
+    visibility: visible !important;   /* ghi đè .invisible — luôn nhìn thấy đường bấm */
+    gap: 8px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.o_web_client .o_form_status_indicator_buttons .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
+    padding: 0 14px !important;
+    border-radius: 999px !important;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+/* ẩn icon gốc để pill chỉ còn chữ — icon ☁/↺ ở 26x18 chính là thứ không ai thấy */
+.o_web_client .o_form_status_indicator_buttons .btn i {
+    display: none !important;
+}
+
+.o_web_client .o_form_button_save {
+    background-color: var(--lab-ink) !important;
+    border: 1px solid var(--lab-ink) !important;
+    color: #ffffff !important;
+}
+
+.o_web_client .o_form_button_save:hover {
+    background-color: #1b1b26 !important;
+    border-color: #1b1b26 !important;
+}
+
+.o_web_client .o_form_button_save::after {
+    content: "Lưu";
+}
+
+.o_web_client .o_form_button_cancel {
+    background-color: var(--lab-s1) !important;
+    border: 1px solid var(--lab-line) !important;
+    color: var(--lab-ink-2) !important;
+}
+
+.o_web_client .o_form_button_cancel:hover {
+    background-color: var(--lab-card-2) !important;
+    color: var(--lab-ink) !important;
+}
+
+.o_web_client .o_form_button_cancel::after {
+    content: "Huỷ";
+}
+
+/* Nút "New" trên form dùng .btn-outline-primary -> đang ra nền NÚT LIME, chữ đen.
+   Đây là hành vi v5 có chủ đích (tạo mới = nhấn), nhưng phải là pill để khớp .btn-primary. */
+.o_web_client .o_form_button_create {
+    border-radius: 999px !important;
+    font-weight: 700 !important;
+}

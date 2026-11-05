@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<title>PROTOTYPE v3 — APP (Tài xế) — duyệt thiết kế</title>
+<link rel="stylesheet" href="style.css" />
+<style>
+  /* Mobile ipvory: panel cao theo noi dung de sheet chi tiet luon thay; chu ke thua mau toi */
+  .app .content { display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+  .app .panel { flex: none; height: auto; }
+  .app .panel .t { color: var(--ink-ivory); }
+  .app .panel .d { color: var(--ink2-ivory); }
+</style></head>
+<body>
+<div class="app">
+  <div class="shell">
+
+    <div class="topbar">
+      <div class="brand"><span class="cube"></span>AppLogictics</div>
+      <div class="topbar-right">
+        <span class="icon-btn">⚙</span>
+        <span class="avatar">BH</span>
+      </div>
+    </div>
+
+    <div class="page-head" style="padding:14px 14px 4px">
+      <h1 class="page-title">Việc hôm nay</h1>
+    </div>
+
+    <!-- 2 thẻ KPI: 1 lime (nhấn) + 1 tối -->
+    <div class="stats">
+      <div class="stat hl">
+        <div class="k">Cần lấy</div>
+        <div class="v">14 <small>việc</small></div>
+        <div class="bar"><i style="width:64%"></i></div>
+      </div>
+      <div class="stat">
+        <div class="k">Đã lấy</div>
+        <div class="v">4 <small>việc</small></div>
+        <div class="bar"><i style="width:22%"></i></div>
+      </div>
+    </div>
+
+    <div class="filters" style="padding:0 14px 12px">
+      <span class="pill" style="flex:1">Lọc theo trạng thái <b>▾</b></span>
+      <span class="icon-btn">⌕</span>
+    </div>
+
+    <div class="content">
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Danh sách việc</h3>
+          <div class="seg"><span class="on">Đang làm <span class="n">14</span></span><span>Xong</span></div>
+        </div>
+        <div class="rows">
+          <div class="row">
+            <div class="who" style="width:auto;flex:1">
+              <span class="av">SA</span>
+              <div><div class="t">LH/26/4346 · Sách Cũ Sài Gòn</div><div class="d">19:00–22:00 · 7 kiện · 141 Lạch Tray, Hải Phòng</div></div>
+            </div>
+            <div class="st on">Mới</div>
+          </div>
+          <div class="row">
+            <div class="who" style="width:auto;flex:1">
+              <span class="av">BT</span>
+              <div><div class="t">LH/26/4349 · Bếp Từ Tân Tiến</div><div class="d">15:00–18:00 · 12 kiện · 9 Trường Chinh, Hà Nội</div></div>
+            </div>
+            <div class="st">Đã gán</div>
+          </div>
+          <div class="row">
+            <div class="who" style="width:auto;flex:1">
+              <span class="av">LK</span>
+              <div><div class="t">LH/26/4369 · Linh Kiện Ô Tô</div><div class="d">21:00–00:00 · 7 kiện · 63 Cách Mạng Tháng 8</div></div>
+            </div>
+            <div class="st">Đang đến</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD CHI TIẾT mobile: dark card dưới panel -->
+      <div class="float">
+        <div class="fh">
+          <div>
+            <div class="num">LH/26/4346</div>
+            <div style="font-size:11px;color:var(--ink-2);margin-top:2px">Sách Cũ Sài Gòn · Mới</div>
+          </div>
+        </div>
+        <div class="cols" style="grid-template-columns:1fr 1fr">
+          <div class="box3"><div class="k">Khung giờ</div><div class="v">19:00–22:00</div></div>
+          <div class="box3"><div class="k">Kiện / kg dự kiến</div><div class="v">7 · 141 kg</div></div>
+        </div>
+        <div class="meta">
+          <div class="m"><div class="k">Địa chỉ lấy</div><div class="v" style="font-size:12px">141 Lạch Tray, Ngô Quyền, Hải Phòng</div></div>
+        </div>
+        <div class="meta">
+          <div class="m"><div class="k">Liên hệ</div><div class="v">Chị Lan · 0912 445 566</div></div>
+        </div>
+        <div class="actions">
+          <button class="btn ghost" style="flex:1">Không lấy được</button>
+          <button class="btn primary" style="flex:1">Bắt đầu đi</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

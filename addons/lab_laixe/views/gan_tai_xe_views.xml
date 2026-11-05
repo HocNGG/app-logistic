@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  =====================================================================================
+  WIZARD "GÁN TÀI XẾ" — mở từ form Yêu cầu lấy hàng (nút trên header).
+
+  VÌ SAO (D1/D2, 2026-11-02): CS đã rời app, nên gán tài xế phải làm được trên WEB.
+  Wizard chỉ ghi `driver_id` rồi gọi `job.action_assign()` — KHÔNG nhân bản logic
+  (kiểm trạng thái + chatter nằm ở model, web và app đi cùng một đường).
+
+  `default_job_id` lấy từ `active_id` của bản ghi đang mở; `target=new` để hiện modal.
+  Dropdown `driver_id` bị giới hạn bằng field kỹ thuật `driver_kha_dung` (nhân viên có
+  user thuộc nhóm Tài xế) — không có `has_group` trong logic (Luật 3).
+  =====================================================================================
+-->
+<odoo>
+
+    <record id="view_lab_gan_tai_xe_form" model="ir.ui.view">
+        <field name="name">lab.yeu.cau.lay.hang.gan.tai.xe.form</field>
+        <field name="model">lab.yeu.cau.lay.hang.gan.tai.xe</field>
+        <field name="arch" type="xml">
+            <form string="Gán tài xế">
+                <group>
+                    <field name="job_id" readonly="1"/>
+                    <field name="driver_kha_dung" invisible="1"/>
+                    <field name="driver_id" options="{'no_create': True, 'no_open': True}"/>
+                    <field name="ghi_chu" placeholder="Tuỳ chọn — ghi vào chatter…"/>
+                </group>
+                <footer>
+                    <button name="action_gan" string="Gán tài xế" type="object" class="btn-primary"/>
+                    <button string="Huỷ" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_lab_gan_tai_xe" model="ir.actions.act_window">
+        <field name="name">Gán tài xế</field>
+        <field name="res_model">lab.yeu.cau.lay.hang.gan.tai.xe</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{'default_job_id': active_id}</field>
+    </record>
+
+</odoo>

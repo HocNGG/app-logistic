@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  =====================================================================================
+  lab_ui/views/menu.xml — Bảng điều khiển (client action OWL) + điểm vào trên menu.
+  Người viết: FE-01. Biên giới: addons/lab_ui/** (AGENTS.md Luật 10 — views/static thuộc FE-01).
+
+  ĐỐI CHIẾU SOURCE THẬT (odoo 17.0, addons/web/static/src/webclient/actions/action_service.js):
+    • `_executeClientAction()`: `actionRegistry.get(action.tag)`; nếu giá trị là class kế thừa
+      `Component` thì Odoo render nó như một màn hình → props = `{ action, actionId }`.
+      Vì vậy `tag` bên dưới PHẢI trùng chuỗi đăng ký trong dashboard.js.
+    • Không có cơ chế ACL riêng cho `ir.actions.client`: quyền nhìn thấy màn hình nằm ở
+      `groups_id` của MENU (dưới). Chốt chặn dữ liệu thật là ACL + ir.rule của model
+      `lab.yeu.cau.lay.hang` và (BE-01) kiểm nhóm ngay trong method `lab_dashboard_kpi`.
+
+  QUYỀN (Luật 3 — menu là một trong ba chỗ phân quyền, không dùng `if`):
+    `lab_core.group_manager` (Trưởng phòng — duyệt) và `lab_core.group_director`
+    (Ban giám đốc — chỉ đọc). Đúng hai nhóm mà endpoint `GET /lab/api/v1/sep/kpi` cho phép
+    (addons/lab_api/controllers/sep.py::NHOM_XEM_DASHBOARD) ⇒ menu và dữ liệu không lệch nhau.
+
+  THỨ TỰ: sequence 5 — "Bảng điều khiển" đứng ĐẦU menu gốc "Gom hàng lẻ" (các mục nghiệp vụ
+  hiện có bắt đầu từ 20), vì màn này là điểm vào của Sếp/Trưởng phòng trong demo.
+  =====================================================================================
+-->
+<odoo>
+
+    <!-- =================================================================================
+         1. ACTION — màn hình OWL "Bảng điều khiển".
+            `tag` = khoá trong registry.category("actions") ở dashboard.js.
+         ================================================================================= -->
+    <record id="action_lab_dashboard" model="ir.actions.client">
+        <field name="name">Bảng điều khiển</field>
+        <field name="tag">lab_ui.dashboard</field>
+        <!-- target mặc định = 'current' (mở trong cửa sổ hiện tại, có breadcrumb). -->
+    </record>
+
+    <!-- =================================================================================
+         2. MENU — "Gom hàng lẻ → Bảng điều khiển".
+            Dùng <record model="ir.ui.menu"> (không dùng <menuitem>) để gán được NHIỀU nhóm
+            qua groups_id — cùng cách lab_core/views/menuitems.xml đã làm cho menu gốc.
+         ================================================================================= -->
+    <record id="menu_lab_dashboard" model="ir.ui.menu">
+        <field name="name">Bảng điều khiển</field>
+        <field name="parent_id" ref="lab_core.menu_lab_root"/>
+        <field name="sequence">5</field>
+        <field name="action" ref="action_lab_dashboard"/>
+        <field name="groups_id" eval="[
+            (4, ref('lab_core.group_manager')),
+            (4, ref('lab_core.group_director')),
+        ]"/>
+    </record>
+
+</odoo>

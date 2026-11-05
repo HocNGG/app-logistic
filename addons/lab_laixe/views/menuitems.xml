@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  =====================================================================================
+  MENU cho model `lab.yeu.cau.lay.hang` (bước ②) — dưới menu gốc "Gom hàng lẻ" (lab_core).
+  Người viết: FE-01 (Wave B). Biên giới: addons/**/views/** (AGENTS.md Luật 10).
+
+  ⚠️ CẦN BE-01 KHAI VÀO MANIFEST, ĐÚNG THỨ TỰ:
+      addons/lab_laixe/__manifest__.py → "data" thêm, sau security + data:
+          "views/lab_yeu_cau_lay_hang_views.xml"   ← khai 2 action trước
+          "views/menuitems.xml"                    ← file này (phải ở CUỐI)
+
+  QUYỀN (Luật 3 — menu là một trong ba chỗ phân quyền, không dùng `if`):
+  Chỉ nhóm có ACL thật trên model mới thấy menu:
+      group_cs, group_warehouse, group_docs, group_sale_admin, group_manager, group_director.
+  `group_driver` CỐ Ý KHÔNG có ở đây: tài xế là `base.group_portal` (docs/02 §4.1), không
+  nạp backend Odoo — tài xế dùng app KMP qua `lab_api` với `access_token`, không phải menu web.
+  `group_account` cũng không: ACL của Kế toán trên model này là 0/0/0/0 (không thấy dữ liệu).
+
+  ĐƯỜNG VÀO NHÁNH NGOẠI LỆ ≤ 2 CLICK (Luật 5):
+      Gom hàng lẻ → "Yêu cầu lấy hàng thất bại" (lọc sẵn state = failed).
+  =====================================================================================
+-->
+<odoo>
+
+    <record id="menu_lab_yeu_cau_lay_hang" model="ir.ui.menu">
+        <field name="name">Yêu cầu lấy hàng</field>
+        <field name="parent_id" ref="lab_core.menu_lab_root"/>
+        <field name="sequence">20</field>
+        <field name="action" ref="action_lab_yeu_cau_lay_hang"/>
+        <!-- PHÂN QUYỀN THEO VAI TRÒ (D1/D6, chốt 2026-11-02): YC lấy hàng là việc của
+             CS (tạo/sửa) + Kho (nhận hàng) + Sale Admin/Manager (duyệt) + BGĐ xem.
+             ĐÃ BỎ group_docs: chứng từ làm AWB/POD, không làm yêu cầu lấy hàng.
+             Kế toán vốn không có ACL trên model này nên không nằm trong menu.
+             Dùng (6,0,[...]) để ĐẶT LẠI danh sách — (4,...) chỉ cộng thêm, nhóm cũ sẽ sống lại. -->
+        <field name="groups_id" eval="[(6, 0, [
+            ref('lab_core.group_cs'),
+            ref('lab_core.group_warehouse'),
+            ref('lab_core.group_sale_admin'),
+            ref('lab_core.group_manager'),
+            ref('lab_core.group_director'),
+        ])]"/>
+    </record>
+
+    <record id="menu_lab_yeu_cau_lay_hang_failed" model="ir.ui.menu">
+        <field name="name">Yêu cầu lấy hàng thất bại</field>
+        <field name="parent_id" ref="lab_core.menu_lab_root"/>
+        <field name="sequence">21</field>
+        <field name="action" ref="action_lab_yeu_cau_lay_hang_failed"/>
+        <!-- Nay gồm cả Kho: kho là người gặp "lấy hàng thất bại" ngoài thực địa và cần
+             mở lại việc để xử lý, nên menu phải thấy được (trước đây chỉ CS/Sale Admin). -->
+        <field name="groups_id" eval="[(6, 0, [
+            ref('lab_core.group_cs'),
+            ref('lab_core.group_warehouse'),
+            ref('lab_core.group_sale_admin'),
+            ref('lab_core.group_manager'),
+            ref('lab_core.group_director'),
+        ])]"/>
+    </record>
+
+</odoo>

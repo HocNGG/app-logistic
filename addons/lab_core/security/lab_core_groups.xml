@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  9 nhóm quyền của dự án — nguồn: docs/02-kien-truc.md §4.1 và docs/00 §2.
+  (nhóm thứ 9 là "Trưởng nhóm tài xế" — người PHÂN CÔNG tài xế trên app, thêm
+  cùng đợt với 2 endpoint điều phối; xem ``group_driver_leader`` bên dưới.)
+  Nhóm là res.groups (XML); CSV chỉ dùng cho ACL. File này PHẢI load trước
+  security/ir.model.access.csv (xem __manifest__.py).
+
+  Quyết định (⚠️ khác mẫu trong agents/be/skills/04 một chút): KHÔNG dùng
+  category_id trỏ tới base.module_category_* vì xmlid đó không chắc tồn tại ở
+  17.0 CE — sai xmlid là lỗi cài đặt thật ("External ID not found"). Ta tự khai
+  một ir.module.category của chính mình (lab_core.module_category_lab) nên
+  chắc chắn resolve được, và vẫn gom 9 nhóm vào 1 mục "AppLogictics Lab" trong
+  Settings > Users & Companies > Groups.
+-->
+<odoo>
+
+    <record id="module_category_lab" model="ir.module.category">
+        <field name="name">AppLogictics Lab</field>
+        <field name="description">Nhóm quyền nghiệp vụ của hệ thống gom hàng lẻ (6 phòng ban)</field>
+        <field name="sequence">90</field>
+    </record>
+
+    <!-- =====================================================================
+         Thứ tự khai báo có ý nghĩa: nhóm được implied_ids phải có trước.
+         ===================================================================== -->
+
+    <!-- CS / SALE — kế thừa sales_team.group_sale_salesman -->
+    <record id="group_cs" model="res.groups">
+        <field name="name">CS/Sale</field>
+        <field name="category_id" ref="module_category_lab"/>
+        <field name="implied_ids" eval="[(4, ref('sales_team.group_sale_salesman'))]"/>
+        <field name="comment">Nhận yêu cầu, báo giá, theo dõi, báo khách, xử lý khiếu nại.</field>
+    </record>
+
+    <!-- TÀI XẾ — portal-level, KHÔNG vào backend (chỉ dùng app KMP qua lab_api) -->
+    <record id="group_driver" model="res.groups">
+        <field name="name">Tài xế (portal)</field>
+        <field name="category_id" ref="module_category_lab"/>
+        <field name="implied_ids" eval="[(4, ref('base.group_portal'))]"/>
+        <field name="comment">Đi lấy hàng tận nơi: ảnh, chữ ký, xác nhận trên app di động.</field>
+    </record>
+
+    <!-- TRƯỞNG NHÓM TÀI XẾ — Internal User, người PHÂN CÔNG việc cho tài xế.
+         Vì sao Internal (base.group_user) chứ không portal: họ dùng app/backoffice
+         để điều phối, và cần đọc hr.employee.public (Odoo 17 chỉ cấp cho Internal
+         User) để lấy danh sách tài xế. Vì sao KHÔNG imply group_driver: trưởng
+         nhóm đi phân công, không nhận việc — nếu imply group_driver thì
+         ir.rule "Tài xế chỉ thấy yêu cầu lấy hàng của mình" (lab_laixe) sẽ khoá
+         họ vào đúng bản ghi của mình -> không còn việc nào để phân công.
+         Quyền bản ghi vẫn do ACL (lab_laixe/security/ir.model.access.csv) +
+         ir.rule quyết định (AGENTS.md Luật 3). -->
+    <record id="group_driver_leader" model="res.groups">
+        <field name="name">Trưởng nhóm tài xế</field>
+        <field name="category_id" ref="module_category_lab"/>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+        <field name="comment">Phân công tài xế cho yêu cầu lấy hàng (cùng 2 endpoint điều phối với CS); không phải tài xế, không tạo/xoá yêu cầu.</field>
+    </record>
+
+    <!-- KHO — kế thừa stock.group_stock_user -->
+    <record id="group_warehouse" model="res.groups">
+        <field name="name">Kho</field>
+        <field name="category_id" ref="module_category_lab"/>
+        <field name="implied_ids" eval="[(4, ref('stock.group_stock_user'))]"/>
+        <field name="comment">Nhận, cân, đo, dán mã kiện, đóng gói, xuất kho, kiểm đếm.</field>
+    </record>
+
+    <!-- CHỨNG TỪ — KHÔNG kế thừa group_warehouse (sửa 2026-11-03 theo RV-01 P0-1).
+         VÌ SAO BỎ: kế thừa cả nhóm Kho khiến tài khoản chứng từ (chungtu01) có TOÀN BỘ
+         quyền kho — đo thật: `/auth/login` trả roles `["kho"]` (app mở nhầm màn Kho),
+         `GET /kho/cho-xuat` trả 200, menu "Yêu cầu lấy hàng" hiện ra (trái ma trận phân
+         vùng). Chứng từ chỉ cần XEM phiếu kho ⇒ cấp 3 dòng ACL CHỈ ĐỌC trong
+         `security/ir.model.access.csv`, không kế thừa nhóm. -->
+    <record id="group_docs" model="res.groups">
+        <field name="name">Chứng từ</field>
+        <field name="category_id" ref="module_category_lab"/>
+        <!-- PHẢI gỡ TƯỜNG MINH: bỏ dòng khai báo không xoá được quan hệ đã có trong
+             `res_groups_implied_rel` (Odoo chỉ ghi khi có lệnh, không tự dọn).
+             Đo 2026-11-03: vẫn còn hàng "Chứng từ → Kho" dù đã xoá implied_ids. -->
+        <field name="implied_ids" eval="[(3, ref('group_warehouse'))]"/>
+        <field name="comment">Booking, AWB/HBL, manifest, hải quan, mốc hành trình. Chỉ ĐỌC phiếu kho, không nhận/xuất hàng.</field>
+    </record>
+
+    <!-- KẾ TOÁN — kế thừa account.group_account_invoice -->
+    <record id="group_account" model="res.groups">
+        <field name="name">Kế toán</field>
+        <field name="category_id" ref="module_category_lab"/>
+        <field name="implied_ids" eval="[(4, ref('account.group_account_invoice'))]"/>
+        <field name="comment">Debit, kiểm &amp; khoá Debit, hoá đơn, thu tiền, đối soát, khoá tháng.</field>
+    </record>
+
+    <!-- SALE ADMIN — kế thừa group_cs -->
+    <record id="group_sale_admin" model="res.groups">
+        <field name="name">Sale Admin</field>
+        <field name="category_id" ref="module_category_lab"/>
+        <field name="implied_ids" eval="[(4, ref('group_cs'))]"/>
+        <field name="comment">Duyệt đơn vào chuyến, duyệt giảm tải, xem dashboard.</field>
+    </record>
+
+    <!-- TRƯỞNG PHÒNG — duyệt tier validation (2 cấp: trưởng nhóm -> manager) -->
+    <record id="group_manager" model="res.groups">
+        <field name="name">Trưởng phòng (duyệt)</field>
+        <field name="category_id" ref="module_category_lab"/>
+        <field name="implied_ids" eval="[(4, ref('group_sale_admin')), (4, ref('account.group_account_manager'))]"/>
+        <field name="comment">Người duyệt tier validation; mở khoá Debit có lý do (OQ-04).</field>
+    </record>
+
+    <!-- BAN GIÁM ĐỐC — chỉ đọc, xem dashboard -->
+    <record id="group_director" model="res.groups">
+        <field name="name">Ban giám đốc (chỉ đọc)</field>
+        <field name="category_id" ref="module_category_lab"/>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+        <field name="comment">Chỉ xem dashboard/báo cáo, không thao tác nghiệp vụ.</field>
+    </record>
+
+</odoo>

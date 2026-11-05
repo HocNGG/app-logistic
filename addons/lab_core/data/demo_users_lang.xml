@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  NGÔN NGỮ TIẾNG VIỆT CHO TÀI KHOẢN DEMO — file RIÊNG, `noupdate="0"` (Luật 6).
+
+  VÌ SAO CẦN (đo 2026-11-03): user demo seed với `lang = en_US` (mặc định Odoo) ⇒
+  list/form web hiện ngày **mm/dd/yyyy HH:mm** và vài nhãn hệ thống bằng tiếng Anh.
+  "Tiếng Việt là ngôn ngữ sản phẩm" là luật cứng của dự án, nên tài khoản demo phải
+  có `lang = vi_VN`.
+
+  VÌ SAO `<function>` chứ KHÔNG dùng `<record>`:
+  record `demo_user_cs`… được tạo bởi `data/demo_data.xml` với `noupdate="1"` ⇒ cờ
+  noupdate đã lưu trên `ir.model.data` = True ⇒ `<record noupdate="0">` KHÔNG ghi đè
+  được trên DB đã cài. `<function>` chỉ bị bỏ qua khi env đang noupdate, nên đặt
+  trong `<data noupdate="0">` là nó chạy ở CẢ lần cài lẫn mỗi lần `-u`.
+
+  Logic ở `lab_core/models/res_users.py::_lab_dat_ngon_ngu_vi` (idempotent):
+    * bật `res.lang` vi_VN nếu còn `active = NULL`;
+    * đặt `partner_id.lang = 'vi_VN'` cho từng user (chỉ user còn khác mới ghi);
+    * NGOÀI danh sách truyền vào, hàm còn tự phủ mọi login trong `TAI_KHOAN_DEMO`
+      — cần vậy vì `taixe04`/`taixe05` do `seed_demo_lon.py` tạo (KHÔNG có xmlid) và
+      `taixe01..03` có xmlid nằm ở module `lab_laixe` (lab_core không depends nó).
+  `admin` dùng xmlid của base (`base.user_admin`).
+-->
+<odoo>
+    <data noupdate="0">
+
+        <function model="res.users" name="_lab_dat_ngon_ngu_vi"
+                  eval="[[
+                      ref('base.user_admin'),
+                      ref('demo_user_cs'),
+                      ref('demo_user_kho'),
+                      ref('demo_user_chungtu'),
+                      ref('demo_user_ketoan'),
+                      ref('demo_user_manager'),
+                      ref('demo_user_sep'),
+                      ref('demo_user_nhomtruong')
+                  ]]"/>
+
+    </data>
+</odoo>

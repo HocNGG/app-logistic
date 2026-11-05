@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  VÁ EMAIL CHO USER DEMO — vì sao phải có file RIÊNG với `noupdate="0"`:
+
+  `data/demo_data.xml` khai `noupdate="1"` (upgrade KHÔNG ghi đè dữ liệu người dùng
+  đã sửa tay). Hệ quả: trên một DB ĐÃ cài từ trước, `-u lab_core` KHÔNG áp email mới
+  vào các record đã tồn tại — mà thiếu email người gửi thì `message_post` raise
+  "Unable to send message, please configure the sender's email address." và làm
+  rollback cả giao dịch nghiệp vụ (lỗi thật, xem models/lab_yeu_cau_lay_hang.py).
+  `reset-demo.ps1` (xoá DB, cài lại) thì không dính, nhưng `reset-demo.ps1 -KeepData`
+  và lệnh `-u` thường ngày thì dính.
+
+  Vì vậy file này chỉ chứa ĐÚNG field `email` của user demo, `noupdate="0"` để mỗi lần
+  upgrade đều ghi lại. Đây là tài khoản demo công khai (mật khẩu `lab@2026` đã ghi
+  trong infra/scripts/seed-users.md) nên ghi đè email là hành vi MONG MUỐN.
+  KHÔNG thêm field nào khác vào đây — mọi field khác vẫn do demo_data.xml quản.
+-->
+<odoo>
+    <data noupdate="0">
+
+        <record id="demo_user_cs" model="res.users">
+            <field name="email">cs01@applogictics.local</field>
+        </record>
+
+        <record id="demo_user_kho" model="res.users">
+            <field name="email">kho01@applogictics.local</field>
+        </record>
+
+        <record id="demo_user_chungtu" model="res.users">
+            <field name="email">chungtu01@applogictics.local</field>
+        </record>
+
+        <record id="demo_user_ketoan" model="res.users">
+            <field name="email">ketoan01@applogictics.local</field>
+        </record>
+
+        <record id="demo_user_manager" model="res.users">
+            <field name="email">manager01@applogictics.local</field>
+        </record>
+
+        <record id="demo_user_sep" model="res.users">
+            <field name="email">sep@applogictics.local</field>
+        </record>
+
+        <!-- Trưởng nhóm tài xế: người bấm "Gán tài xế" -> `action_assign` gọi
+             `message_post`, nên email người gửi càng bắt buộc (thiếu là rollback
+             cả giao dịch gán việc). -->
+        <record id="demo_user_nhomtruong" model="res.users">
+            <field name="email">nhomtruong01@applogictics.local</field>
+        </record>
+
+    </data>
+</odoo>

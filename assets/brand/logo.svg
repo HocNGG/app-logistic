@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 72" width="320" height="72" role="img" aria-label="AppLogictics — Gom hàng lẻ">
+  <!--
+    Logo ngang (mark + wordmark) cho NỀN SÁNG (giấy ấm) — docs, README, landing.
+    Nền tối: đặt mark trên nền `#0F1512`/`#1F4A3D` và đổi fill chữ thành `#F1EDE1`.
+    Màu: MASTER.md §2.1. Không gradient (xem ghi chú ở logo-mark.svg).
+  -->
+  <g transform="translate(4,4) scale(0.95)" stroke-linejoin="round">
+    <path d="M32 6 L56 19 L32 32 L8 19 Z" fill="#2F6B57"/>
+    <path d="M8 19 L32 32 L32 58 L8 45 Z" fill="#1F4A3D"/>
+    <path d="M56 19 L56 45 L32 58 L32 32 Z" fill="#17392F"/>
+    <path d="M20 46 C 14 40, 14 30, 22 25" fill="none" stroke="#B8761F"
+          stroke-width="2.6" stroke-linecap="round" stroke-dasharray="1 5"/>
+    <circle cx="22" cy="25" r="2.6" fill="#B8761F"/>
+  </g>
+
+  <text x="78" y="35" font-family="Segoe UI Variable Display, Segoe UI, Inter, system-ui, sans-serif"
+        font-size="25" font-weight="700" letter-spacing="-0.4" fill="#16150F">
+    AppLogictics
+  </text>
+  <text x="79" y="55" font-family="Segoe UI Variable Display, Segoe UI, Inter, system-ui, sans-serif"
+        font-size="12.5" font-weight="500" letter-spacing="0.6" fill="#5A5647">
+    Gom hàng lẻ · ERP
+  </text>
+</svg>

@@ -1,0 +1,862 @@
+// =====================================================================================
+// lab_ui/static/src/dashboard/dashboard.scss  —  CSS của màn "Bảng điều khiển".
+//
+// Bundle: "web.assets_backend". Palette: docs/adr/ADR-009-dark-premium-lime.md §6 —
+// DARK là chế độ DUY NHẤT. Token lấy từ khối `:root` của backend.scss (nạp TRƯỚC file này
+// trong cùng bundle) ⇒ file này KHÔNG khai mã màu literal nào: audit `#[0-9a-fA-F]{3,8}` = 0.
+//
+// Bố cục: agents/_shared/skills/ui-dashboard-app-screens.md §3 (KPI) §4 (chart) §5 (bảng/
+// chip) §6 + 4 ảnh tham chiếu của khách (dark navy + lime, card xếp lớp, mật độ thông tin).
+//
+// PHẠM VI: MỌI selector nằm dưới `.o_web_client .o_lab_dash` — không có selector toàn cục,
+//   không chạm class khác của Odoo. Cấm (đã kiểm 0 lần trong file): `!important`, gradient,
+//   backdrop-filter, glow, animation vô hạn.
+//
+// QUY TẮC MÀU (ADR-009 §7):
+//   • lime CHỈ ở: chip kỳ đang chọn, series 1 và DUY NHẤT MỘT card hero (ADR-009 §5.3 cho
+//     phép đúng 1 vùng lime đặc trên dashboard).
+//   • chữ trên nền lime = --lab-on-accent (14:1), KHÔNG dùng chữ trắng.
+//   • trạng thái luôn kèm CHỮ (chip), không bao giờ chỉ dựa vào màu.
+//
+// CONTRAST (WCAG 2.1, đã tính):
+//   ink trên card 13,5:1 · ink-2 trên card 5,2:1 · accent trên card 10,4:1
+//   ok 7,9:1 · warn 6,7:1 · bad 5,2:1 · info 6,0:1 (chữ chip trên chính tint của nó)
+//   on-accent trên accent 14,0:1 (card hero + chip kỳ đang chọn)
+// =====================================================================================
+
+// Gốc của màn hình. `flex: 1 1 auto` + `overflow: auto` để dashboard tự cuộn khi nội dung
+// cao hơn khung nhìn (client action KHÔNG có `.o_content` như view Odoo);
+// `min-height: 0` để trình duyệt cho phép co lại trong flex cha.
+.o_web_client .o_lab_dash {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    gap: 16px;
+    min-height: 0;
+    padding: 24px;
+    overflow: auto;
+    background-color: var(--lab-bg);
+    color: var(--lab-ink);
+    font-family: var(--lab-font);
+}
+
+// -------------------------------------------------------------------------------------
+// 1. TOOLBAR — tiêu đề + 3 chip kỳ + nút xuất (tắt)
+// -------------------------------------------------------------------------------------
+.o_web_client .o_lab_dash .o_lab_dash__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.o_web_client .o_lab_dash .o_lab_dash__heading {
+    min-width: 0;
+}
+
+.o_web_client .o_lab_dash .o_lab_dash__title {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    color: var(--lab-ink);
+}
+
+.o_web_client .o_lab_dash .o_lab_dash__sub {
+    margin: 4px 0 0;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--lab-ink-2);
+}
+
+.o_web_client .o_lab_dash .o_lab_dash__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+
+.o_web_client .o_lab_dash .o_lab_ranges {
+    display: inline-flex;
+    gap: 4px;
+    padding: 3px;
+    border: 1px solid var(--lab-line);
+    border-radius: var(--lab-r-2);
+    background-color: var(--lab-s1);
+}
+
+// Control chung của màn hình (chip kỳ + nút phụ): cao 32, chữ 13, bo 10.
+.o_web_client .o_lab_dash .o_lab_btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 32px;
+    padding: 0 12px;
+    border: 1px solid transparent;
+    border-radius: var(--lab-r-2);
+    background-color: transparent;
+    color: var(--lab-ink);
+    font-family: var(--lab-font);
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color var(--lab-duration) var(--lab-ease),
+                border-color var(--lab-duration) var(--lab-ease),
+                color var(--lab-duration) var(--lab-ease);
+}
+
+.o_web_client .o_lab_dash .o_lab_btn:hover {
+    background-color: var(--lab-neutral-tint);
+}
+
+.o_web_client .o_lab_dash .o_lab_btn:focus-visible {
+    outline: 2px solid var(--lab-accent);
+    outline-offset: 1px;
+}
+
+// Chip kỳ đang chọn: nền lime + chữ --lab-on-accent (một điểm nhấn duy nhất của toolbar).
+.o_web_client .o_lab_dash .o_lab_btn--range.is-active {
+    background-color: var(--lab-accent);
+    border-color: var(--lab-accent);
+    color: var(--lab-on-accent);
+    font-weight: 600;
+}
+
+.o_web_client .o_lab_dash .o_lab_btn--range.is-active:hover {
+    background-color: var(--lab-accent-2);
+    border-color: var(--lab-accent-2);
+}
+
+.o_web_client .o_lab_dash .o_lab_btn--ghost {
+    border-color: var(--lab-line);
+    background-color: var(--lab-s1);
+}
+
+.o_web_client .o_lab_dash .o_lab_btn--ghost:hover {
+    background-color: var(--lab-card-2);
+}
+
+// Nút bị tắt: nhìn ra ngay là không bấm được (không giả vờ có tính năng — Luật 8/9).
+.o_web_client .o_lab_dash .o_lab_btn:disabled,
+.o_web_client .o_lab_dash .o_lab_btn[disabled] {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.o_web_client .o_lab_dash .o_lab_btn:disabled:hover {
+    background-color: var(--lab-s1);
+}
+
+// -------------------------------------------------------------------------------------
+// 2. PANEL — card --lab-card trên nền --lab-bg, viền --lab-line, KHÔNG đổ bóng
+//    (ADR-009 §6: bóng duy nhất dành cho popover/menu/dialog)
+// -------------------------------------------------------------------------------------
+.o_web_client .o_lab_dash .o_lab_panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+    padding: 16px 20px 20px;
+    border: 1px solid var(--lab-line);
+    border-radius: var(--lab-r-3);
+    background-color: var(--lab-card);
+    box-shadow: none;
+}
+
+.o_web_client .o_lab_dash .o_lab_panel__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px 16px;
+}
+
+.o_web_client .o_lab_dash .o_lab_panel__title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--lab-ink);
+}
+
+.o_web_client .o_lab_dash .o_lab_panel__meta {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--lab-ink-2);
+    font-variant-numeric: tabular-nums;
+}
+
+// -------------------------------------------------------------------------------------
+// 3. KPI — nhãn 12 phía TRÊN · số 34 tabular · 1 dòng mô tả · chip Δ
+// -------------------------------------------------------------------------------------
+.o_web_client .o_lab_dash .o_lab_dash__kpis {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.o_web_client .o_lab_dash .o_lab_dash__wide {
+    grid-column: 1 / -1;
+}
+
+.o_web_client .o_lab_dash .o_lab_kpi {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    padding: 18px 18px 16px;
+    border: 1px solid var(--lab-line);
+    border-radius: var(--lab-r-3);
+    background-color: var(--lab-card);
+    box-shadow: none;
+}
+
+// Nhãn 12px, chữ thường, --lab-ink-2 — ĐỨNG TRÊN số (đúng 4 ảnh tham chiếu).
+.o_web_client .o_lab_dash .o_lab_kpi__label {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.4;
+    font-weight: 500;
+    color: var(--lab-ink-2);
+}
+
+// KPI đang tải: giữ nguyên khung thẻ để layout không nhảy khi số về; số mờ về màu mực phụ.
+.o_web_client .o_lab_dash .o_lab_kpi--skeleton .o_lab_kpi__num {
+    color: var(--lab-ink-3);
+}
+
+.o_web_client .o_lab_dash .o_lab_kpi__value {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin: 0;
+    min-width: 0;
+}
+
+// Số lớn 34px = giữa khoảng 30–40 mà khách yêu cầu (thang chữ của skill không có bậc 34 —
+// chỗ này ưu tiên spec KPI).
+.o_web_client .o_lab_dash .o_lab_kpi__num {
+    font-size: 34px;
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    color: var(--lab-ink);
+}
+
+.o_web_client .o_lab_dash .o_lab_kpi__num--none {
+    color: var(--lab-ink-3);
+    font-weight: 500;
+}
+
+.o_web_client .o_lab_dash .o_lab_kpi__unit,
+.o_web_client .o_lab_dash .o_lab_kpi__hint {
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--lab-ink-2);
+}
+
+// 1 dòng mô tả dưới số (chữ TĨNH — không phải số liệu, không bịa số).
+// Màu --lab-ink-2 (5,2:1 trên card); --lab-ink-3 chỉ 3,0:1 trên card ⇒ không dùng cho chữ.
+.o_web_client .o_lab_dash .o_lab_kpi__desc {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--lab-ink-2);
+}
+
+.o_web_client .o_lab_dash .o_lab_kpi__foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 2px;
+    min-height: 20px;
+}
+
+// Card HERO — vùng lime đặc DUY NHẤT được phép trên màn hình (ADR-009 §5.3): thẻ KPI đầu
+// tiên. Chữ bắt buộc --lab-on-accent (14:1), KHÔNG dùng chữ trắng.
+.o_web_client .o_lab_dash .o_lab_kpi--hero {
+    background-color: var(--lab-accent);
+    border-color: var(--lab-accent);
+    color: var(--lab-on-accent);
+}
+
+.o_web_client .o_lab_dash .o_lab_kpi--hero .o_lab_kpi__label {
+    color: rgba(var(--lab-on-accent-rgb), .78);
+}
+
+.o_web_client .o_lab_dash .o_lab_kpi--hero .o_lab_kpi__num,
+.o_web_client .o_lab_dash .o_lab_kpi--hero .o_lab_kpi__unit {
+    color: var(--lab-on-accent);
+}
+
+.o_web_client .o_lab_dash .o_lab_kpi--hero .o_lab_kpi__desc,
+.o_web_client .o_lab_dash .o_lab_kpi--hero .o_lab_kpi__hint {
+    color: rgba(var(--lab-on-accent-rgb), .72);
+}
+
+.o_web_client .o_lab_dash .o_lab_kpi--hero .o_lab_kpi__num--none {
+    color: rgba(var(--lab-on-accent-rgb), .72);
+}
+
+// Chip Δ: tint của đúng màu trạng thái + chữ cùng màu, LUÔN có mốc so sánh bằng chữ.
+.o_web_client .o_lab_dash .o_lab_delta {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: var(--lab-r-1);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.5;
+    background-color: var(--lab-s2);
+    color: var(--lab-ink-2);
+}
+
+.o_web_client .o_lab_dash .o_lab_delta--len {
+    background-color: var(--lab-ok-tint);
+    color: var(--lab-ok);
+}
+
+.o_web_client .o_lab_dash .o_lab_delta--xuong {
+    background-color: var(--lab-bad-tint);
+    color: var(--lab-bad);
+}
+
+.o_web_client .o_lab_dash .o_lab_delta--canh {
+    background-color: var(--lab-warn-tint);
+    color: var(--lab-warn);
+}
+
+// Chip Δ trên card hero: tint của --lab-on-accent (giữ tương phản trên nền lime).
+.o_web_client .o_lab_dash .o_lab_kpi--hero .o_lab_delta {
+    background-color: rgba(var(--lab-on-accent-rgb), .16);
+    color: var(--lab-on-accent);
+}
+
+// -------------------------------------------------------------------------------------
+// 4. CHART — area (SVG) + donut: series --lab-c1/c2/c3, lưới --lab-grid
+// -------------------------------------------------------------------------------------
+.o_web_client .o_lab_dash .o_lab_dash__charts {
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+    gap: 16px;
+}
+
+.o_web_client .o_lab_dash .o_lab_chart__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.o_web_client .o_lab_dash .o_lab_legend {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--lab-ink-2);
+}
+
+.o_web_client .o_lab_dash .o_lab_legend__dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    background-color: var(--lab-c1);
+}
+
+.o_web_client .o_lab_dash .o_lab_legend__dot--1 {
+    background-color: var(--lab-c1);
+}
+
+.o_web_client .o_lab_dash .o_lab_legend__dot--2 {
+    background-color: var(--lab-c2);
+}
+
+.o_web_client .o_lab_dash .o_lab_legend__dot--3 {
+    background-color: var(--lab-c3);
+}
+
+// Nhóm trạng thái thứ 4 không có màu series riêng (ADR-009 §6 chỉ định 3 màu chart)
+// ⇒ dùng --lab-ink-3 (mực mờ). Không sinh màu thứ 4 ngoài bảng §6.
+.o_web_client .o_lab_dash .o_lab_legend__dot--4 {
+    background-color: var(--lab-ink-3);
+}
+
+.o_web_client .o_lab_dash .o_lab_chart__wrap {
+    min-width: 0;
+}
+
+.o_web_client .o_lab_dash .o_lab_chart {
+    display: block;
+    width: 100%;
+    height: auto;
+    font-family: var(--lab-font);
+    overflow: visible;
+}
+
+// Lưới: --lab-grid (trắng 6%) — đủ thấy trên card, không tranh với dữ liệu.
+.o_web_client .o_lab_dash .o_lab_chart__grid line {
+    stroke: var(--lab-grid);
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+}
+
+.o_web_client .o_lab_dash .o_lab_chart__ylabel,
+.o_web_client .o_lab_dash .o_lab_chart__xlabel {
+    fill: var(--lab-ink-2);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
+// Vùng dưới đường series 1: tint accent 10% (KHÔNG gradient — gradient bị cấm).
+.o_web_client .o_lab_dash .o_lab_chart__area {
+    fill: var(--lab-accent-tint);
+    stroke: none;
+}
+
+.o_web_client .o_lab_dash .o_lab_chart__line {
+    fill: none;
+    stroke-width: 2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+}
+
+.o_web_client .o_lab_dash .o_lab_chart__line--1 {
+    stroke: var(--lab-c1);
+}
+
+.o_web_client .o_lab_dash .o_lab_chart__line--2 {
+    stroke: var(--lab-c2);
+}
+
+// Điểm: viền bằng --lab-card để tách khỏi đường (không dùng trắng: trắng là màu chữ).
+.o_web_client .o_lab_dash .o_lab_chart__dot {
+    stroke: var(--lab-card);
+    stroke-width: 1;
+}
+
+.o_web_client .o_lab_dash .o_lab_chart__dot--1 {
+    fill: var(--lab-c1);
+}
+
+.o_web_client .o_lab_dash .o_lab_chart__dot--2 {
+    fill: var(--lab-c2);
+}
+
+// Cột bắt chuột: trong suốt nhưng vẫn nhận hover để browser hiện tooltip từ <title>.
+.o_web_client .o_lab_dash .o_lab_chart__hit {
+    fill: transparent;
+    stroke: none;
+}
+
+.o_web_client .o_lab_dash .o_lab_donut__wrap {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px 24px;
+}
+
+.o_web_client .o_lab_dash .o_lab_donut {
+    flex: 0 0 auto;
+    width: 160px;
+    height: 160px;
+    font-family: var(--lab-font);
+}
+
+// Vòng nền (track): --lab-grid — đường dẫn của vòng, không phải dữ liệu.
+.o_web_client .o_lab_dash .o_lab_donut__track {
+    fill: none;
+    stroke: var(--lab-grid);
+    stroke-width: 22;
+}
+
+.o_web_client .o_lab_dash .o_lab_donut__seg {
+    fill: none;
+    stroke-width: 22;
+    stroke-linecap: butt;
+}
+
+.o_web_client .o_lab_dash .o_lab_donut__seg--1 {
+    stroke: var(--lab-c1);
+}
+
+.o_web_client .o_lab_dash .o_lab_donut__seg--2 {
+    stroke: var(--lab-c2);
+}
+
+.o_web_client .o_lab_dash .o_lab_donut__seg--3 {
+    stroke: var(--lab-c3);
+}
+
+.o_web_client .o_lab_dash .o_lab_donut__seg--4 {
+    stroke: var(--lab-ink-3);
+}
+
+.o_web_client .o_lab_dash .o_lab_donut__total {
+    fill: var(--lab-ink);
+    font-size: 22px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.o_web_client .o_lab_dash .o_lab_donut__total-label {
+    fill: var(--lab-ink-2);
+    font-size: 12px;
+}
+
+.o_web_client .o_lab_dash .o_lab_donut__legend {
+    flex: 1 1 160px;
+    min-width: 0;
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.o_web_client .o_lab_dash .o_lab_donut__legend .o_lab_legend {
+    justify-content: flex-start;
+}
+
+.o_web_client .o_lab_dash .o_lab_legend__label {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.o_web_client .o_lab_dash .o_lab_legend__value {
+    font-variant-numeric: tabular-nums;
+    color: var(--lab-ink);
+    font-weight: 600;
+}
+
+.o_web_client .o_lab_dash .o_lab_legend__pct {
+    min-width: 38px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+// Hai trạng thái ngoài vòng: chip chữ + số, không vẽ cung (xem dashboard.js NGOAI_VONG).
+.o_web_client .o_lab_dash .o_lab_donut__offring {
+    flex: 1 1 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    margin: 0;
+    padding: 8px 0 0;
+    border-top: 1px solid var(--lab-line);
+    list-style: none;
+}
+
+.o_web_client .o_lab_dash .o_lab_offring {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.o_web_client .o_lab_dash .o_lab_offring__value {
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--lab-ink);
+}
+
+.o_web_client .o_lab_dash .o_lab_donut__offring-label {
+    margin: 0;
+    font-size: 13px;
+    color: var(--lab-ink-2);
+}
+
+// -------------------------------------------------------------------------------------
+// 5. CHIP TRẠNG THÁI — 7 state của lab.yeu.cau.lay.hang (§6: ok/warn/bad/info)
+//    Tint 14–22% của đúng 4 màu trạng thái, LUÔN có nhãn chữ (do template/BE cấp).
+// -------------------------------------------------------------------------------------
+.o_web_client .o_lab_dash .o_lab_chip {
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+    padding: 2px 8px;
+    border: 1px solid transparent;
+    border-radius: var(--lab-r-1);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.5;
+    white-space: nowrap;
+    background-color: var(--lab-s2);
+    color: var(--lab-ink-2);
+}
+
+// Mới: chưa ai nhận ⇒ cần chú ý (--lab-warn).
+.o_web_client .o_lab_dash .o_lab_chip--new {
+    background-color: var(--lab-warn-tint);
+    color: var(--lab-warn);
+}
+
+// Đã gán tài xế: đang được điều phối (--lab-info, tint nhẹ).
+.o_web_client .o_lab_dash .o_lab_chip--assigned {
+    background-color: var(--lab-info-tint);
+    color: var(--lab-info);
+}
+
+// Đang đến lấy: đang di chuyển ⇒ cùng họ info; phân biệt bằng VIỀN đậm hơn chứ không tăng tint
+// (tint 22% làm nền sáng lên, chữ info trên nó chỉ còn 3,98:1 — dưới ngưỡng 4,5:1).
+.o_web_client .o_lab_dash .o_lab_chip--en_route {
+    background-color: var(--lab-info-tint);
+    border-color: rgba(var(--lab-info-rgb), .45);
+    color: var(--lab-info);
+}
+
+// Đã lấy được hàng (--lab-ok, tint nhẹ) / Đã về kho (tint đậm hơn).
+.o_web_client .o_lab_dash .o_lab_chip--picked_up {
+    background-color: var(--lab-ok-tint);
+    color: var(--lab-ok);
+}
+
+.o_web_client .o_lab_dash .o_lab_chip--confirmed {
+    background-color: var(--lab-ok-tint-2);
+    color: var(--lab-ok);
+}
+
+// Lấy hàng thất bại: nguy hiểm (--lab-bad). Đã huỷ: trung tính.
+.o_web_client .o_lab_dash .o_lab_chip--failed {
+    background-color: var(--lab-bad-tint);
+    color: var(--lab-bad);
+}
+
+.o_web_client .o_lab_dash .o_lab_chip--cancelled {
+    background-color: var(--lab-s2);
+    color: var(--lab-ink-2);
+}
+
+// -------------------------------------------------------------------------------------
+// 6. BẢNG — header --lab-s2, hàng 44, CHỈ kẻ đường ngang, số tabular căn phải (§5)
+// -------------------------------------------------------------------------------------
+.o_web_client .o_lab_dash .o_lab_table__wrap {
+    min-width: 0;
+    overflow-x: auto;
+}
+
+.o_web_client .o_lab_dash .o_lab_table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.o_web_client .o_lab_dash .o_lab_table th {
+    padding: 10px 12px;
+    border: 0;
+    border-bottom: 1px solid var(--lab-line);
+    background-color: var(--lab-s2);
+    color: var(--lab-ink-2);
+    font-size: 12px;
+    font-weight: 500;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.o_web_client .o_lab_dash .o_lab_table th:first-child {
+    border-top-left-radius: var(--lab-r-1);
+}
+
+.o_web_client .o_lab_dash .o_lab_table th:last-child {
+    border-top-right-radius: var(--lab-r-1);
+}
+
+.o_web_client .o_lab_dash .o_lab_table td {
+    height: 44px;
+    padding: 8px 12px;
+    border: 0;
+    border-bottom: 1px solid var(--lab-line);
+    vertical-align: middle;
+    color: var(--lab-ink);
+}
+
+.o_web_client .o_lab_dash .o_lab_table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.o_web_client .o_lab_dash .o_lab_table__row {
+    cursor: pointer;
+    transition: background-color var(--lab-duration) var(--lab-ease);
+}
+
+.o_web_client .o_lab_dash .o_lab_table__row:hover {
+    background-color: var(--lab-card-2);
+}
+
+.o_web_client .o_lab_dash .o_lab_table__row:focus-visible {
+    outline: 2px solid var(--lab-accent);
+    outline-offset: -2px;
+}
+
+.o_web_client .o_lab_dash .o_lab_table__ref {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.o_web_client .o_lab_dash .o_lab_col--num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+// -------------------------------------------------------------------------------------
+// 7. TRẠNG THÁI KHỐI — loading / empty / error (icon vẽ bằng CSS, không emoji)
+// -------------------------------------------------------------------------------------
+.o_web_client .o_lab_dash .o_lab_state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 132px;
+    padding: 24px;
+    border: 1px dashed var(--lab-line);
+    border-radius: var(--lab-r-3);
+    background-color: var(--lab-s1);
+    text-align: center;
+}
+
+.o_web_client .o_lab_dash .o_lab_state__mark {
+    position: relative;
+    display: block;
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--lab-line-2);
+    border-radius: 4px;
+    background-color: var(--lab-s2);
+}
+
+// Dấu "×" của khối lỗi: HAI vạch xoay 45° vẽ bằng pseudo-element.
+// Cố ý KHÔNG dùng ảnh/emoji/icon-font và cũng KHÔNG dùng gradient (gradient bị cấm
+// trong design system — dùng nó để vẽ dấu × là lách luật, review sẽ bắt).
+.o_web_client .o_lab_dash .o_lab_state__mark--error {
+    border-color: var(--lab-bad);
+    background-color: var(--lab-bad-tint);
+}
+
+.o_web_client .o_lab_dash .o_lab_state__mark--error::before,
+.o_web_client .o_lab_dash .o_lab_state__mark--error::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 12px;
+    height: 2px;
+    margin: -1px 0 0 -6px;
+    border-radius: 1px;
+    background-color: var(--lab-bad);
+}
+
+.o_web_client .o_lab_dash .o_lab_state__mark--error::before {
+    transform: rotate(45deg);
+}
+
+.o_web_client .o_lab_dash .o_lab_state__mark--error::after {
+    transform: rotate(-45deg);
+}
+
+.o_web_client .o_lab_dash .o_lab_state__text {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--lab-ink);
+}
+
+.o_web_client .o_lab_dash .o_lab_state__hint {
+    margin: 0;
+    max-width: 60ch;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--lab-ink-2);
+}
+
+.o_web_client .o_lab_dash .o_lab_state__action {
+    margin-top: 4px;
+}
+
+// -------------------------------------------------------------------------------------
+// 8. CHUYỂN ĐỘNG — chỉ cho thẻ thống kê + panel, chạy 1 lần, tắt theo prefers-reduced-motion
+// -------------------------------------------------------------------------------------
+@keyframes lab-dash-rise {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .o_web_client .o_lab_dash .o_lab_kpi {
+        animation: lab-dash-rise 200ms var(--lab-ease) both;
+    }
+
+    .o_web_client .o_lab_dash .o_lab_kpi:nth-child(2) {
+        animation-delay: 60ms;
+    }
+
+    .o_web_client .o_lab_dash .o_lab_kpi:nth-child(3) {
+        animation-delay: 120ms;
+    }
+
+    .o_web_client .o_lab_dash .o_lab_kpi:nth-child(4) {
+        animation-delay: 180ms;
+    }
+}
+
+// -------------------------------------------------------------------------------------
+// 9. RESPONSIVE — ≤1200px: KPI 2×2 + chart xếp dọc · ≤600px: 1 cột, bảng còn 3 cột (§6)
+// -------------------------------------------------------------------------------------
+@media (max-width: 1200px) {
+    .o_web_client .o_lab_dash .o_lab_dash__kpis {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .o_web_client .o_lab_dash .o_lab_dash__charts {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .o_web_client .o_lab_dash {
+        padding: 16px;
+    }
+
+    .o_web_client .o_lab_dash .o_lab_dash__title {
+        font-size: 20px;
+    }
+
+    .o_web_client .o_lab_dash .o_lab_kpi {
+        padding: 16px 14px;
+    }
+
+    .o_web_client .o_lab_dash .o_lab_kpi__num {
+        font-size: 30px;
+    }
+
+    .o_web_client .o_lab_dash .o_lab_chart {
+        min-height: 160px;
+    }
+
+    // Bảng chỉ còn: Mã việc · Shop · Trạng thái (chip) — khớp skill dashboard §6.
+    .o_web_client .o_lab_dash .o_lab_col--phu {
+        display: none;
+    }
+
+    .o_web_client .o_lab_dash .o_lab_donut {
+        width: 140px;
+        height: 140px;
+    }
+}

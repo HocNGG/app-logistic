@@ -1,0 +1,19 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_lab_hanhtrinh_cs,lab.hanh.trinh — CS đọc,model_lab_hanh_trinh,lab_core.group_cs,1,0,0,0
+access_lab_hanhtrinh_driver,lab.hanh.trinh — Tài xế không thấy,model_lab_hanh_trinh,lab_core.group_driver,0,0,0,0
+access_lab_hanhtrinh_warehouse,lab.hanh.trinh — Kho đọc,model_lab_hanh_trinh,lab_core.group_warehouse,1,0,0,0
+access_lab_hanhtrinh_docs,lab.hanh.trinh — Chứng từ đọc ghi tạo,model_lab_hanh_trinh,lab_core.group_docs,1,1,1,0
+access_lab_hanhtrinh_account,lab.hanh.trinh — Kế toán đọc,model_lab_hanh_trinh,lab_core.group_account,1,0,0,0
+access_lab_hanhtrinh_sale_admin,lab.hanh.trinh — Sale Admin đọc,model_lab_hanh_trinh,lab_core.group_sale_admin,1,0,0,0
+access_lab_hanhtrinh_manager,lab.hanh.trinh — Trưởng phòng đọc ghi tạo,model_lab_hanh_trinh,lab_core.group_manager,1,1,1,0
+access_lab_hanhtrinh_director,lab.hanh.trinh — BGĐ chỉ đọc,model_lab_hanh_trinh,lab_core.group_director,1,0,0,0
+access_lab_hanhtrinh_line_cs,lab.hanh.trinh.line — CS đọc,model_lab_hanh_trinh_line,lab_core.group_cs,1,0,0,0
+access_lab_hanhtrinh_line_driver,lab.hanh.trinh.line — Tài xế không thấy,model_lab_hanh_trinh_line,lab_core.group_driver,0,0,0,0
+access_lab_hanhtrinh_line_warehouse,lab.hanh.trinh.line — Kho đọc,model_lab_hanh_trinh_line,lab_core.group_warehouse,1,0,0,0
+access_lab_hanhtrinh_line_docs,lab.hanh.trinh.line — Chứng từ đọc ghi tạo,model_lab_hanh_trinh_line,lab_core.group_docs,1,1,1,0
+access_lab_hanhtrinh_line_account,lab.hanh.trinh.line — Kế toán đọc,model_lab_hanh_trinh_line,lab_core.group_account,1,0,0,0
+access_lab_hanhtrinh_line_sale_admin,lab.hanh.trinh.line — Sale Admin đọc,model_lab_hanh_trinh_line,lab_core.group_sale_admin,1,0,0,0
+access_lab_hanhtrinh_line_manager,lab.hanh.trinh.line — Trưởng phòng đọc ghi tạo,model_lab_hanh_trinh_line,lab_core.group_manager,1,1,1,0
+access_lab_hanhtrinh_line_director,lab.hanh.trinh.line — BGĐ chỉ đọc,model_lab_hanh_trinh_line,lab_core.group_director,1,0,0,0
+access_lab_hanhtrinh_system_admin,"lab.hanh.trinh — QUẢN TRỊ (base.group_system) CHỈ ĐỌC: công cụ test/kiểm dữ liệu, không sửa",model_lab_hanh_trinh,base.group_system,1,0,0,0
+access_lab_hanhtrinh_line_system_admin,"lab.hanh.trinh.line — QUẢN TRỊ (base.group_system) CHỈ ĐỌC: công cụ test/kiểm dữ liệu, không sửa",model_lab_hanh_trinh_line,base.group_system,1,0,0,0

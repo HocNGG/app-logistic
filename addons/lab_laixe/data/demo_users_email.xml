@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  VÁ EMAIL CHO 3 TÀI XẾ DEMO — file RIÊNG, `noupdate="0"`.
+
+  Lý do (giống hệt addons/lab_core/data/demo_users_email.xml): `data/demo_data.xml`
+  khai `noupdate="1"` nên `-u lab_laixe` trên DB đã cài KHÔNG ghi email vào record
+  đã tồn tại. Thiếu email người gửi → `message_post` raise "Unable to send message,
+  please configure the sender's email address." → rollback cả giao dịch, tài xế gửi
+  ảnh/chữ ký/số kiện xong mà yêu cầu không đổi trạng thái (lỗi E2E thật 2026-10-29).
+
+  Chỉ chứa field `email`; tài khoản demo công khai (mật khẩu `lab@2026` trong
+  infra/scripts/seed-users.md) nên ghi đè là hành vi mong muốn.
+-->
+<odoo>
+    <data noupdate="0">
+
+        <record id="demo_user_taixe01" model="res.users">
+            <field name="email">taixe01@applogictics.local</field>
+        </record>
+
+        <record id="demo_user_taixe02" model="res.users">
+            <field name="email">taixe02@applogictics.local</field>
+        </record>
+
+        <record id="demo_user_taixe03" model="res.users">
+            <field name="email">taixe03@applogictics.local</field>
+        </record>
+
+    </data>
+</odoo>

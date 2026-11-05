@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Định nghĩa tier validation — bước ⑥ (duyệt đơn vào chuyến) và ⑭ (duyệt khoá Debit).
+  Nguồn: docs/02-kien-truc.md §3.1 + agents/be/skills/08-tier-validation.md §3, §5.
+
+  noupdate="1": người dùng đã tinh chỉnh người duyệt trên UI thì upgrade KHÔNG ghi đè.
+
+  ⚠️ THỨ TỰ CẤP: mixin `request_validation()` duyệt `tier.definition` theo
+  `sequence DESC` rồi đánh số `tier.review.sequence` 1,2,… — nghĩa là definition có
+  sequence LỚN hơn được duyệt TRƯỚC. Vì vậy "cấp 1 (Trưởng nhóm CS)" phải mang
+  sequence 20, "cấp 2 (Trưởng phòng)" mang sequence 10. Đã kiểm bằng code
+  `addons/oca/base_tier_validation/models/tier_validation.py::request_validation`.
+-->
+<odoo>
+    <data noupdate="1">
+
+        <!-- =============================================================
+             ⑥ Duyệt đơn vào chuyến — 2 cấp, duyệt tuần tự (approve_sequence)
+             ============================================================= -->
+
+        <record id="tier_chuyen_cap1" model="tier.definition">
+            <field name="name">Duyệt vào chuyến — cấp 1: Trưởng nhóm CS</field>
+            <field name="model_id" ref="model_lab_chuyen"/>
+            <field name="review_type">group</field>
+            <field name="reviewer_group_id" ref="lab_core.group_sale_admin"/>
+            <field name="definition_domain">[]</field>
+            <field name="sequence">20</field>
+            <field name="approve_sequence" eval="True"/>
+            <field name="notify_on_pending" eval="True"/>
+            <field name="company_id" eval="False"/>
+        </record>
+
+        <record id="tier_chuyen_cap2" model="tier.definition">
+            <field name="name">Duyệt vào chuyến — cấp 2: Trưởng phòng (chuyến bay)</field>
+            <field name="model_id" ref="model_lab_chuyen"/>
+            <field name="review_type">group</field>
+            <field name="reviewer_group_id" ref="lab_core.group_manager"/>
+            <field name="definition_domain">[('loai_van_chuyen', '=', 'air')]</field>
+            <field name="sequence">10</field>
+            <field name="approve_sequence" eval="True"/>
+            <field name="notify_on_pending" eval="True"/>
+            <field name="company_id" eval="False"/>
+        </record>
+
+        <!-- =============================================================
+             ⑭ Duyệt khoá Debit — 1 cấp (Trưởng phòng), chỉ journal code DEBIT
+             ============================================================= -->
+
+        <record id="tier_debit_duyet_khoa" model="tier.definition">
+            <field name="name">Duyệt khoá Debit (⑭)</field>
+            <field name="model_id" ref="model_account_move"/>
+            <field name="review_type">group</field>
+            <field name="reviewer_group_id" ref="lab_core.group_manager"/>
+            <field name="definition_domain">[('journal_id.code', '=', 'DEBIT')]</field>
+            <field name="sequence">10</field>
+            <field name="approve_sequence" eval="False"/>
+            <field name="company_id" eval="False"/>
+        </record>
+
+    </data>
+</odoo>

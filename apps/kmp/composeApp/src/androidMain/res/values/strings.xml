@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Nhãn người dùng thấy trên launcher / recent apps. Tiếng Việt có dấu (AGENTS.md Luật 6:
+  tiếng Việt là ngôn ngữ sản phẩm), thuật ngữ đúng nghiệp vụ: "Gom hàng lẻ".
+-->
+<resources>
+    <string name="app_name">AppLogictics · Gom hàng lẻ</string>
+</resources>

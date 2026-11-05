@@ -1,0 +1,132 @@
+<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8"><title>Dark premium — Bảng điều khiển</title>
+<style>
+:root{
+ /* trích từ 3 ảnh tham chiếu: nền gần đen, surface bậc thang, hairline mảnh, pill nav, card bo 16 */
+ --bg:#0B0D10;--s1:#14171C;--s2:#1B1F26;--s3:#232832;--line:#262B33;
+ --ink:#F2F5F7;--mut:#8A93A0;--red:#E4443A;--redD:#C1332A;--redGlow:rgba(228,68,58,.35);
+ --lime:#C6F24E;--ok:#5FD68A;--warn:#E8A33D;--font:"Segoe UI Variable Display","Segoe UI",Inter,system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:linear-gradient(160deg,#D9DCE2,#C3C7CF);font-family:var(--font);padding:26px}
+.lbl{font-size:12px;font-weight:600;color:#3a3f47;margin:0 0 8px}
+.art{width:1400px;border-radius:20px;overflow:hidden;box-shadow:0 24px 60px rgba(10,12,16,.45);background:var(--bg);color:var(--ink)}
+.shell{display:grid;grid-template-columns:72px 1fr;min-height:820px}
+.rail{background:var(--s1);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 0}
+.logo{width:34px;height:34px;border-radius:10px;background:var(--red);display:grid;place-items:center;font-weight:800;font-size:15px;box-shadow:0 6px 18px var(--redGlow)}
+.ri{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;color:var(--mut);font-size:15px}
+.ri.on{background:var(--s3);color:#fff}
+.rai{margin-top:auto;width:32px;height:32px;border-radius:50%;background:var(--s3);display:grid;place-items:center;font-size:11px}
+.main{min-width:0;padding:16px 22px 22px}
+.top{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.wm{font-size:15px;font-weight:700;letter-spacing:-.01em}
+.pills{display:flex;gap:4px;background:var(--s2);border:1px solid var(--line);border-radius:999px;padding:4px}
+.pill{padding:6px 14px;border-radius:999px;font-size:12.5px;color:var(--mut)}
+.pill.on{background:#fff;color:#0B0D10;font-weight:650}
+.grow{flex:1}
+.ic{width:34px;height:34px;border-radius:10px;background:var(--s2);border:1px solid var(--line);display:grid;place-items:center;color:var(--mut);font-size:13px}
+.avs{display:flex;margin-right:-8px}
+.avs i{width:28px;height:28px;border-radius:50%;border:2px solid var(--bg);margin-left:-8px;background:linear-gradient(140deg,#7B8BA3,#3F4A5C)}
+h1{font-size:30px;font-weight:700;letter-spacing:-.025em;margin:4px 0 2px}
+.sub{font-size:13px;color:var(--mut)}
+.stats{display:grid;grid-template-columns:1.25fr 1fr 1fr 1fr;gap:12px;margin:16px 0 12px}
+.card{background:var(--s1);border:1px solid var(--line);border-radius:16px;padding:16px}
+.card.hero{background:radial-gradient(120% 140% at 12% 0%,#F0574C 0%,var(--red) 38%,#A82A23 100%);border-color:transparent;box-shadow:0 18px 40px var(--redGlow)}
+.k{font-size:12px;color:var(--mut)}.hero .k{color:rgba(255,255,255,.82)}
+.v{font-size:30px;font-weight:700;letter-spacing:-.02em;margin-top:8px;font-variant-numeric:tabular-nums}
+.hero .v{color:#fff}
+.d{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:650;padding:3px 8px;border-radius:999px;margin-top:10px;background:rgba(95,214,138,.16);color:var(--ok)}
+.d.neg{background:rgba(228,68,58,.16);color:#F2837A}
+.hero .d{background:rgba(0,0,0,.22);color:#fff}
+.row{display:grid;grid-template-columns:1.6fr 1fr;gap:12px}
+.ct{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.ct b{font-size:14px;font-weight:650}.ct span{font-size:11.5px;color:var(--mut)}
+.legend{display:flex;gap:12px;font-size:11.5px;color:var(--mut);margin-top:10px}
+.legend i{width:8px;height:8px;border-radius:2px;display:inline-block;margin-right:6px}
+.tbl{margin-top:12px;background:var(--s1);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.th,.tr{display:grid;grid-template-columns:1.1fr 1.5fr .8fr .8fr 1fr;align-items:center}
+.th{height:34px;font-size:10.5px;letter-spacing:.04em;color:var(--mut);background:var(--s2);padding:0 4px}
+.tr{height:46px;border-top:1px solid var(--line);font-size:12.5px;padding:0 4px}
+.th>div,.tr>div{padding:0 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.r{text-align:right;font-variant-numeric:tabular-nums}
+.tag{font-size:11px;font-weight:650;padding:3px 9px;border-radius:999px}
+.t-ok{background:rgba(95,214,138,.15);color:var(--ok)}
+.t-go{background:rgba(198,242,78,.14);color:var(--lime)}
+.t-bad{background:rgba(228,68,58,.16);color:#F2837A}
+.t-mut{background:var(--s3);color:var(--mut)}
+.who{display:flex;align-items:center;gap:8px}
+.who i{width:22px;height:22px;border-radius:50%;background:linear-gradient(140deg,#8FA0B8,#455063);flex:0 0 22px}
+</style></head><body>
+<div class="lbl">WEB · Bảng điều khiển — dark premium theo 3 ảnh tham chiếu (bo 16 · pill nav · card hero đặc màu · avatar stack). Accent giữ ĐỎ theo chỉ đạo trước.</div>
+<div class="art"><div class="shell">
+  <div class="rail">
+    <div class="logo">A</div>
+    <div class="ri on">▦</div><div class="ri">▤</div><div class="ri">⛟</div><div class="ri">◎</div><div class="ri">⌸</div>
+    <div class="rai">VT</div>
+  </div>
+  <div class="main">
+    <div class="top">
+      <div class="wm">AppLogictics</div>
+      <div class="pills"><span class="pill on">Tổng quan</span><span class="pill">Đơn hàng</span><span class="pill">Chuyến</span><span class="pill">Kế toán</span></div>
+      <div class="grow"></div>
+      <div class="avs"><i></i><i></i><i></i></div>
+      <div class="ic">⌕</div><div class="ic">◔</div><div class="ic">＋</div>
+    </div>
+
+    <h1>Bảng điều khiển</h1>
+    <div class="sub">128 đơn · 36 chuyến đang chạy · cập nhật 12:44</div>
+
+    <div class="stats">
+      <div class="card hero">
+        <div class="k">Việc chờ gán</div>
+        <div class="v">13 <span style="font-size:13px;font-weight:500;opacity:.85">việc</span></div>
+        <div class="d">▲ 4 so với hôm qua</div>
+      </div>
+      <div class="card"><div class="k">Đang lấy hàng</div><div class="v">36</div><div class="d">▲ 6 so với hôm qua</div></div>
+      <div class="card"><div class="k">Đã về kho hôm nay</div><div class="v">9</div><div class="d">▲ 80%</div></div>
+      <div class="card"><div class="k">Tải chuyến TB</div><div class="v">73<span style="font-size:13px;color:var(--mut)">%</span></div><div class="d neg">▼ 2%</div></div>
+    </div>
+
+    <div class="row">
+      <div class="card">
+        <div class="ct"><b>Xu hướng việc theo ngày</b><span>7 ngày · đơn vị: việc</span></div>
+        <svg viewBox="0 0 700 190" style="width:100%;height:190px">
+          <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#E4443A" stop-opacity=".45"/><stop offset="100%" stop-color="#E4443A" stop-opacity="0"/></linearGradient></defs>
+          <g stroke="#1E242C" stroke-width="1"><line x1="0" y1="30" x2="700" y2="30"/><line x1="0" y1="80" x2="700" y2="80"/><line x1="0" y1="130" x2="700" y2="130"/></g>
+          <path d="M0 150 L100 132 L200 138 L300 96 L400 58 L500 106 L600 88 L700 34 L700 190 L0 190 Z" fill="url(#g)"/>
+          <polyline points="0,150 100,132 200,138 300,96 400,58 500,106 600,88 700,34" fill="none" stroke="#E4443A" stroke-width="2.6" stroke-linejoin="round"/>
+          <polyline points="0,124 100,128 200,152 300,134 400,100 500,116 600,124 700,138" fill="none" stroke="#5B6675" stroke-width="2" stroke-dasharray="6 5"/>
+          <g fill="#5B6675" font-size="11"><text x="2" y="185">24/10</text><text x="330" y="185">27/10</text><text x="660" y="185">30/10</text></g>
+        </svg>
+        <div class="legend"><span><i style="background:#E4443A"></i>Tạo mới</span><span><i style="background:#5B6675"></i>Đã về kho (nét đứt)</span></div>
+      </div>
+      <div class="card">
+        <div class="ct"><b>Cơ cấu trạng thái</b><span>257 việc</span></div>
+        <div style="display:flex;align-items:center;gap:18px">
+          <svg width="150" height="150" viewBox="0 0 42 42">
+            <circle cx="21" cy="21" r="15.9" fill="none" stroke="#232832" stroke-width="6"/>
+            <circle cx="21" cy="21" r="15.9" fill="none" stroke="#E4443A" stroke-width="6" stroke-dasharray="74 26" stroke-dashoffset="25" transform="rotate(-90 21 21)"/>
+            <circle cx="21" cy="21" r="15.9" fill="none" stroke="#F2837A" stroke-width="6" stroke-dasharray="7 93" stroke-dashoffset="-49" transform="rotate(-90 21 21)"/>
+            <circle cx="21" cy="21" r="15.9" fill="none" stroke="#C6F24E" stroke-width="6" stroke-dasharray="14 86" stroke-dashoffset="-56" transform="rotate(-90 21 21)"/>
+            <text x="21" y="20" text-anchor="middle" fill="#F2F5F7" font-size="6" font-weight="700">257</text>
+            <text x="21" y="25" text-anchor="middle" fill="#8A93A0" font-size="3">việc</text>
+          </svg>
+          <div style="font-size:12px;flex:1">
+            <div style="display:flex;justify-content:space-between;padding:4px 0"><span><i style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#E4443A;margin-right:7px"></i>Đã về kho</span><b class="r">191</b></div>
+            <div style="display:flex;justify-content:space-between;padding:4px 0"><span><i style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#F2837A;margin-right:7px"></i>Đang lấy</span><b class="r">36</b></div>
+            <div style="display:flex;justify-content:space-between;padding:4px 0"><span><i style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#C6F24E;margin-right:7px"></i>Chờ gán</span><b class="r">13</b></div>
+            <div style="display:flex;justify-content:space-between;padding:4px 0;color:#8A93A0"><span><i style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#5B6675;margin-right:7px"></i>Khác</span><b class="r">17</b></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tbl">
+      <div class="th"><div>MÃ ĐƠN</div><div>SHOP</div><div class="r">CƯỚC</div><div class="r">CẬP NHẬT</div><div>TRẠNG THÁI</div></div>
+      <div class="tr"><div class="who"><i></i>ĐH/26/1042</div><div>Sen Đá Shop</div><div class="r">186.000 ₫</div><div class="r">17:41</div><div><span class="tag t-go">Chờ lấy</span></div></div>
+      <div class="tr"><div class="who"><i></i>ĐH/26/1041</div><div>Mây Trắng Store</div><div class="r">124.500 ₫</div><div class="r">16:20</div><div><span class="tag t-ok">Đã về kho</span></div></div>
+      <div class="tr"><div class="who"><i></i>ĐH/26/1040</div><div>Bao Bì Nhựa Tiến Đạt</div><div class="r">342.000 ₫</div><div class="r">14:11</div><div><span class="tag t-bad">Lấy thất bại</span></div></div>
+      <div class="tr"><div class="who"><i></i>ĐH/26/1037</div><div>Nội Thất Gỗ Việt</div><div class="r">—</div><div class="r">18:30</div><div><span class="tag t-mut">Chưa vào chuyến</span></div></div>
+    </div>
+  </div>
+</div></div>
+</body></html>

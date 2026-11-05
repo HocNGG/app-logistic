@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  GỠ NHÓM KỸ THUẬT KHỎI 3 TÀI XẾ DEMO — cùng lý do với
+  `addons/lab_core/data/demo_users_technical.xml` (đọc comment ở đó trước).
+
+  Vì sao phải có file riêng ở module này: tài xế (`demo_user_taixe01..03`) được
+  khai trong `lab_laixe/data/demo_data.xml`, mà `lab_core` KHÔNG depends
+  `lab_laixe` nên không thể `ref()` tới các record đó (quy tắc phụ thuộc một
+  chiều, docs/02 §1).
+
+  Ghi chú: tài xế là portal (`base.group_portal`) — nhóm này KHÔNG imply
+  `base.group_no_one`, nên trên DB sạch lời gọi này là no-op. Giữ lại vì:
+  (1) nếu ai đó nâng tài xế lên Internal User thì bất biến vẫn đúng,
+  (2) hàm idempotent nên không có hại.
+-->
+<odoo>
+    <data noupdate="0">
+
+        <function model="res.users" name="_lab_bo_nhom_ky_thuat" eval="[[ref('demo_user_taixe01'), ref('demo_user_taixe02'), ref('demo_user_taixe03')]]"/>
+
+    </data>
+</odoo>

@@ -1,0 +1,8 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_res_partner_cs,"res.partner — CS/Trưởng nhóm CS ĐỌC-GHI-TẠO khách hàng (KHÔNG xoá): bước ① phải tạo shop khi khách lần đầu gửi hàng",base.model_res_partner,lab_core.group_cs,1,1,1,0
+access_sale_order_cs_read,"sale.order — CS/Quản lý CHỈ ĐỌC: bước ⑦ gom đơn vào chuyến PHẢI chọn được 'Đơn hàng của shop'; KHÔNG sửa/không tạo/không xoá (đo 2026-11-02: cs01/manager01 đọc được 0 đơn ⇒ ô chọn rỗng, chỉ hiện 'Create')",sale.model_sale_order,lab_core.group_cs,1,0,0,0
+access_sale_order_line_cs_read,"sale.order.line — CS/Quản lý CHỈ ĐỌC: xem dòng hàng của đơn bán đã gom vào chuyến",sale.model_sale_order_line,lab_core.group_cs,1,0,0,0
+access_sale_order_warehouse_read,"sale.order — Kho CHỈ ĐỌC: xem mã đơn bán gắn trên yêu cầu lấy hàng sau khi nhận hàng (KHÔNG tạo/sửa/xoá — giữ N16)",sale.model_sale_order,lab_core.group_warehouse,1,0,0,0
+access_stock_picking_docs_read,"stock.picking — Chứng từ CHỈ ĐỌC: xem phiếu nhập/xuất để đối chiếu AWB/HBL; KHÔNG validate (không được nhận/xuất hàng)",stock.model_stock_picking,lab_core.group_docs,1,0,0,0
+access_stock_move_docs_read,"stock.move — Chứng từ CHỈ ĐỌC: xem dòng hàng của phiếu kho",stock.model_stock_move,lab_core.group_docs,1,0,0,0
+access_stock_move_line_docs_read,"stock.move.line — Chứng từ CHỈ ĐỌC: xem dòng/kiện của phiếu kho",stock.model_stock_move_line,lab_core.group_docs,1,0,0,0

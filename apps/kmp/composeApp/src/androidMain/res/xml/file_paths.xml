@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Thư mục FileProvider được phép cấp cho app camera: `cache/captures/` (ảnh tạm, xoá sau khi đọc). -->
+<paths>
+    <cache-path
+        name="captures"
+        path="captures/" />
+</paths>
+

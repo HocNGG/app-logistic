@@ -1,0 +1,1882 @@
+// =====================================================================================
+// lab_ui/static/src/scss/backend.scss  —  TẦNG CSS GIAO DIỆN (backend + trang đăng nhập)
+//
+// Palette: docs/adr/ADR-009-dark-premium-lime.md §6 — DARK là CHẾ ĐỘ DUY NHẤT.
+//   Không có nhánh light, không có cơ chế đổi theme, không có fallback sáng:
+//   token khai trên `:root` (khối 1) đã là dark và áp ngay.
+//
+// Bundle: "web.assets_backend" (backend) + "web.assets_frontend" (trang /web/login —
+//   /web/login KHÔNG nạp web.assets_backend, xem ghi chú trong __manifest__.py).
+// Bố cục màn làm việc: agents/_shared/skills/ui-dashboard-app-screens.md §3–§6
+//   (card xếp lớp, KPI, chip trạng thái, bảng thoáng).
+//
+// PHẠM VI (mọi selector đều nằm dưới 1 trong 2 gốc này, không có selector toàn cục):
+//   • `.o_web_client …`  — body của backend có class o_web_client (web.webclient_bootstrap)
+//   • `body.o_login …`   — body trang đăng nhập (class do lab_ui/views/login.xml thêm)
+//   • `:root { --lab-* }` — chỉ khai CSS custom property, không style phần tử nào
+//
+// KHÔNG có: gradient, backdrop-filter, glow, animation vô hạn, mã màu literal ngoài khối 1.
+// !important: mỗi chỗ có comment lý do ĐO ĐƯỢC ngay tại rule (utility Bootstrap sinh kèm
+//   !important, hoặc navbar bị web client tô bằng khai báo mạnh hơn rule thường).
+//
+// ĐỐI CHIẾU SOURCE THẬT (odoo 17.0 — không viết theo trí nhớ; tên class đã kiểm từng cái):
+//   navbar.xml            : header.o_navbar > nav.o_main_navbar, .o_menu_brand,
+//                           .o_menu_sections, a.o_nav_entry, .o_navbar_apps_menu, .o_menu_systray
+//   dropdown.xml          : .o-dropdown > div.o-dropdown--menu.dropdown-menu, a.dropdown-item
+//   control_panel.xml     : .o_control_panel, .o_breadcrumb, .o_last_breadcrumb_item.active,
+//                           nav.o_cp_switch_buttons > button.o_switch_view(.active), .o_cp_pager
+//   list_renderer.xml/js  : .o_list_view .o_list_renderer > table.o_list_table
+//                           (table table-sm table-hover + table-striped khi không group),
+//                           tr.o_data_row, tr.o_data_row_selected, td.o_data_cell, tfoot
+//   list_renderer.scss    : custom property --ListRenderer-thead-bg-color / -padding-y;
+//                           .o_list_table { --table-bg } ; $variable-prefix: '' (bootstrap_overridden)
+//                           ⇒ CSS var của Bootstrap ở đây KHÔNG có tiền tố `bs-`:
+//                              --table-striped-bg / --table-hover-bg / --table-accent-bg
+//   badge_field.xml/js    : span.badge.rounded-pill + class text-bg-<decoration> (5 nhóm)
+//   form_compiler.js      : .o_form_renderer > .o_form_sheet_bg > .o_form_sheet,
+//                           .o_form_statusbar
+//   statusbar_field.xml   : .o_statusbar_status > button.btn.o_arrow_button(.o_arrow_button_current)
+//   kanban_renderer.xml   : .o_kanban_renderer > .o_kanban_group > .o_kanban_record
+//
+// CONTRAST (WCAG 2.1, tính trên đúng token §6 — ADR-009 §7):
+//   ink trên bg            ≈ 18,1:1   (chữ thường cần ≥ 4,5:1)
+//   ink-2 trên bg          ≈  7,0:1   (nhãn phụ)
+//   ink-3 trên bg          ≈  4,1:1   (chỉ chữ ≥ 14px đậm / nhãn phụ)
+//   on-accent trên accent  ≈ 14,0:1   (chữ trên nút / card lime)
+//   ok/warn/bad/info trên card ≈ 7,9 / 6,7 / 5,2 / 6,0 : 1 (chip trạng thái)
+// =====================================================================================
+
+
+// -------------------------------------------------------------------------------------
+// 1. TOKEN — ADR-009 §6. ĐÂY LÀ CHỖ DUY NHẤT trong file được phép có mã màu literal.
+//    Audit (grep): `#[0-9a-fA-F]{3,8}` ngoài khối này = 0.
+//    Không nhánh light: dark áp thẳng, không cần thuộc tính nào.
+// -------------------------------------------------------------------------------------
+:root {
+    color-scheme: light;            // select/scrollbar của HĐH cũng sang tông sáng
+    // ---- §6: nền / bề mặt / viền ----
+    --lab-bg: #F3F2F8;              // nền trang, nền sau cùng
+    --lab-s1: #FFFFFF;              // sidebar, top nav
+    --lab-s2: #F6F6FB;              // khối nội dung, filter bar, header bảng
+    --lab-card: #FFFFFF;            // card, bảng, panel
+    --lab-card-2: #F0F0F6;          // hover dòng/card
+    --lab-line: rgba(11, 11, 18, .10);    // mọi đường phân tách
+    --lab-line-2: rgba(11, 11, 18, .20);  // input focus, khung chọn
+
+    // ---- §6: mực ----
+    --lab-ink: #0B0B12;             // chữ chính
+    --lab-ink-2: #6B6B78;           // nhãn, mô tả (4,72:1 trên bg)
+    --lab-ink-3: #9A9AA6;           // nét mờ — KHÔNG dùng làm chữ thường
+
+    // ---- §6: nhấn ----
+    --lab-accent: #C2EE2F;          // lime: chip, thanh tiến độ, gạch nhấn
+    --lab-accent-2: #D4F84E;        // lime hover
+    --lab-on-accent: #2B3300;       // CHỮ TRÊN NỀN LIME (9,87:1)
+
+    // ---- §6: trạng thái (luôn kèm CHỮ, không bao giờ chỉ dựa vào màu) ----
+    --lab-ok: #2F9E5F;              // "Đã về kho"
+    --lab-warn: #A06A00;            // "Chờ gán", sát ngưỡng
+    --lab-bad: #B3261E;             // "Thất bại", huỷ
+    --lab-info: #2A6EA8;            // "Đang đi lấy"
+
+    // ---- §6: chart ----
+    --lab-c1: #6F9600;              // series 1
+    --lab-c2: #12857A;              // series 2
+    --lab-c3: #2A6EA8;              // series 3
+    --lab-grid: rgba(11, 11, 18, .07);    // trục, gridline
+
+    // ---- §6: hình học / bóng / font ----
+    --lab-r-1: 8px;                 // input, chip
+    --lab-r-2: 10px;                // control (nút, search, segmented)
+    --lab-r-3: 16px;                // card
+    --lab-r-4: 20px;                // panel, modal
+    --lab-r-5: 24px;                // hero
+    --lab-shadow-1: 0 10px 30px rgba(11, 11, 18, .10);   // popover/menu/dialog DUY NHẤT
+    --lab-font: Inter, "Segoe UI", system-ui, sans-serif;
+
+    // ---- Kênh RGB của ĐÚNG các màu §6 ở trên: chỉ để pha tint bằng alpha.
+    //      Không phải màu mới, không sinh thêm hex nào từ đây. ----
+    --lab-accent-rgb: 194, 238, 47;
+    --lab-on-accent-rgb: 43, 51, 0;
+    --lab-ok-rgb: 47, 158, 95;
+    --lab-warn-rgb: 160, 106, 0;
+    --lab-bad-rgb: 179, 38, 30;
+    --lab-info-rgb: 42, 110, 168;
+
+    // ---- Tint 12–16% của 4 màu trạng thái + accent (nav/hover/selection) ----
+    --lab-accent-tint: rgba(var(--lab-accent-rgb), .10);
+    --lab-accent-tint-2: rgba(var(--lab-accent-rgb), .16);
+    --lab-selection: rgba(var(--lab-accent-rgb), .22);
+    --lab-ok-tint: rgba(var(--lab-ok-rgb), .14);
+    --lab-ok-tint-2: rgba(var(--lab-ok-rgb), .20);
+    --lab-warn-tint: rgba(var(--lab-warn-rgb), .14);
+    --lab-bad-tint: rgba(var(--lab-bad-rgb), .10);   // 10% chứ không 14%: tint đỏ làm NỀN sáng lên ⇒ 14% chỉ còn 4,28:1 cho chữ chip, 10% = 4,54:1
+    --lab-info-tint: rgba(var(--lab-info-rgb), .14);
+    --lab-neutral-tint: rgba(11, 11, 18, .05);   // v5: tint trung tính phải TỐI hơn nền, trắng trên trắng = vô hình
+
+    // ---- Mực ĐẬM của từng hệ màu: dùng cho CHỮ nằm trên nền tint (v5 nền sáng).
+    //      Lime/ok/warn/bad làm CHỮ trên nền sáng chỉ 1,2–3,4:1 -> không đọc được;
+    //     chip vì vậy = nền tint nhạt + chữ đậm cùng hệ. ----
+    --lab-accent-ink: #3F4F00;
+    --lab-ok-ink: #1F7A47;
+    --lab-warn-ink: #7A5200;
+    --lab-bad-ink: #8E211A;
+    --lab-info-ink: #1F5A8A;
+
+    // ---- Bước tông của bảng: dark KHÔNG sọc zebra (bảng 300 dòng sọc liên tục rất mỏi
+    //      mắt) — nền phẳng + kẻ ngang + hover/chọn = --lab-card-2. Dùng màu ĐẶC chứ không
+    //      dùng alpha: nếu dùng alpha, màu phụ thuộc nền phía sau và hover sẽ TỐI ĐI trên
+    //      nền --lab-bg (đã thấy ở bản nháp). ----
+    --lab-row-hover: var(--lab-card-2);
+    --lab-row-selected: var(--lab-card-2);
+
+    --lab-duration: 180ms;
+    --lab-ease: cubic-bezier(.2, .6, .2, 1);
+
+    // Ô nhập / select / thanh cuộn native của trình duyệt cũng theo dark.
+    color-scheme: dark;
+}
+
+
+// -------------------------------------------------------------------------------------
+// 2. NỀN TẢNG BACKEND
+// -------------------------------------------------------------------------------------
+.o_web_client {
+    background-color: var(--lab-bg);
+    color: var(--lab-ink);
+    font-family: var(--lab-font);
+}
+
+
+// -------------------------------------------------------------------------------------
+// 3. NAVBAR + MENU — nav = PILL trong header (4 ảnh tham chiếu), mục đang mở nền --lab-card
+//    + chữ --lab-ink + vạch đáy 2px --lab-accent.
+//    ⚠️ Bỏ "vạch trái 3px" của bản cũ: đó là mẫu cho SIDEBAR DỌC. Navbar 17.0 là thanh
+//    ngang nên vạch trái nằm ở mép trái màn hình, đọc thành "viền lỗi" chứ không thành active.
+// -------------------------------------------------------------------------------------
+.o_web_client .o_main_navbar {
+    background-color: var(--lab-s1);
+    border-bottom: 1px solid var(--lab-line);
+    box-shadow: none;
+    color: var(--lab-ink);
+    font-size: 14px;
+}
+
+// -------------------------------------------------------------------------------------
+// ⚠️ !important — LÝ DO ĐO ĐƯỢC (kết luận giữ từ phiên trước, KHÔNG đoán):
+//   rule thường `.o_web_client .o_main_navbar{background:var(--lab-s1)}` đã nằm trong
+//   bundle và đặc tả cao hơn `.o_main_navbar{background:<brand>}` của web, NHƯNG navbar
+//   vẫn render đúng màu brand (đo pixel 2026-10-28). ⇒ giá trị đó đến từ khai báo mạnh hơn
+//   (inline style / rule !important của web client).
+//   Nay brand = LIME ⇒ nếu không ép, CẢ DẢI NAVBAR THÀNH MỘT MẢNG LIME ĐẶC, vi phạm
+//   ADR-009 §7 ("lime KHÔNG làm nền diện rộng"). Chỉ áp cho header backend, không áp login.
+// -------------------------------------------------------------------------------------
+body .o_web_client > header.o_navbar > .o_main_navbar,
+body .o_web_client header.o_navbar > nav.o_main_navbar,
+.o_web_client .o_main_navbar {
+    background: var(--lab-s1) !important;
+    border-bottom: 1px solid var(--lab-line) !important;
+    color: var(--lab-ink) !important;
+}
+
+// Brand: lime chỉ là ĐIỂM NHẤN (chữ 14px trên --lab-s1 ≈ 12,9:1), không phải nền.
+.o_web_client .o_main_navbar .o_menu_brand {
+    border-radius: var(--lab-r-1);
+    color: var(--lab-accent);
+    font-weight: 600;
+    transition: background-color var(--lab-duration) var(--lab-ease),
+                color var(--lab-duration) var(--lab-ease);
+}
+
+.o_web_client .o_main_navbar .o_menu_brand:hover,
+.o_web_client .o_main_navbar .o_menu_brand:focus-visible {
+    background-color: var(--lab-neutral-tint);
+    box-shadow: none;
+    color: var(--lab-accent-2);
+}
+
+// Mục menu cấp 1 trong navbar (DropdownItem của web.NavBar.SectionsMenu: a.o_nav_entry).
+// ⚠️ ĐO THẬT: mỗi `a.o_nav_entry` từng bị Odoo tô nền bằng màu brand — phải set background
+// cho CHÍNH entry, nếu chỉ set navbar thì cả dải menu vẫn màu brand.
+.o_web_client .o_main_navbar .o_nav_entry {
+    border-radius: var(--lab-r-1);
+    background-color: transparent;
+    background-image: none;
+    color: var(--lab-ink-2);
+    transition: background-color var(--lab-duration) var(--lab-ease),
+                box-shadow var(--lab-duration) var(--lab-ease),
+                color var(--lab-duration) var(--lab-ease);
+}
+
+.o_web_client .o_main_navbar .o_menu_brand,
+.o_web_client .o_main_navbar .o_navbar_apps_menu .dropdown-toggle,
+.o_web_client .o_main_navbar .o_menu_sections .dropdown-toggle {
+    background-color: transparent;
+    background-image: none;
+    color: var(--lab-accent);
+}
+
+.o_web_client .o_main_navbar .o_nav_entry:hover,
+.o_web_client .o_main_navbar .o_nav_entry:focus-visible {
+    background-color: var(--lab-neutral-tint);
+    color: var(--lab-ink);
+}
+
+// MUC DANG CHON = PILL LIME (theo anh tham chieu 2026-10-30: muc nav active la mot vien
+// pill nen lime, chu mau on-accent). Truoc day chi co vach day 2px -> khong du noi.
+.o_web_client .o_main_navbar .o_nav_entry.active {
+    background-color: var(--lab-accent);
+    background-image: none;
+    box-shadow: none;
+    color: var(--lab-on-accent);
+    font-weight: 600;
+}
+
+.o_web_client .o_main_navbar .o_nav_entry.active:hover,
+.o_web_client .o_main_navbar .o_nav_entry.active:focus-visible {
+    background-color: var(--lab-accent-2);
+    color: var(--lab-on-accent);
+}
+
+// Trong menu xo xuong (man hep) muc active cung la pill lime.
+.o_web_client .o_main_navbar .dropdown-menu .dropdown-item.active,
+.o_web_client .o_main_navbar .dropdown-menu .dropdown-item:active {
+    background-color: var(--lab-accent);
+    color: var(--lab-on-accent);
+    border-radius: var(--lab-r-1);
+}
+
+.o_web_client .o_main_navbar .o_menu_sections .dropdown-toggle,
+.o_web_client .o_main_navbar .o_navbar_apps_menu .dropdown-toggle,
+.o_web_client .o_main_navbar .o_menu_systray .btn {
+    color: var(--lab-ink);
+}
+
+.o_web_client .o_main_navbar .o_menu_sections .dropdown-toggle:hover,
+.o_web_client .o_main_navbar .o_menu_sections .dropdown-toggle:focus-visible,
+.o_web_client .o_main_navbar .o_navbar_apps_menu .dropdown-toggle:hover,
+.o_web_client .o_main_navbar .o_navbar_apps_menu .dropdown-toggle:focus-visible,
+.o_web_client .o_main_navbar .o_menu_systray .btn:hover,
+.o_web_client .o_main_navbar .o_menu_systray .btn:focus-visible {
+    background-color: var(--lab-neutral-tint);
+    color: var(--lab-accent);
+}
+
+// Item trong menu xổ xuống (menu ứng dụng + menu section): hover = nền --lab-card-2 + chữ
+// lime. Bỏ `border-left` của bản cũ: viền trái là mẫu menu dọc, trong menu nổi nó làm chữ
+// nhảy 3px mà không thêm thông tin.
+.o_web_client .o_navbar_apps_menu .o-dropdown--menu .dropdown-item,
+.o_web_client .o_menu_sections .o-dropdown--menu .dropdown-item {
+    border-radius: var(--lab-r-1);
+    color: var(--lab-ink);
+    font-size: 14px;
+    transition: background-color var(--lab-duration) var(--lab-ease),
+                color var(--lab-duration) var(--lab-ease);
+}
+
+.o_web_client .o_navbar_apps_menu .o-dropdown--menu .dropdown-item:hover,
+.o_web_client .o_navbar_apps_menu .o-dropdown--menu .dropdown-item:focus-visible,
+.o_web_client .o_navbar_apps_menu .o-dropdown--menu .dropdown-item.active,
+.o_web_client .o_navbar_apps_menu .o-dropdown--menu .dropdown-item.focus,
+.o_web_client .o_menu_sections .o-dropdown--menu .dropdown-item:hover,
+.o_web_client .o_menu_sections .o-dropdown--menu .dropdown-item:focus-visible,
+.o_web_client .o_menu_sections .o-dropdown--menu .dropdown-item.active,
+.o_web_client .o_menu_sections .o-dropdown--menu .dropdown-item.focus {
+    background-color: var(--lab-card-2);
+    color: var(--lab-accent);
+}
+
+// Nhóm mục trong menu (dropdown-header) — nhãn phụ, không in hoa.
+// Màu --lab-ink-2 (5,2:1 trên card), KHÔNG dùng --lab-ink-3 (chỉ 3,0:1 trên card).
+.o_web_client .o-dropdown--menu .dropdown-header {
+    color: var(--lab-ink-2);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+
+// -------------------------------------------------------------------------------------
+// 4. CONTROL PANEL + TÌM KIẾM + BREADCRUMB + CHUYỂN CHẾ ĐỘ XEM
+// -------------------------------------------------------------------------------------
+.o_web_client .o_control_panel {
+    background-color: var(--lab-bg);
+    border-bottom: 1px solid var(--lab-line);
+}
+
+.o_web_client .o_control_panel .o_searchview {
+    background-color: var(--lab-card);
+    border: 1px solid var(--lab-line);
+    border-radius: var(--lab-r-2);
+    box-shadow: none;
+}
+
+// Focus nhìn thấy được: viền + outline cùng --lab-accent (skill §5: "focus nhìn thấy").
+.o_web_client .o_control_panel .o_searchview:focus-within {
+    border-color: var(--lab-accent);
+    outline: 2px solid var(--lab-accent);
+    outline-offset: 1px;
+}
+
+.o_web_client .o_control_panel .o_breadcrumb,
+.o_web_client .o_control_panel .breadcrumb {
+    font-size: 13px;
+}
+
+.o_web_client .o_control_panel .o_last_breadcrumb_item.active,
+.o_web_client .o_control_panel .o_last_breadcrumb_item.active a {
+    color: var(--lab-ink);
+    font-weight: 600;
+}
+
+.o_web_client .o_control_panel .o_breadcrumb a {
+    color: var(--lab-ink-2);
+}
+
+.o_web_client .o_control_panel .o_breadcrumb a:hover,
+.o_web_client .o_control_panel .o_breadcrumb a:focus-visible {
+    color: var(--lab-accent);
+}
+
+// Cụm nút chuyển chế độ xem (list/kanban/form): nút đang xem = tint accent + chữ --lab-accent.
+.o_web_client .o_control_panel .o_cp_switch_buttons .o_switch_view {
+    color: var(--lab-ink-2);
+}
+
+.o_web_client .o_control_panel .o_cp_switch_buttons .o_switch_view.active {
+    background-color: var(--lab-accent-tint);
+    border-color: var(--lab-accent);
+    color: var(--lab-accent);
+}
+
+.o_web_client .o_control_panel .o_cp_pager {
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    color: var(--lab-ink-2);
+}
+
+
+// -------------------------------------------------------------------------------------
+// 5. BẢNG (LIST) — header --lab-s2, hàng ≥ 44px, CHỈ kẻ đường ngang, số tabular
+// -------------------------------------------------------------------------------------
+// Odoo 17 khai header bảng bằng 2 custom property này (list_renderer.scss). Ghi đè bằng
+// selector đặc tả CAO HƠN khai báo gốc (gốc: `.o_list_view .o_list_renderer`) ⇒ không
+// cần !important và không phụ thuộc thứ tự nạp file.
+.o_web_client .o_list_view .o_list_renderer {
+    --ListRenderer-thead-bg-color: var(--lab-s2);
+    --ListRenderer-thead-padding-y: 12px;
+    box-shadow: none;
+}
+
+.o_web_client .o_list_view .o_list_table {
+    // Tắt sọc xám lạnh của Bootstrap (--table-accent-bg = rgba(0,0,0,.05)); dark dùng nền
+    // phẳng --lab-card + kẻ ngang, KHÔNG sọc. Tên biến KHÔNG có tiền tố `bs-` vì Odoo đặt
+    // $variable-prefix: '' (bootstrap_overridden.scss) — đã đối chiếu _tables.scss.
+    --table-striped-bg: transparent;
+    --table-hover-bg: transparent;
+    --table-bg: var(--lab-card);
+}
+
+.o_web_client .o_list_view .o_list_table thead,
+.o_web_client .o_list_view .o_list_table thead th {
+    border-left: 0;
+    border-right: 0;
+    box-shadow: none;
+}
+
+.o_web_client .o_list_view .o_list_table thead th {
+    font-size: 13px;          // skill §5: chữ header 13px, sentence-case (không in hoa)
+    font-weight: 500;
+    letter-spacing: 0;
+    color: var(--lab-ink-2);
+    border-bottom: 1px solid var(--lab-line);
+}
+
+.o_web_client .o_list_view .o_list_table > tbody > tr.o_data_row > td {
+    height: 44px;             // skill §5: hàng cao 44 (height trên td = min-height)
+    padding-top: 8px;
+    padding-bottom: 8px;
+    border-left: 0;           // bảng chỉ kẻ ĐƯỜNG NGANG
+    border-right: 0;
+    border-bottom: 1px solid var(--lab-line);
+    background-color: var(--lab-card);
+    vertical-align: middle;
+}
+
+// Hàng lẻ: dark KHÔNG sọc zebra — nền phẳng --lab-card, tách dòng bằng đường kẻ ngang.
+.o_web_client .o_list_view .o_list_table > tbody > tr.o_data_row:nth-of-type(odd) > td {
+    background-color: var(--lab-card);
+}
+
+.o_web_client .o_list_view .o_list_table > tbody > tr.o_data_row:hover > td {
+    background-color: var(--lab-row-hover);
+}
+
+// Hàng đang chọn: --lab-row-selected (tint accent 13%) + chữ ink; màu không phải tín hiệu duy nhất.
+.o_web_client .o_list_view .o_list_table > tbody > tr.o_data_row.o_data_row_selected > td {
+    --table-accent-bg: transparent;
+    background-color: var(--lab-row-selected);
+    color: var(--lab-ink);
+}
+
+// Ô CHỌN DÒNG (checkbox) KHÔNG phải `td.o_data_cell` nên vẫn thừa hưởng
+// `.text-success/.text-danger` mà `decoration-*` gắn lên <tr> ⇒ viền checkbox xanh/đỏ,
+// đọc như lỗi theme. Đo bằng probe DOM (infra/scripts/probe-row.mjs, 2026-10-30):
+// color = rgb(0, 136, 24) ở ô đầu của dòng `o_data_row text-success`. Ép ô chọn về ink-2.
+.o_web_client .o_list_view .o_list_table > tbody > tr > td.o_list_record_selector,
+.o_web_client .o_list_view .o_list_table > thead > tr > th.o_list_record_selector,
+.o_web_client .o_list_view .o_list_table > tfoot > tr > td {
+    color: var(--lab-ink-2);
+}
+
+// Checkbox trên nền tối: Bootstrap để nền trắng + viền xám ⇒ chói. Dùng bề mặt s1.
+.o_web_client .o_list_view .o_list_table .o_list_record_selector .form-check-input {
+    background-color: var(--lab-s1);
+    border-color: var(--lab-line-2);
+}
+
+// Số liệu căn theo cột: tabular-nums CHỈ trong ô dữ liệu của list (không áp toàn cục).
+.o_web_client .o_list_view .o_data_cell {
+    font-variant-numeric: tabular-nums;
+}
+
+.o_web_client .o_list_view .o_list_number {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+// Dòng nhóm: cùng bước tông --lab-s2, bỏ background-image (Odoo nhiều bản dùng gradient ở đây).
+.o_web_client .o_list_view .o_list_table tbody > tr.o_group_header {
+    background-color: var(--lab-s2);
+    background-image: none;
+    box-shadow: none;
+}
+
+.o_web_client .o_list_view .o_list_table tfoot td {
+    background-color: var(--lab-s2);
+    color: var(--lab-ink);
+    border-top: 1px solid var(--lab-line);
+    font-weight: 600;
+}
+
+.o_web_client .o_list_view .o_list_table .form-check-input {
+    accent-color: var(--lab-accent);   // checkbox chọn dòng: 1 màu nhấn, không tự vẽ lại
+}
+
+// CHIP TRẠNG THÁI trong bảng.
+// Widget `badge` của Odoo 17 render `<span class="badge rounded-pill text-bg-<decoration>">`
+// (badge_field.xml dòng 5). Nhãn chữ do field `state` cấp — chip luôn có chữ, không chỉ màu.
+//
+// ⚠️ !important BẮT BUỘC tại đây (utility của Bootstrap sinh kèm !important):
+//    `.rounded-pill` là utility Bootstrap sinh KÈM `!important`
+//    ($enable-important-utilities: true — bootstrap/_variables.scss:354). Không có
+//    !important thì bo góc 999px không thể đổi về --lab-r-1 (8px) và
+//    "pill badge" chính là *tell* của giao diện AI đại trà (design-taste-anti-slop §2).
+//    Cách khác là bỏ class rounded-pill trong view của lab_laixe — NGOÀI phạm vi module này.
+.o_web_client .o_list_view .o_badge_cell .badge {
+    padding: 2px 8px;
+    border: 1px solid transparent;
+    border-radius: var(--lab-r-1) !important; /* lý do: xem comment ngay trên */
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.5;
+    background-color: var(--lab-s2);
+    color: var(--lab-ink-2);
+}
+
+// 5 nhóm decoration mà tree của lab_laixe gán cho field `state`:
+//   info     = new + assigned        (cần chú ý / đang điều phối)  -> --lab-warn
+//   primary  = en_route + picked_up  (đang trên đường / đã lấy)     -> --lab-accent
+//   success  = confirmed             (đã về kho)                    -> --lab-ok
+//   warning  = cancelled             (đã huỷ)                       -> --lab-s2 (trung tính)
+//   danger   = failed                (thất bại)                     -> --lab-bad
+// ⚠️ Vì sao không tách đủ 7 màu: view tree của lab_laixe gộp new+assigned vào CÙNG
+//    `decoration-info` và en_route+picked_up vào CÙNG `decoration-primary`, mà module này
+//    không được sửa file ngoài addons/lab_ui/** ⇒ CSS chỉ phân biệt được 5 nhóm. Bản
+//    dashboard (do lab_ui tự render) đã có đủ 7 màu.
+.o_web_client .o_list_view .o_badge_cell .badge.text-bg-info {
+    background-color: var(--lab-warn-tint);
+    color: var(--lab-warn);
+}
+
+.o_web_client .o_list_view .o_badge_cell .badge.text-bg-primary {
+    background-color: var(--lab-accent-tint-2);
+    color: var(--lab-accent);
+}
+
+.o_web_client .o_list_view .o_badge_cell .badge.text-bg-success {
+    background-color: var(--lab-ok-tint);
+    color: var(--lab-ok);
+}
+
+.o_web_client .o_list_view .o_badge_cell .badge.text-bg-warning {
+    background-color: var(--lab-s2);
+    color: var(--lab-ink-2);
+}
+
+.o_web_client .o_list_view .o_badge_cell .badge.text-bg-danger {
+    background-color: var(--lab-bad-tint);
+    color: var(--lab-bad);
+}
+
+
+// -------------------------------------------------------------------------------------
+// 6. FORM — sheet = --lab-card trên nền --lab-bg (viền --lab-line, KHÔNG đổ bóng), statusbar s2
+// -------------------------------------------------------------------------------------
+.o_web_client .o_form_view .o_form_sheet_bg {
+    background-color: var(--lab-bg);
+    border-bottom: 1px solid var(--lab-line);
+}
+
+.o_web_client .o_form_view .o_form_sheet {
+    background-color: var(--lab-card);
+    border: 1px solid var(--lab-line);
+    border-radius: var(--lab-r-3);
+    box-shadow: none;   // ADR-009 §6: bóng CHỈ dành cho popover; card tách bằng viền + bề mặt
+}
+
+.o_web_client .o_form_view .oe_title h1 {
+    font-size: 28px;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    color: var(--lab-ink);
+}
+
+.o_web_client .o_form_view .o_group .o_form_label {
+    font-size: 13px;
+    color: var(--lab-ink-2);
+}
+
+.o_web_client .o_form_view .o_form_statusbar {
+    background-color: var(--lab-s2);
+    border-bottom: 1px solid var(--lab-line);
+}
+
+// Statusbar 7 trạng thái: bước HIỆN TẠI là chữ --lab-accent đậm; không tô đầy nền để mũi tên
+// của Odoo (vẽ bằng border) vẫn đúng hình.
+.o_web_client .o_form_view .o_statusbar_status .o_arrow_button {
+    font-size: 13px;
+}
+
+.o_web_client .o_form_view .o_statusbar_status .o_arrow_button.o_arrow_button_current {
+    color: var(--lab-accent);
+    font-weight: 600;
+}
+
+.o_web_client .o_form_view .o_statusbar_status .o_arrow_button:focus-visible {
+    outline: 2px solid var(--lab-accent);
+    outline-offset: 2px;
+}
+
+
+// -------------------------------------------------------------------------------------
+// 7. KANBAN — thẻ --lab-card viền mảnh trên nền --lab-bg (ref-03), phẳng, không glow
+// -------------------------------------------------------------------------------------
+.o_web_client .o_kanban_renderer {
+    background-color: transparent;
+}
+
+.o_web_client .o_kanban_renderer .o_kanban_group {
+    background-color: transparent;
+}
+
+.o_web_client .o_kanban_renderer .o_kanban_record {
+    border: 1px solid var(--lab-line);
+    border-radius: var(--lab-r-3);
+    background-color: var(--lab-card);
+    box-shadow: none;
+    transition: border-color var(--lab-duration) var(--lab-ease);
+}
+
+.o_web_client .o_kanban_renderer .o_kanban_record:hover,
+.o_web_client .o_kanban_renderer .o_kanban_record:focus-within {
+    border-color: var(--lab-accent);
+}
+
+.o_web_client .o_kanban_renderer .o_kanban_record .o_kanban_record_title {
+    color: var(--lab-ink);
+    font-weight: 600;
+}
+
+.o_web_client .o_kanban_renderer .o_kanban_group .o_kanban_header {
+    color: var(--lab-ink-2);
+    font-size: 13px;
+}
+
+
+// -------------------------------------------------------------------------------------
+// 8. LỚP NỔI — modal + dropdown: đây là 2 chỗ DUY NHẤT có shadow lớp overlay
+// -------------------------------------------------------------------------------------
+.o_web_client .modal-content {
+    border: 1px solid var(--lab-line);
+    box-shadow: var(--lab-shadow-1);
+}
+
+.o_web_client .o-dropdown--menu {
+    background-color: var(--lab-card);
+    border: 1px solid var(--lab-line);
+    box-shadow: var(--lab-shadow-1);
+}
+
+
+// -------------------------------------------------------------------------------------
+// 9. PANEL/CARD — bo 10px (logic màu + bo của control do biến SCSS lo, xem variables.scss)
+// -------------------------------------------------------------------------------------
+.o_web_client .card,
+.o_web_client .o_form_view .o_form_sheet,
+.o_web_client .o_kanban_view .o_kanban_record,
+.o_web_client .modal-content,
+.o_web_client .o-dropdown--menu {
+    border-radius: var(--lab-r-3);
+}
+
+.o_web_client .card {
+    background-color: var(--lab-card);
+    border: 1px solid var(--lab-line);
+    box-shadow: none;
+}
+
+
+// -------------------------------------------------------------------------------------
+// 10. CONTROL — bo 6px, focus nhìn thấy được, không đổ bóng
+// -------------------------------------------------------------------------------------
+.o_web_client .btn {
+    border-radius: var(--lab-r-2);
+    box-shadow: none;
+}
+
+.o_web_client .btn:focus-visible,
+.o_web_client .form-control:focus,
+.o_web_client .form-select:focus {
+    border-color: var(--lab-accent);
+    outline: 2px solid var(--lab-accent);
+    outline-offset: 1px;
+    box-shadow: none;
+}
+
+.o_web_client .o_input,
+.o_web_client .form-control,
+.o_web_client .form-select {
+    border-radius: var(--lab-r-2);
+}
+
+
+// =====================================================================================
+// =====================================================================================
+// 11. TRANG ĐĂNG NHẬP — dark, 2 panel: brand (--lab-s1) | form card (--lab-card)
+//     Khối duy nhất KHÔNG nằm dưới `.o_web_client` (trang login đi qua web.assets_frontend).
+//
+//     DOM thật (dump từ /web/login, 2026-11-01 — xem lab_ui/views/login.xml):
+//       body.o_login > #wrapwrap > main > div.container.lab_login_shell
+//                                      > aside.lab_login_brand      (ta chèn)
+//                                      > div.card.o_database_list   (form Odoo, giữ nguyên)
+//
+//     Không đổi field/action/CSRF nào — chỉ trình bày (views/login.xml).
+//
+//     QUY TẮC MÀU (ADR-009 §7):
+//       • panel trái = --lab-s1, KHÔNG phải lime. Bản trước tô cả panel bằng accent nên chữ
+//         sáng trên lime chỉ ≈ 1,5:1 — đo trên ảnh dark-01-login.png: không đọc được.
+//         Lime là màu nền DIỆN RỘNG bị cấm; ở đây lime chỉ còn: 1 ô logo, 3 con số, nút chính.
+//       • chữ trên nền lime = --lab-on-accent (14:1), không dùng chữ trắng.
+//
+//     ⚠️ SỬA LỖI ĐO ĐƯỢC của bản trước: panel/card từng có `opacity: 0` khi đo bằng
+//     getComputedStyle ngay sau khi tải (animation `both` + `animation-delay` giữ khung hình
+//     `from`). Bản này CHỈ animate `transform` — nội dung luôn hiện, không phụ thuộc thời
+//     điểm chụp.
+// =====================================================================================
+body.o_login {
+    background-color: var(--lab-bg);
+    color: var(--lab-ink);
+    font-family: var(--lab-font);
+
+    // #wrapwrap là id do web.frontend_layout sinh ra.
+    #wrapwrap {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #wrapwrap > main {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        justify-content: stretch;
+    }
+
+    // ------------------------------------------------------------------ lưới 2 cột
+    // `.container` của Bootstrap có max-width theo breakpoint + gutter 2 bên ⇒ phải xoá cả
+    // hai, nếu không panel thương hiệu không tràn được ra mép màn hình.
+    .lab_login_shell {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        align-items: stretch;
+        gap: 0;
+        width: 100%;
+        max-width: none;
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        // `py-5` (template web.login_layout) là utility `!important` 3rem ⇒ panel bị hụt
+        // 48px trên/dưới và lộ nền thành 2 dải. Đã đo bằng bounding box.
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+    }
+
+    // ------------------------------------------------------ panel thương hiệu (trái)
+    .lab_login_brand {
+        order: -1;                 // luôn đứng trước card dù DOM đứng sau
+        display: flex;
+        flex-direction: column;
+        // Gom khối tiêu đề + 3 con số thành MỘT cụm ở trên, đẩy chân trang xuống đáy.
+        justify-content: flex-start;
+        gap: 40px;
+        min-width: 0;
+        padding: 56px 56px 40px;
+        background-color: var(--lab-s1);
+        border: 0;
+        border-right: 1px solid var(--lab-line);
+        border-radius: 0;
+        color: var(--lab-ink);
+    }
+
+    .lab_login_brand_top,
+    .lab_login_proof {
+        max-width: 520px;          // chữ không kéo quá 60 ký tự/dòng
+    }
+
+    .lab_login_brand_top {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    // Logo VẼ BẰNG CSS (không ảnh, không SVG ngoài): 2 kiện hàng trên 1 pallet.
+    // Trên nền tối: kiện 1 = lime đặc (điểm nhấn duy nhất của logo), kiện 2 = CÙNG HỌ LIME
+    // ở alpha 38% (không dùng --lab-ink-3 vì #687486 đọc thành "ô xám = ảnh lỗi" trên nền
+    // navy — đo bằng ảnh chụp docs/review/v2/web-login-1440.png), pallet = viền mạnh.
+    .lab_login_mark {
+        display: grid;
+        grid-template-columns: 30px 30px;
+        grid-template-rows: 30px 8px;
+        gap: 6px;
+        width: 66px;
+    }
+
+    .lab_login_mark_unit {
+        display: block;
+        border-radius: 3px;
+        background-color: var(--lab-accent);
+    }
+
+    .lab_login_mark_unit + .lab_login_mark_unit {
+        background-color: rgba(var(--lab-accent-rgb), .38);
+    }
+
+    .lab_login_mark_base {
+        display: block;
+        grid-column: 1 / -1;
+        border-radius: 3px;
+        background-color: rgba(255, 255, 255, .22);
+    }
+
+    .lab_login_wordmark {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--lab-ink-2);
+    }
+
+    // Tiêu đề: ≤ 2 dòng ở 1440/768/390 (tracking -0.03em).
+    .lab_login_title {
+        margin: 0;
+        font-size: 48px;
+        line-height: 1.06;
+        letter-spacing: -0.03em;
+        font-weight: 700;
+        color: var(--lab-ink);
+    }
+
+    .lab_login_claim {
+        margin: 0;
+        max-width: 42ch;
+        font-size: 16px;
+        line-height: 1.6;
+        color: var(--lab-ink-2);   // 6,5:1 trên --lab-s1
+    }
+
+    // ---------------------------------------------------------- 3 con số bằng chứng
+    .lab_login_proof {
+        display: grid;
+        gap: 0;
+        margin: 0;
+    }
+
+    .lab_login_proof_item {
+        display: grid;
+        grid-template-columns: 56px minmax(0, 1fr);
+        align-items: baseline;
+        gap: 16px;
+        padding: 16px 0;
+        border-top: 1px solid var(--lab-line);
+    }
+
+    // Số = lime: chữ số, không phải đoạn văn (ADR-009 §7 chỉ cấm lime làm chữ đoạn dài).
+    .lab_login_proof_item dt {
+        margin: 0;
+        font-size: 28px;
+        line-height: 1;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        font-variant-numeric: tabular-nums;
+        color: var(--lab-accent);
+    }
+
+    .lab_login_proof_item dd {
+        margin: 0;
+        font-size: 13px;
+        line-height: 1.55;
+        color: var(--lab-ink-2);
+    }
+
+    .lab_login_footnote {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 24px;
+        margin: 0;
+        margin-top: auto;          // dính đáy panel
+        padding-top: 16px;
+        border-top: 1px solid var(--lab-line);
+        font-size: 12px;
+        line-height: 1.55;
+        color: var(--lab-ink-2);   // 6,5:1 trên --lab-s1 (ink-3 chỉ 3,8:1 — không đủ cho chữ 12px)
+    }
+
+    // ---------------------------------------------------------------- cột form (phải)
+    // Card của Odoo được "cởi áo" khỏi class card sáng rồi tự vẽ lại thành một panel dark
+    // nổi trên nền --lab-bg (3 tầng: bg → s1 → card).
+    .o_database_list.lab_login_card,
+    .o_database_list {
+        align-self: center;
+        justify-self: center;
+        width: 100%;
+        max-width: 460px !important;   // !important: template gốc gắn `max-width` inline
+        padding: 32px;
+        background-color: var(--lab-card);
+        border: 1px solid var(--lab-line) !important;   // `.border-0` là utility !important
+        border-radius: var(--lab-r-4);
+        box-shadow: none;
+    }
+
+    // ⚠️ !important BẮT BUỘC — ĐO ĐƯỢC (quét document.styleSheets, 2026-11-01): rule đang
+    // thắng là `.card-body { background-color: rgba(255,255,255,.9) !important }` (CSS sẵn
+    // có của Odoo cho khối đăng nhập, không phải Bootstrap thuần). Không có !important thì
+    // dù selector của ta đặc tả cao hơn, nền trắng vẫn thắng.
+    // Phạm vi chỉ còn `body.o_login .o_database_list` ⇒ không ảnh hưởng card nơi khác.
+    .o_database_list .card-body {
+        padding: 0;
+        background-color: transparent !important;
+        color: var(--lab-ink);
+    }
+
+    // Khối logo công ty: căn TRÁI cho thẳng hàng với tiêu đề + nhãn (Odoo đặt text-center).
+    // `.text-center` / `.border-bottom` là utility Bootstrap sinh KÈM `!important`.
+    .o_database_list .card-body > .text-center.border-bottom {
+        text-align: left !important;
+        padding-bottom: 0;
+        margin-bottom: 24px;
+        border-bottom: 0 !important;
+    }
+
+    .o_database_list .card-body > .text-center img {
+        // !important BẮT BUỘC: Odoo gắn style inline `max-height:120px` lên <img>
+        // (web.login_layout) và style inline luôn thắng selector thường.
+        max-height: 40px !important;
+        width: auto;
+    }
+
+    // ------------------------------------------------------------------- đầu form
+    .lab_login_form_head {
+        margin: 0 0 24px;
+    }
+
+    .lab_login_form_title {
+        margin: 0 0 6px;
+        font-size: 20px;
+        line-height: 1.3;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: var(--lab-ink);
+    }
+
+    .lab_login_hint {
+        margin: 0;
+        font-size: 13px;
+        line-height: 1.55;
+        color: var(--lab-ink-2);
+    }
+
+    // --------------------------------------------------------------- nhãn + ô nhập
+    .oe_login_form {
+        width: 100%;
+    }
+
+    .oe_login_form .form-label,
+    .oe_login_form label {
+        margin-bottom: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--lab-ink-2);
+    }
+
+    .oe_login_form .form-control {
+        min-height: 44px;
+        padding: 0 12px;
+        background-color: var(--lab-s2);
+        border: 1px solid var(--lab-line);
+        border-radius: var(--lab-r-1);
+        color: var(--lab-ink);
+        font-size: 14px;
+    }
+
+    .oe_login_form .form-control::placeholder {
+        color: var(--lab-ink-3);
+        opacity: 1;
+    }
+
+    .oe_login_form .form-control:focus {
+        background-color: var(--lab-s2);
+        border-color: var(--lab-accent);
+        outline: 2px solid var(--lab-accent);
+        outline-offset: 1px;
+        box-shadow: none;
+        color: var(--lab-ink);
+    }
+
+    // ---------------------------------------------------------------------- nút
+    .oe_login_buttons .btn {
+        min-height: 44px;
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: var(--lab-r-2);
+    }
+
+    // Nút chính = nền LIME + chữ --lab-on-accent (14:1).
+    // Màu nút login mặc định đi qua $o-enterprise-color (đã override ở variables.scss) —
+    // giữ thêm rule tường minh này làm lớp bảo hiểm thứ hai vì đã ĐO ĐƯỢC rằng biến SCSS
+    // không đủ để đổi màu nút ở bundle frontend.
+    .btn-primary,
+    .oe_login_buttons .btn-primary {
+        background-color: var(--lab-accent);
+        border-color: var(--lab-accent);
+        color: var(--lab-on-accent);
+
+        &:hover,
+        &:focus,
+        &:active {
+            background-color: var(--lab-accent-2);
+            border-color: var(--lab-accent-2);
+            color: var(--lab-on-accent);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--lab-accent);
+            outline-offset: 2px;
+        }
+    }
+
+    // Một màu nhấn cho link — đè màu link mặc định của web.
+    .btn-link,
+    a:not(.btn) {
+        color: var(--lab-accent);
+
+        &:hover,
+        &:focus {
+            color: var(--lab-accent-2);
+        }
+    }
+
+    // Chân card của Odoo (Quản lý CSDL · Vận hành bởi Odoo): nhỏ, mờ, không cạnh tranh.
+    .o_database_list .card-body > .text-center.mt-4.pt-3.border-top {
+        margin-top: 24px;
+        padding-top: 16px;
+        border-color: var(--lab-line) !important;   // `.border-top` là utility !important
+        font-size: 12px;
+        color: var(--lab-ink-2);   // 5,2:1 trên card (ink-3 chỉ 3,0:1)
+    }
+}
+
+// Khối báo lỗi đăng nhập của Odoo (`.alert-danger`): nền tint nguy hiểm + CHỮ trạng thái
+// (không chỉ màu), chữ chính vẫn là --lab-ink để đọc được trên nền tối.
+body.o_login .alert-danger {
+    background-color: var(--lab-bad-tint);
+    border: 1px solid rgba(var(--lab-bad-rgb), .40);
+    border-radius: var(--lab-r-1);
+    color: var(--lab-ink);
+}
+
+// -------------------------------------------------------------------------------------
+// Màn hẹp (< 900px): một cột, panel thương hiệu rút gọn lên trên.
+// -------------------------------------------------------------------------------------
+@media (max-width: 900px) {
+    body.o_login .lab_login_shell {
+        grid-template-columns: minmax(0, 1fr);
+        min-height: 0;
+    }
+
+    body.o_login .lab_login_brand {
+        gap: 24px;
+        padding: 32px 24px;
+        border-right: 0;
+        border-bottom: 1px solid var(--lab-line);
+    }
+
+    body.o_login .lab_login_title {
+        font-size: 30px;
+    }
+
+    body.o_login .lab_login_proof {
+        display: none;         // 390px: 3 khối số chiếm hết màn trước khi tới form
+    }
+
+    body.o_login .lab_login_footnote {
+        display: none;
+    }
+
+    body.o_login .o_database_list.lab_login_card,
+    body.o_login .o_database_list {
+        padding: 24px;
+        margin: 24px auto;
+    }
+}
+
+// -------------------------------------------------------------------------------------
+// Chuyển động: CHỈ transform (xem ghi chú đầu mục 11). Nội dung luôn hiển thị.
+// -------------------------------------------------------------------------------------
+@keyframes lab-login-rise {
+    from {
+        transform: translateY(12px);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    body.o_login .lab_login_brand,
+    body.o_login .o_database_list.lab_login_card {
+        animation: lab-login-rise 220ms var(--lab-ease) both;
+    }
+
+    body.o_login .o_database_list.lab_login_card {
+        animation-delay: 60ms;
+    }
+}
+
+
+// =====================================================================================
+// =====================================================================================
+// 12. LỚP TINH CHỈNH HIỆN ĐẠI — ghi đè CÓ CHỦ ĐÍCH lên §4–§6
+//
+// Vì sao có mục 12 thay vì sửa trực tiếp §5: các quy tắc dưới đây là *quyết định thiết kế
+// mới* (design-system/lab-logistics/MASTER.md §5) đọc lại DOM thật của list view Odoo 17.
+// Gom về một chỗ để lần sau đọc là hiểu ngay "cái gì đã đổi so với spec gốc".
+//
+// ĐO THẬT (getComputedStyle trên /web#menu_id=334&action=489, 2026-11-01):
+//   • chip `<span class="badge rounded-pill text-bg-info">` → Odoo tự tô nền brand + chữ TRẮNG.
+//     Tức 7 khối `.o_badge_cell .badge.text-bg-*` ở §5 KHÔNG ăn, dù selector đặc tả cao hơn.
+//     Nguyên nhân: utility `.text-bg-*` của Odoo sinh KÈM `!important`
+//     ($enable-important-utilities: true — bootstrap/_variables.scss:354). ⇒ buộc phải
+//     `!important`, xem mục 12.4.
+//   • `thead th` → position: relative, nền trong suốt ⇒ header KHÔNG dính khi cuộn.
+//   • hàng lẻ → nền zebra dày; nay dark KHÔNG sọc (xem §12.2 + --lab-row-* ở khối 1).
+// =====================================================================================
+
+// -------------------------------------------------------------------------------------
+// 12.1 THANH CÔNG CỤ (control panel): gọn hơn, cao 56px, tách bằng 1 đường kẻ
+// -------------------------------------------------------------------------------------
+.o_web_client .o_control_panel {
+    padding-top: 6px;
+    padding-bottom: 6px;
+    background-color: var(--lab-s1);   // lõm một bước so với nền: tách mà không cần bóng
+    border-bottom: 1px solid var(--lab-line);
+}
+
+// Ô tìm kiếm: pill 6px, chữ 13px, placeholder màu mực phụ (đạt 4.5:1 trên card).
+.o_web_client .o_control_panel .o_searchview {
+    min-height: 34px;
+    padding-left: 10px;
+    font-size: 13px;
+}
+
+.o_web_client .o_control_panel .o_searchview_input,
+.o_web_client .o_control_panel .o_searchview_input::placeholder {
+    font-size: 13px;
+    color: var(--lab-ink-2);
+}
+
+// Cụm chuyển chế độ xem thành SEGMENTED CONTROL: 3 nút dính liền, chỉ nút ngoài cùng bo góc.
+// (Bản cũ để 3 nút rời, mỗi nút có viền riêng ⇒ trông như 3 nút độc lập không liên quan.)
+.o_web_client .o_control_panel .o_cp_switch_buttons {
+    display: inline-flex;
+    align-items: stretch;
+    gap: 0;
+}
+
+.o_web_client .o_control_panel .o_cp_switch_buttons .o_switch_view {
+    border-radius: 0;
+    border-color: var(--lab-line);
+    margin-left: -1px;          // chồng viền: 3 nút thành 1 khối
+}
+
+.o_web_client .o_control_panel .o_cp_switch_buttons .o_switch_view:first-child {
+    margin-left: 0;
+    border-top-left-radius: var(--lab-r-2);
+    border-bottom-left-radius: var(--lab-r-2);
+}
+
+.o_web_client .o_control_panel .o_cp_switch_buttons .o_switch_view:last-child {
+    border-top-right-radius: var(--lab-r-2);
+    border-bottom-right-radius: var(--lab-r-2);
+}
+
+.o_web_client .o_control_panel .o_cp_switch_buttons .o_switch_view.active {
+    border-color: var(--lab-accent);
+    z-index: 1;                 // nút đang chọn nổi lên trên đường viền chồng nhau
+}
+
+// -------------------------------------------------------------------------------------
+// 12.2 BẢNG: bỏ zebra dày → đường kẻ ngang + hover; header dính
+// -------------------------------------------------------------------------------------
+// Zebra quá dày ở một bảng 300 dòng làm mắt phải nhảy giữa 2 bước tông liên tục. Spec
+// (MASTER §5.1) đổi sang: nền phẳng + kẻ đường ngang 1px + hover.
+.o_web_client .o_list_view .o_list_table > tbody > tr.o_data_row:nth-of-type(odd) > td {
+    background-color: var(--lab-card);
+}
+
+.o_web_client .o_list_view .o_list_table > tbody > tr.o_data_row:hover > td {
+    background-color: var(--lab-row-hover);
+}
+
+// Header dính khi cuộn: `position: sticky` trên `th`, cần `top: 0` + z-index trên nền đặc
+// (nếu không, các ô dữ liệu sẽ chạy qua dưới header và nhìn thấy chữ chồng chữ).
+.o_web_client .o_list_view .o_list_table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background-color: var(--lab-s2);
+    border-bottom: 1px solid var(--lab-line);
+    white-space: nowrap;
+}
+
+// Đường kẻ nhẹ hơn ở hàng: 1px line là đủ, không cần thêm nền.
+.o_web_client .o_list_view .o_list_table > tbody > tr.o_data_row > td {
+    border-bottom: 1px solid var(--lab-line);
+}
+
+
+// -------------------------------------------------------------------------------------
+// 12.3 Ô SỐ / NGÀY: căn phải + chữ số đều (tabular) — quét cột dọc nhanh hơn
+// -------------------------------------------------------------------------------------
+.o_web_client .o_list_view .o_list_table > tbody > tr.o_data_row > td.o_data_cell.o_list_number,
+.o_web_client .o_list_view .o_list_table > tbody > tr.o_data_row > td .o_field_float,
+.o_web_client .o_list_view .o_list_table > tbody > tr.o_data_row > td .o_field_monetary {
+    text-align: right;
+}
+
+// -------------------------------------------------------------------------------------
+// 12.4 CHIP TRẠNG THÁI — nền tint + chữ đậm (MASTER §5.5)
+//      `!important` là BẮT BUỘC: utility `.text-bg-*` của Odoo sinh kèm `!important`
+//      (đo được ở 12.0). Chỉ 10 khai báo, đều nằm trong `.o_badge_cell`.
+// -------------------------------------------------------------------------------------
+.o_web_client .o_list_view .o_badge_cell .badge.text-bg-info {
+    background-color: var(--lab-warn-tint) !important;
+    color: var(--lab-warn) !important;
+}
+
+.o_web_client .o_list_view .o_badge_cell .badge.text-bg-primary {
+    background-color: var(--lab-accent-tint-2) !important;
+    color: var(--lab-accent) !important;
+}
+
+.o_web_client .o_list_view .o_badge_cell .badge.text-bg-success {
+    background-color: var(--lab-ok-tint) !important;
+    color: var(--lab-ok) !important;
+}
+
+.o_web_client .o_list_view .o_badge_cell .badge.text-bg-warning {
+    background-color: var(--lab-s2) !important;
+    color: var(--lab-ink-2) !important;
+}
+
+.o_web_client .o_list_view .o_badge_cell .badge.text-bg-danger {
+    background-color: var(--lab-bad-tint) !important;
+    color: var(--lab-bad) !important;
+}
+
+// -------------------------------------------------------------------------------------
+// 12.5 FOCUS nhìn thấy được ở MỌI control của backend (không chỉ input)
+// -------------------------------------------------------------------------------------
+.o_web_client a:focus-visible,
+.o_web_client button:focus-visible,
+.o_web_client .btn:focus-visible,
+.o_web_client .o_data_row:focus-visible,
+.o_web_client .o_switch_view:focus-visible {
+    outline: 2px solid var(--lab-accent);
+    outline-offset: 2px;
+    border-radius: var(--lab-r-2);
+}
+
+// -------------------------------------------------------------------------------------
+// 12.6 CHI TIẾT (bôi đen chữ + thanh cuộn): đã gom về MỤC 15 ở cuối file — một nguồn duy
+//      nhất cho `::selection` và scrollbar, tránh hai rule trùng khai hai alpha khác nhau.
+// -------------------------------------------------------------------------------------
+
+
+// -------------------------------------------------------------------------------------
+// 12.7 CONTROL PANEL — nhịp chữ + bề rộng ô tìm kiếm (DOM thật, đo 2026-11-01)
+//
+// Cấu trúc 17.0 (dump bằng elementsFromPoint/innerHTML — không đoán):
+//   .o_control_panel
+//     └ .o_control_panel_main
+//         ├ .o_control_panel_breadcrumbs > .o_breadcrumb    ← TIÊU ĐỀ màn hình nằm ở đây
+//         ├ .o_control_panel_actions     > .o_cp_searchview  ← ô tìm kiếm (input-group)
+//         └ .o_control_panel_navigation  > .o_cp_pager + nav.o_cp_switch_buttons
+// -------------------------------------------------------------------------------------
+
+// Tiêu đề màn hình phải là thứ to nhất trên thanh công cụ (hiện đang 14px ⇒ ngang hàng
+// với nhãn cột, mắt không có điểm bám).
+.o_web_client .o_control_panel .o_breadcrumb {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    color: var(--lab-ink);
+}
+
+.o_web_client .o_control_panel .o_breadcrumb .active,
+.o_web_client .o_control_panel .o_breadcrumb .o_last_breadcrumb_item {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--lab-ink);
+}
+
+// Ô tìm kiếm: đủ rộng để thấy 2–3 facet, cao 36 (nhỏ hơn ô nhập form để không tranh chỗ).
+.o_web_client .o_control_panel .o_cp_searchview {
+    min-width: 380px;
+}
+
+.o_web_client .o_control_panel .o_cp_searchview .o_searchview {
+    min-height: 36px;
+    align-items: center;
+}
+
+// Pager: chữ số đều, không in đậm — thông tin phụ, không phải hành động.
+.o_web_client .o_control_panel .o_cp_pager {
+    gap: 8px;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    color: var(--lab-ink-2);
+}
+
+// Nút chuyển chế độ xem trong suốt khi không active (bỏ nền xám của .btn-secondary):
+// ở đây chúng là 3 biểu tượng, không phải 3 nút hành động.
+.o_web_client .o_control_panel nav.o_cp_switch_buttons .o_switch_view {
+    background-color: transparent;
+    color: var(--lab-ink-2);
+}
+
+.o_web_client .o_control_panel nav.o_cp_switch_buttons .o_switch_view.active {
+    background-color: var(--lab-accent-tint);
+    color: var(--lab-accent);
+}
+
+
+// =====================================================================================
+// =====================================================================================
+// 13. SỬA 4 LỖI THỊ GIÁC ĐÃ ĐO (REDESIGN_PROGRESS §2–§3) — đặt CUỐI file để chắc chắn
+//     thắng các rule phía trên (cùng specificity: khai sau thắng).
+// =====================================================================================
+
+// -------------------------------------------------------------------------------------
+// 13.1 CHỮ TRONG DÒNG KHÔNG ĐƯỢC NHUỘM MÀU TRẠNG THÁI
+//   Nguyên nhân ĐO ĐƯỢC: `<tree decoration-success/danger/...>` của Odoo 17 gắn utility
+//   Bootstrap (`.text-success`, `.text-danger`, …) LÊN THẺ <tr>. Vì `color` kế thừa, MỌI ô
+//   của dòng đổi màu — ngày, tên tài xế, shop… đều xanh/đỏ (ảnh dark-02-list.png).
+//   Màu trạng thái chỉ được sống trong CHIP (`span.badge.text-bg-*`), nơi nó LUÔN kèm chữ.
+//   Ghi chú kỹ thuật: `color` đặt trực tiếp trên `td` thắng giá trị KẾ THỪA từ `tr` — kể cả
+//   khi utility trên `tr` là `!important`, vì !important của phần tử cha không truyền qua
+//   kế thừa.
+// -------------------------------------------------------------------------------------
+.o_web_client .o_list_view .o_list_table > tbody > tr.o_data_row > td.o_data_cell {
+    color: var(--lab-ink);
+}
+
+// Dòng "đã huỷ" (decoration-muted) vẫn cần nhạt hơn: dùng ink-2, KHÔNG dùng màu trạng thái.
+.o_web_client .o_list_view .o_list_table > tbody > tr.o_data_row.text-muted > td.o_data_cell {
+    color: var(--lab-ink-2);
+}
+
+// Link trong ô vẫn đọc được trên nền tối. Chip giữ màu của nó vì rule §12.4 khai trực tiếp
+// trên <span> (màu trực tiếp thắng màu kế thừa từ <td>).
+.o_web_client .o_list_view .o_list_table > tbody > tr.o_data_row > td.o_data_cell a {
+    color: var(--lab-accent);
+}
+
+// -------------------------------------------------------------------------------------
+// 13.2 VẠCH TRÁI DÒNG LỖI PHẢI NỔI TRÊN NỀN TỐI: --lab-bad, dày 2px
+//   Tín hiệu PHỤ — tín hiệu chính vẫn là chip có chữ "Lấy hàng thất bại" (WCAG 1.4.1:
+//   không dùng màu làm tín hiệu duy nhất).
+//   `:has()` có trong Chrome ≥ 105 / Safari ≥ 15.4 / Firefox ≥ 121; trình duyệt cũ chỉ mất
+//   vạch, không hỏng bố cục.
+// -------------------------------------------------------------------------------------
+.o_web_client .o_list_view .o_list_table > tbody > tr.o_data_row:has(.text-bg-danger) > td:first-child {
+    box-shadow: inset 2px 0 0 var(--lab-bad);
+}
+
+// -------------------------------------------------------------------------------------
+// 13.3 VIỀN SÁNG BOOTSTRAP CÒN SÓT (bảng, thanh chuyển chế độ xem, segmented, control
+//   panel, card/panel nổi) ⇒ mọi viền còn lại dùng --lab-line (trắng 8%).
+//   ⚠️ Bootstrap 5.1.3 (bản Odoo 17 dùng) KHÔNG có `--table-border-color`/`--bs-table-*`
+//   cho viền, nên phải set `border-color` tường minh — không dựa vào CSS var không tồn tại.
+// -------------------------------------------------------------------------------------
+.o_web_client .o_list_view,
+.o_web_client .o_list_view .o_list_renderer,
+.o_web_client .o_list_view .o_list_table,
+.o_web_client .o_list_view .o_list_table thead,
+.o_web_client .o_list_view .o_list_table tbody,
+.o_web_client .o_list_view .o_list_table tfoot,
+.o_web_client .o_list_view .o_list_table th,
+.o_web_client .o_list_view .o_list_table td,
+.o_web_client .o_cp_switch_buttons,
+.o_web_client .o_cp_switch_buttons .o_switch_view,
+.o_web_client .o_control_panel,
+.o_web_client .o_control_panel .o_searchview,
+.o_web_client .o_form_view,
+.o_web_client .o_form_view .o_form_sheet,
+.o_web_client .o_kanban_view,
+.o_web_client .o_kanban_renderer,
+.o_web_client .card,
+.o_web_client .modal-content,
+.o_web_client .dropdown-menu,
+.o_web_client .o-dropdown--menu,
+.o_web_client .o_list_table .o_group_header {
+    border-color: var(--lab-line);
+}
+
+// Segmented chuyển chế độ xem: một "track" liền khối (nền --lab-s2) + nút đang xem có tint
+// accent và viền accent. Không dùng `overflow: hidden` để không cắt outline của focus.
+.o_web_client .o_cp_switch_buttons {
+    background-color: var(--lab-s2);
+    border: 1px solid var(--lab-line);
+    border-radius: var(--lab-r-2);
+}
+
+.o_web_client .o_cp_switch_buttons .o_switch_view {
+    background-color: transparent;
+    color: var(--lab-ink-2);
+}
+
+.o_web_client .o_cp_switch_buttons .o_switch_view.active {
+    background-color: var(--lab-accent-tint);
+    border-color: var(--lab-accent);
+    color: var(--lab-accent);
+}
+
+// =====================================================================================
+// 14. NEUTRALIZE BỀ MẶT SÁNG CÒN LẠI CỦA BOOTSTRAP/ODOO (dark phải "kín")
+//   Odoo 17 dựng trên Bootstrap SÁNG: một số component không đi qua $o-* nên vẫn còn nền
+//   trắng/xám nhạt. Đây là danh sách CÓ CHỦ ĐÍCH cho các màn demo (backend), không phải
+//   "đè mọi thứ": mỗi selector tương ứng một bề mặt đã thấy trong ảnh chụp.
+// =====================================================================================
+.o_web_client .o_content {
+    background-color: var(--lab-bg);
+}
+
+// Ô nhập: Bootstrap mặc định nền trắng cho `.form-control`; Odoo dùng thêm `.o_input`.
+.o_web_client input.o_input,
+.o_web_client textarea.o_input,
+.o_web_client .form-control,
+.o_web_client .form-select {
+    background-color: var(--lab-s2);
+    border: 1px solid var(--lab-line);
+    color: var(--lab-ink);
+}
+
+// `option` của select: nền tối để danh sách xổ xuống không trắng.
+.o_web_client select option,
+.o_web_client .form-select option {
+    background-color: var(--lab-s2);
+    color: var(--lab-ink);
+}
+
+// Dropdown/menu nổi + popover: bóng DUY NHẤT của hệ (--lab-shadow-1, ADR-009 §6).
+.o_web_client .dropdown-menu,
+.o_web_client .o-dropdown--menu,
+.o_web_client .o-autocomplete--dropdown-menu,
+.o_web_client .popover {
+    background-color: var(--lab-card);
+    border: 1px solid var(--lab-line);
+    box-shadow: var(--lab-shadow-1);
+    color: var(--lab-ink);
+}
+
+.o_web_client .dropdown-item {
+    color: var(--lab-ink);
+}
+
+.o_web_client .dropdown-item:hover,
+.o_web_client .dropdown-item:focus {
+    background-color: var(--lab-card-2);
+    color: var(--lab-ink);
+}
+
+// Modal/dialog: nền card, tiêu đề ink, kẻ mảnh ở header/footer.
+.o_web_client .modal-content {
+    background-color: var(--lab-card);
+    color: var(--lab-ink);
+}
+
+.o_web_client .modal-header,
+.o_web_client .modal-footer {
+    border-color: var(--lab-line);
+}
+
+.o_web_client .modal-title {
+    color: var(--lab-ink);
+}
+
+// Tab + list-group (Odoo dùng ở nhiều màn): nền trong suốt, chỉ kẻ đường mảnh.
+.o_web_client .nav-tabs {
+    border-bottom-color: var(--lab-line);
+}
+
+.o_web_client .nav-tabs .nav-link {
+    border-color: transparent;
+    color: var(--lab-ink-2);
+}
+
+.o_web_client .nav-tabs .nav-link.active {
+    background-color: transparent;
+    border-color: var(--lab-line) var(--lab-line) transparent;
+    color: var(--lab-ink);
+}
+
+.o_web_client .list-group-item {
+    background-color: var(--lab-card);
+    border-color: var(--lab-line);
+    color: var(--lab-ink);
+}
+
+// Facet của ô tìm kiếm (chip điều kiện lọc): nền s2 + viền line, chữ ink.
+.o_web_client .o_searchview .o_searchview_facet {
+    background-color: var(--lab-s2);
+    border: 1px solid var(--lab-line);
+    color: var(--lab-ink);
+}
+
+// Cảnh báo/thông báo: nền tint trạng thái + chữ ink (không chữ vàng trên nền vàng).
+.o_web_client .alert-danger {
+    background-color: var(--lab-bad-tint);
+    border-color: rgba(var(--lab-bad-rgb), .40);
+    color: var(--lab-ink);
+}
+
+.o_web_client .alert-warning {
+    background-color: var(--lab-warn-tint);
+    border-color: rgba(var(--lab-warn-rgb), .40);
+    color: var(--lab-ink);
+}
+
+.o_web_client .alert-success {
+    background-color: var(--lab-ok-tint);
+    border-color: rgba(var(--lab-ok-rgb), .40);
+    color: var(--lab-ink);
+}
+
+.o_web_client .alert-info {
+    background-color: var(--lab-info-tint);
+    border-color: rgba(var(--lab-info-rgb), .40);
+    color: var(--lab-ink);
+}
+
+// Cửa sổ chat (module mail/im_livechat) — nền card, không để khung trắng.
+.o_web_client .o-mail-ChatWindow,
+.o_web_client .o-mail-ChatWindow-header {
+    background-color: var(--lab-card);
+    border-color: var(--lab-line);
+    color: var(--lab-ink);
+}
+
+// Toast/notification của Odoo: surface card + chữ ink.
+.o_web_client .o_notification_manager .o_notification {
+    background-color: var(--lab-card);
+    border: 1px solid var(--lab-line);
+    color: var(--lab-ink);
+}
+
+// Chatter (nếu module mail có mặt): không để khối trắng giữa form tối.
+.o_web_client .o-mail-Chatter,
+.o_web_client .o-mail-ChatterContainer,
+.o_web_client .o-mail-Thread,
+.o_web_client .o_chatter {
+    background-color: var(--lab-card);
+    color: var(--lab-ink);
+}
+
+// -------------------------------------------------------------------------------------
+// 15. CHI TIẾT: placeholder + bôi đen + thanh cuộn (cùng họ token, không thêm màu mới)
+// -------------------------------------------------------------------------------------
+.o_web_client .o_input::placeholder,
+.o_web_client .form-control::placeholder {
+    color: var(--lab-ink-3);
+    opacity: 1;
+}
+
+.o_web_client ::selection {
+    background-color: var(--lab-selection);
+}
+
+.o_web_client .o_content ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.o_web_client .o_content ::-webkit-scrollbar-thumb {
+    background-color: var(--lab-line-2);
+    border: 3px solid var(--lab-bg);
+    border-radius: 999px;
+}
+
+.o_web_client .o_content ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--lab-ink-3);
+}
+
+// =====================================================================================
+// 15. FORM + LIST THEO ANH THAM CHIEU (2026-10-30)
+// -------------------------------------------------------------------------------------
+// Yeu cau cua khach: "chinh lai phan giao dien cua cac form don hang/chuyen thanh nhu anh;
+// thanh nav khi chon nut nao thi nut do sang lime".
+//
+// Anh tham chieu la mot CRM dark: the KPI lon o tren, hang chip loc, bang co avatar, nut
+// chinh lime, va form chia khoi ro rang. Odoo la Bootstrap sang -> phai dat lai TOAN BO
+// be mat form; khong fork odoo/addons/web (Luat 1), chi CSS o day.
+//
+// Nguyen tac: (1) be mat phan tang thay vi bong; (2) nhan phu 11px uppercase + letter-spacing;
+// (3) chi MOT mau nhac = lime, khong dat nen lime tren khoi lon (tru statusbar hien tai).
+// =====================================================================================
+
+// ---------------------------------------------------------------- FORM SHEET = CARD
+.o_web_client .o_form_view {
+    background-color: var(--lab-bg);
+}
+
+.o_web_client .o_form_view .o_form_sheet_bg {
+    background-color: transparent;
+    border-bottom: 0;
+}
+
+.o_web_client .o_form_view .o_form_sheet {
+    background-color: var(--lab-card);
+    border: 1px solid var(--lab-line);
+    border-radius: var(--lab-r-3);
+    box-shadow: none;
+    max-width: 1180px;
+    margin: 12px auto 24px;
+    padding: 24px 28px;
+}
+
+// Nhan field: nho, chu hoa, mau ink-2 (giong nhan the KPI trong anh)
+.o_web_client .o_form_view .o_group .o_form_label,
+.o_web_client .o_form_view .o_form_label {
+    color: var(--lab-ink-2);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+// Tieu de khoi (o_horizontal_separator) = nhan lime, khong phai duong ke
+.o_web_client .o_form_view .o_horizontal_separator {
+    color: var(--lab-accent);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+
+// Gia tri field: chu ink, input nen s2 + vien line (an toan ca tren sheet)
+.o_web_client .o_form_view .o_field_widget {
+    color: var(--lab-ink);
+}
+
+.o_web_client .o_form_view .o_field_widget input,
+.o_web_client .o_form_view .o_field_widget textarea,
+.o_web_client .o_form_view .o_field_widget select,
+.o_web_client .o_form_view .o_input_dropdown > input {
+    background-color: var(--lab-s2);
+    border: 1px solid var(--lab-line);
+    border-radius: var(--lab-r-1);
+    color: var(--lab-ink);
+}
+
+.o_web_client .o_form_view .o_field_widget input:focus,
+.o_web_client .o_form_view .o_field_widget textarea:focus,
+.o_web_client .o_form_view .o_field_widget select:focus {
+    border-color: var(--lab-line-2);
+    box-shadow: 0 0 0 3px var(--lab-accent-tint);
+    outline: none;
+}
+
+// ---------------------------------------------------------------- SMART BUTTONS (hop den)
+.o_web_client .o_form_view .oe_button_box .oe_stat_button {
+    background-color: var(--lab-s2);
+    border: 1px solid var(--lab-line);
+    border-radius: var(--lab-r-2);
+    color: var(--lab-ink-2);
+    padding: 8px 12px;
+    transition: background-color var(--lab-duration) var(--lab-ease),
+                border-color var(--lab-duration) var(--lab-ease);
+}
+
+.o_web_client .o_form_view .oe_button_box .oe_stat_button:hover,
+.o_web_client .o_form_view .oe_button_box .oe_stat_button:focus-visible {
+    background-color: var(--lab-card-2);
+    border-color: var(--lab-line-2);
+}
+
+.o_web_client .o_form_view .oe_button_box .oe_stat_button .o_stat_value {
+    color: var(--lab-ink);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.o_web_client .o_form_view .oe_button_box .oe_stat_button .o_stat_text {
+    font-size: 11px;
+    letter-spacing: 0.03em;
+}
+
+// ---------------------------------------------------------------- STATUSBAR = PILL
+// Trang thai hien tai = pill lime chu toi; cac muc khac = pill s2 chu ink-2.
+.o_web_client .o_form_view .o_form_statusbar {
+    background-color: transparent;
+    border-bottom: 1px solid var(--lab-line);
+    padding: 0 0 10px;
+}
+
+.o_web_client .o_form_statusbar .o_statusbar_status .btn.o_arrow_button,
+.o_web_client .o_form_statusbar .o_statusbar_status .btn-secondary {
+    background-color: var(--lab-s2);
+    background-image: none;
+    border: 1px solid var(--lab-line);
+    border-radius: 999px;
+    color: var(--lab-ink-2);
+    font-size: 12px;
+    font-weight: 600;
+    margin-right: 4px;
+}
+
+.o_web_client .o_form_statusbar .o_statusbar_status .btn.o_arrow_button_current,
+.o_web_client .o_form_statusbar .o_statusbar_status .btn.o_arrow_button_current:hover {
+    background-color: var(--lab-accent);
+    border-color: var(--lab-accent);
+    color: var(--lab-on-accent);
+}
+
+// ---------------------------------------------------------------- NOTEBOOK = TAB PILL
+.o_web_client .o_form_view .o_notebook .nav-tabs {
+    border-bottom: 1px solid var(--lab-line);
+    gap: 4px;
+}
+
+.o_web_client .o_form_view .o_notebook .nav-tabs .nav-link {
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    color: var(--lab-ink-2);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 14px;
+}
+
+.o_web_client .o_form_view .o_notebook .nav-tabs .nav-link:hover {
+    background-color: var(--lab-card-2);
+    color: var(--lab-ink);
+}
+
+.o_web_client .o_form_view .o_notebook .nav-tabs .nav-link.active {
+    background-color: var(--lab-accent);
+    border-color: var(--lab-accent);
+    color: var(--lab-on-accent);
+}
+
+// Group trong form khong co nen rieng: de sheet lo, chi ngan bang khoang trang
+.o_web_client .o_form_view .o_group {
+    background-color: transparent;
+}
+
+// ---------------------------------------------------------------- LIST: HEADER + FACET
+.o_web_client .o_list_view .o_list_table thead th {
+    background-color: var(--lab-s2);
+    color: var(--lab-ink-3);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+// Chip loc cua search view = pill (giong hang chip loc trong anh)
+.o_web_client .o_control_panel .o_searchview_facet {
+    background-color: var(--lab-s2);
+    border: 1px solid var(--lab-line);
+    border-radius: 999px;
+    color: var(--lab-ink);
+    padding: 2px 10px;
+}
+
+.o_web_client .o_control_panel .o_searchview_facet .o_facet_values {
+    color: var(--lab-accent);
+}
+
+.o_web_client .o_control_panel .o_searchview_facet .o_facet_remove {
+    color: var(--lab-ink-2);
+}
+
+// Nut "Moi" (primary) o control panel = pill lime chu toi (giong nut "+ New" trong anh)
+.o_web_client .o_control_panel .o_cp_left .btn-primary,
+.o_web_client .o_control_panel .o_cp_buttons .btn-primary {
+    border-radius: 999px;
+    background-color: var(--lab-accent);
+    border-color: var(--lab-accent);
+    color: var(--lab-on-accent);
+    font-weight: 700;
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+.o_web_client .o_control_panel .o_cp_left .btn-primary:hover,
+.o_web_client .o_control_panel .o_cp_buttons .btn-primary:hover {
+    background-color: var(--lab-accent-2);
+    border-color: var(--lab-accent-2);
+    color: var(--lab-on-accent);
+}
+
+// ---------------------------------------------------------------- KANBAN CARD
+.o_web_client .o_kanban_view .o_kanban_record {
+    background-color: var(--lab-card);
+    border: 1px solid var(--lab-line);
+    border-radius: var(--lab-r-3);
+    box-shadow: none;
+}
+
+.o_web_client .o_kanban_view .o_kanban_record:hover {
+    border-color: var(--lab-line-2);
+}
+
+// ---------------------------------------------------------------- CHATTER = CARD
+.o_web_client .o_form_view .o_chatter,
+.o_web_client .o_form_view .o-mail-Chatter {
+    background-color: var(--lab-card);
+    border: 1px solid var(--lab-line);
+    border-radius: var(--lab-r-3);
+    padding: 12px 16px;
+}
+
+// ---------------------------------------------------------------- BREADCRUMB: BO "HOP TRANG"
+// Anh chup form chuyen 2026-10-30: muc dau cua breadcrumb hien nhu mot HOP TRANG (chu toi
+// tren nen sang) — do Odoo/Bootstrap gan background cho phan tu do. Khong the doan selector
+// chinh xac (breadcrumb render theo tung action), nen ep TOAN BO con cua .o_breadcrumb ve
+// nen trong suot + khong vien, chi giu typography: muc dau = ink-2 14px, muc cuoi = ink 20px.
+.o_web_client .o_control_panel .o_breadcrumb > *,
+.o_web_client .o_control_panel .o_breadcrumb a,
+.o_web_client .o_control_panel .o_breadcrumb .o_last_breadcrumb_item {
+    background-color: transparent !important;
+    background-image: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    text-decoration: none !important;
+}
+
+.o_web_client .o_control_panel .o_breadcrumb a,
+.o_web_client .o_control_panel .o_breadcrumb > :not(.o_last_breadcrumb_item) {
+    color: var(--lab-ink-2);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.o_web_client .o_control_panel .o_breadcrumb .o_last_breadcrumb_item,
+.o_web_client .o_control_panel .o_breadcrumb .o_last_breadcrumb_item a,
+.o_web_client .o_control_panel .o_breadcrumb .active {
+    color: var(--lab-ink);
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+}
+
+// Dau phan cach "/" giua cac muc: ink-3, khong phai vach trang
+.o_web_client .o_control_panel .o_breadcrumb .text-muted,
+.o_web_client .o_control_panel .o_breadcrumb .o_breadcrumb_separator {
+    color: var(--lab-ink-3);
+    font-size: 14px;
+}
+
+// ---------------------------------------------------------------- NAV ACTIVE (JS gan class)
+// Odoo 17 khong gan class active cho .o_nav_entry (da do bang probe DOM 2026-10-30), nen
+// nav_active.js gan class nay theo menu_id/action trong location.hash. Card pill lime =
+// dung yeu cau khach: "chon nut nao thi nut do sang lime".
+.o_web_client .o_main_navbar .o_nav_entry.o_nav_entry_active {
+    background-color: var(--lab-accent);
+    background-image: none;
+    box-shadow: none;
+    color: var(--lab-on-accent);
+    font-weight: 600;
+    border-radius: var(--lab-r-1);
+}
+
+.o_web_client .o_main_navbar .o_nav_entry.o_nav_entry_active:hover,
+.o_web_client .o_main_navbar .o_nav_entry.o_nav_entry_active:focus-visible {
+    background-color: var(--lab-accent-2);
+    color: var(--lab-on-accent);
+}
+
+// ---------------------------------------------------------------- HET MANH SANG SOT (2026-10-30)
+// Anh chup list "Chuyen" con 2 manh SANG tren nen toi: (1) chip loc (facet) trong o tim
+// kiem; (2) nut chuyen che do xem dang active. Odoo 17 to chung bang -searchview-facet-bg
+// / -brand-* nen phai ep bang CSS variable cua ta.
+.o_web_client .o_control_panel .o_searchview .o_searchview_facet,
+.o_web_client .o_control_panel .o_searchview_facet .o_facet_values,
+.o_web_client .o_control_panel .o_searchview_facet .o_facet_values span,
+.o_web_client .o_control_panel .o_searchview_facet .o_facet_remove {
+    background-color: var(--lab-s2) !important;
+    background-image: none !important;
+    color: var(--lab-ink) !important;
+    border-color: var(--lab-line) !important;
+    border-radius: 999px !important;
+}
+
+.o_web_client .o_control_panel .o_cp_switch_buttons .o_switch_view,
+.o_web_client .o_control_panel .o_cp_switch_buttons .btn {
+    background-color: var(--lab-s2) !important;
+    background-image: none !important;
+    border: 1px solid var(--lab-line) !important;
+    color: var(--lab-ink-2) !important;
+}
+
+.o_web_client .o_control_panel .o_cp_switch_buttons .o_switch_view.active,
+.o_web_client .o_control_panel .o_cp_switch_buttons .btn.active {
+    background-color: var(--lab-accent) !important;
+    border-color: var(--lab-accent) !important;
+    color: var(--lab-on-accent) !important;
+}
+
+// Nut "quay lai" trong breadcrumb: pill toi thay vi hop trang
+.o_web_client .o_control_panel .o_breadcrumb .btn,
+.o_web_client .o_control_panel .o_breadcrumb button {
+    background-color: var(--lab-s2) !important;
+    border: 1px solid var(--lab-line) !important;
+    color: var(--lab-ink-2) !important;
+    border-radius: 999px !important;
+}

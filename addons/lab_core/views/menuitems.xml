@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  =====================================================================================
+  MENU GỐC của ứng dụng "Gom hàng lẻ" (lab_core) — điểm vào duy nhất trên thanh ứng dụng.
+  Người viết: FE-01 (Wave B). Biên giới: addons/**/views/** (AGENTS.md Luật 10).
+
+  VÌ SAO MENU GỐC NẰM Ở lab_core:
+  Cả 3 module nghiệp vụ (lab_chuyen, lab_laixe, lab_hanhtrinh) đều depends lab_core, nên
+  lab_core là nơi DUY NHẤT đặt được menu cha mà không tạo phụ thuộc vòng (docs/02 §1).
+  Menu con ("Chuyến", "Yêu cầu lấy hàng", "Hành trình") nằm trong module của chính nó.
+
+  ⚠️ CẦN BE-01 KHAI VÀO MANIFEST (FE-01 không sửa __manifest__.py — Luật 10):
+      addons/lab_core/__manifest__.py  →  "data" thêm  "views/menuitems.xml"
+  Không khai thì file này không được nạp ⇒ Odoo vẫn không có menu.
+
+  QUYỀN: menu gốc mở cho CẢ 8 NHÓM của dự án (docs/02 §4.1). Từng mục con tự giới hạn
+  theo ACL thật của model đó (xem menuitems.xml của 3 module nghiệp vụ).
+  Ở đây dùng <record model="ir.ui.menu"> thay vì thẻ <menuitem> để gán được NHIỀU nhóm
+  bằng groups_id — thẻ <menuitem> chỉ nhận một danh sách groups hẹp hơn.
+  =====================================================================================
+-->
+<odoo>
+
+    <record id="menu_lab_root" model="ir.ui.menu">
+        <field name="name">Gom hàng lẻ</field>
+        <field name="sequence">12</field>
+        <field name="groups_id" eval="[
+            (4, ref('lab_core.group_cs')),
+            (4, ref('lab_core.group_driver')),
+            (4, ref('lab_core.group_warehouse')),
+            (4, ref('lab_core.group_docs')),
+            (4, ref('lab_core.group_account')),
+            (4, ref('lab_core.group_sale_admin')),
+            (4, ref('lab_core.group_manager')),
+            (4, ref('lab_core.group_director')),
+        ]"/>
+    </record>
+
+</odoo>

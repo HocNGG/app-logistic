@@ -1,0 +1,420 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  =====================================================================================
+  VIEW XML — model `lab.chuyen` (bước ⑤⑥⑦⑬⑭ trong docs/00 §3, docs/02 §2.2 + §3.1).
+  Người viết: FE-01 (Wave B). Biên giới: addons/**/views/** (AGENTS.md Luật 10).
+
+  ĐỐI CHIẾU VỚI SOURCE THẬT (`addons/lab_chuyen/models/lab_chuyen.py`) — KHÔNG đoán tên:
+    field  : name, loai_van_chuyen, carrier_id, hang_van_chuyen, so_booking, kho_xuat_id,
+             ngay_di, ngay_den_du_kien, cut_off_datetime,
+             tai_trong_max_kg, the_tich_max_cbm, tai_trong_da_dung_kg, the_tich_da_dung_cbm,
+             ti_le_tai, state, line_ids, picking_ids, debit_ids
+    mixin  : lab_is_exception, lab_exception_type, lab_exception_note, lab_return_step,
+             lab_exception_user_id, lab_exception_date   (lab.flow.mixin)
+    method : action_open · action_confirm_booking · action_depart · action_arrive ·
+             action_deliver · action_close · action_cancel        (đủ 7, đã kiểm)
+  ⚠️ Không có field `user_id` / `line_count` / `note` trên model này — mẫu trong skill 08
+     dùng các field đó nên KHÔNG chép nguyên; view phải khớp model thật.
+
+  ODOO 17 IDIOMS (Luật 2): điều kiện là BIỂU THỨC (`invisible="state != 'draft'"`), tuyệt
+  đối không dùng thuộc tính attrs và không dùng thẻ list.
+
+  ⚠️ CẦN BE-01 KHAI VÀO MANIFEST (FE-01 không sửa __manifest__.py):
+      addons/lab_chuyen/__manifest__.py → "data": "views/lab_chuyen_views.xml"
+      (phải đứng TRƯỚC "views/menuitems.xml" vì menu trỏ tới action khai ở đây)
+  =====================================================================================
+-->
+<odoo>
+
+    <!-- =================================================================================
+         1. TREE — màn quản lý chuyến của CS/Kho.
+         decoration-danger: nhánh ngoại lệ ② (giảm tải) — quá 100% tải là ĐỎ ngay trên
+         danh sách, không phải mở form mới thấy.
+         ================================================================================= -->
+    <record id="view_lab_chuyen_tree" model="ir.ui.view">
+        <field name="name">lab.chuyen.tree</field>
+        <field name="model">lab.chuyen</field>
+        <field name="arch" type="xml">
+            <!-- SẮP XẾP + CỘT THỜI GIAN (N1/N2, cùng chuẩn với YC lấy hàng & Đơn bán):
+                 đơn/chuyến TẠO SỚM nằm trên (hàng đợi FIFO), và phải thấy "Tạo lúc" để biết
+                 chuyến nào đang chờ lâu. Chỉ đổi `default_order` của VIEW, không đổi `_order`
+                 của model (tránh ảnh hưởng RPC/báo cáo/màn khác). -->
+            <tree string="Chuyến"
+                  default_order="create_date asc, id asc"
+                  decoration-danger="ti_le_tai &gt; 100"
+                  decoration-warning="ti_le_tai &gt; 90 and ti_le_tai &lt;= 100"
+                  decoration-muted="state == 'cancelled'">
+                <field name="name" string="Số chuyến"/>
+                <field name="create_date" string="Tạo lúc" optional="show"/>
+                <field name="loai_van_chuyen" string="Loại"/>
+                <field name="hang_van_chuyen" optional="show"/>
+                <field name="so_booking" optional="hide"/>
+                <field name="kho_xuat_id" optional="show"/>
+                <field name="cut_off_datetime" string="Hạn chốt hàng"/>
+                <field name="ngay_di" optional="show"/>
+                <field name="ngay_den_du_kien" optional="hide"/>
+                <field name="tai_trong_max_kg" sum="Sức chứa (kg)"/>
+                <field name="tai_trong_da_dung_kg" sum="Đã dùng (kg)"/>
+                <field name="ti_le_tai" widget="progressbar" string="Tỉ lệ tải"/>
+                <field name="the_tich_max_cbm" optional="hide" sum="Sức chứa (CBM)"/>
+                <field name="the_tich_da_dung_cbm" optional="hide" sum="Đã dùng (CBM)"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-primary="state in ('open', 'booking_confirmed')"
+                       decoration-success="state in ('arrived', 'delivered')"
+                       decoration-warning="state == 'departed'"
+                       decoration-muted="state in ('closed', 'cancelled')"/>
+                <field name="lab_is_exception" optional="hide" string="Ngoại lệ"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- =================================================================================
+         2. FORM — 7 nút chuyển trạng thái + khối tải trọng + 4 tab nghiệp vụ.
+         Quyền trên nút = đúng ACL thật của lab.chuyen: chỉ nhóm có perm_write mới thấy
+         (warehouse, docs, sale_admin, manager). CS/Kế toán/BGĐ chỉ đọc ⇒ không thấy nút.
+         ================================================================================= -->
+    <record id="view_lab_chuyen_form" model="ir.ui.view">
+        <field name="name">lab.chuyen.form</field>
+        <field name="model">lab.chuyen</field>
+        <field name="arch" type="xml">
+            <form string="Chuyến">
+                <header>
+                    <button name="action_open" type="object" string="Mở chuyến" class="oe_highlight"
+                            invisible="state != 'draft'"
+                            groups="lab_core.group_warehouse,lab_core.group_docs,lab_core.group_sale_admin,lab_core.group_manager"/>
+                    <button name="action_confirm_booking" type="object" string="Chốt booking" class="oe_highlight"
+                            invisible="state != 'open'"
+                            groups="lab_core.group_manager,lab_core.group_sale_admin"/>
+                    <button name="action_depart" type="object" string="Khởi hành" class="oe_highlight"
+                            invisible="state != 'booking_confirmed'"
+                            confirm="Chuyến đã khởi hành thì không sửa được đơn trong chuyến. Tiếp tục?"
+                            groups="lab_core.group_manager,lab_core.group_sale_admin"/>
+                    <button name="action_arrive" type="object" string="Đã đến nơi" class="oe_highlight"
+                            invisible="state != 'departed'"
+                            groups="lab_core.group_manager,lab_core.group_sale_admin"/>
+                    <button name="action_deliver" type="object" string="Đã giao khách" class="oe_highlight"
+                            invisible="state != 'arrived'"
+                            groups="lab_core.group_manager,lab_core.group_sale_admin"/>
+                    <button name="action_close" type="object" string="Khoá chuyến"
+                            invisible="state != 'delivered'"
+                            confirm="Khoá chuyến là thao tác cuối: chuyến không sửa được nữa. Tiếp tục?"
+                            groups="lab_core.group_manager,lab_core.group_sale_admin"/>
+                    <button name="action_cancel" type="object" string="Huỷ chuyến"
+                            invisible="state not in ('draft', 'open', 'booking_confirmed')"
+                            confirm="Huỷ chuyến? Các đơn trong chuyến phải được xử lý lại. Tiếp tục?"
+                            groups="lab_core.group_manager,lab_core.group_sale_admin"/>
+                    <!-- IN TEM XUẤT (chốt M7 2026-11-02): mỗi kiện một tem 100x70.
+                         Ẩn khi chuyến chưa có kiện nào được gán mã xuất. -->
+                    <button name="action_in_tem_xuat" type="object" string="In tem xuất"
+                            invisible="so_kien_xuat == 0"
+                            groups="lab_core.group_warehouse,lab_core.group_sale_admin,lab_core.group_manager"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,open,booking_confirmed,departed,arrived,delivered,closed"/>
+                    <!-- Field ẩn: nút "In tem xuất" dùng nó trong modifier invisible nên
+                         Odoo bắt BUỘC phải có mặt trong view (lỗi thật 2026-11-02). -->
+                    <field name="so_kien_xuat" invisible="1"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" string="Số chuyến"/>
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+
+                    <!-- Cảnh báo quá tải (nhánh ② — giảm tải). div nhận invisible như mọi node
+                         khác trong Odoo 17 (đã đối chiếu pattern ở module OCA 17.0). -->
+                    <div class="alert alert-danger" role="alert" invisible="ti_le_tai &lt;= 100">
+                        <strong>Chuyến đã quá tải.</strong>
+                        Tỉ lệ tải vượt 100% — cần chuyển bớt đơn sang chuyến sau (giảm tải),
+                        hoặc đổi sang chuyến có sức chứa lớn hơn.
+                    </div>
+                    <div class="alert alert-warning" role="alert"
+                         invisible="ti_le_tai &lt;= 90 or ti_le_tai &gt; 100">
+                        <strong>Sắp đầy.</strong>
+                        Tỉ lệ tải trên 90% — cân nhắc trước khi nhận thêm đơn vào chuyến.
+                    </div>
+
+                    <group>
+                        <group string="Thông tin chuyến">
+                            <field name="loai_van_chuyen" widget="radio"/>
+                            <field name="carrier_id"/>
+                            <field name="hang_van_chuyen"/>
+                            <field name="so_booking"/>
+                            <field name="kho_xuat_id"/>
+                        </group>
+                        <group string="Lịch chạy">
+                            <field name="ngay_di"/>
+                            <field name="ngay_den_du_kien"/>
+                            <field name="cut_off_datetime"/>
+                        </group>
+                    </group>
+
+                    <!-- Khối tải trọng: 2 chiều kg/CBM + tỉ lệ tải dạng thanh tiến trình -->
+                    <group string="Tải trọng &amp; thể tích">
+                        <group>
+                            <field name="tai_trong_max_kg" string="Sức chứa (kg)"/>
+                            <field name="tai_trong_da_dung_kg" string="Đã dùng (kg)"/>
+                        </group>
+                        <group>
+                            <field name="the_tich_max_cbm" string="Sức chứa (CBM)"/>
+                            <field name="the_tich_da_dung_cbm" string="Đã dùng (CBM)"/>
+                            <field name="ti_le_tai" widget="progressbar"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="Đơn hàng trong chuyến" name="lines">
+                            <field name="line_ids"
+                                   readonly="state in ('closed', 'cancelled')"
+                                   context="{'default_chuyen_id': id}">
+                                <tree editable="bottom" string="Đơn hàng trong chuyến">
+                                    <!-- domain: chỉ đơn ĐÃ XÁC NHẬN (sale) hoặc BÁO GIÁ ĐÃ GỬI (sent).
+                                         Vì sao không để trống domain: drop-down liệt kê CẢ đơn nháp
+                                         và đơn đã huỷ ⇒ người gom chuyến chọn nhầm đơn chết
+                                         (đo 2026-11-02: 149 đơn, trong đó có nháp/huỷ). -->
+                                    <field name="sale_order_id"
+                                           domain="[('state', 'in', ['sale', 'sent'])]"/>
+                                    <field name="partner_id" readonly="1"/>
+                                    <field name="stock_picking_id" optional="show"/>
+                                    <field name="so_kien" sum="Tổng kiện"/>
+                                    <field name="khoi_luong_kg" sum="Tổng kg"/>
+                                    <field name="the_tich_cbm" sum="Tổng CBM"/>
+                                    <field name="state" widget="badge"
+                                           decoration-success="state == 'booked'"
+                                           decoration-warning="state == 'waitlist'"
+                                           decoration-danger="state == 'removed'"
+                                           decoration-muted="state == 'cancelled'"/>
+                                    <field name="ly_do_go" optional="show"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Phiếu xuất kho" name="pickings">
+                            <field name="picking_ids" readonly="1">
+                                <tree string="Phiếu xuất kho" create="false">
+                                    <field name="name" string="Phiếu"/>
+                                    <field name="partner_id" string="Khách hàng"/>
+                                    <field name="origin" string="Nguồn"/>
+                                    <field name="scheduled_date" string="Ngày dự kiến"/>
+                                    <field name="state" widget="badge"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Debit (cước)" name="debits">
+                            <field name="debit_ids" readonly="1">
+                                <tree string="Phiếu ghi nợ (Debit)" create="false">
+                                    <field name="name" string="Số chứng từ"/>
+                                    <field name="partner_id" string="Khách hàng"/>
+                                    <field name="invoice_date" string="Ngày"/>
+                                    <field name="amount_total" string="Tổng cước" sum="Tổng cước"/>
+                                    <field name="state" widget="badge"/>
+                                </tree>
+                            </field>
+                            <div class="text-muted">
+                                Debit là <code>account.move</code> trên journal Debit — không phải
+                                model riêng (AGENTS.md Luật 4). Muốn lập Debit, dùng wizard của
+                                phân hệ Kế toán (bước ⑬).
+                            </div>
+                        </page>
+                        <page string="Ngoại lệ" name="exceptions">
+                            <group>
+                                <group string="Đánh dấu ngoại lệ"
+                                       groups="lab_core.group_sale_admin,lab_core.group_manager">
+                                    <field name="lab_is_exception"/>
+                                    <field name="lab_exception_type"
+                                           invisible="not lab_is_exception"/>
+                                    <field name="lab_return_step"
+                                           invisible="not lab_is_exception"
+                                           placeholder="vd: duyệt chuyến → ⑥"/>
+                                    <field name="lab_exception_note"
+                                           invisible="not lab_is_exception"
+                                           placeholder="Diễn giải ngắn lý do vào nhánh ngoại lệ…"/>
+                                </group>
+                                <group string="Dấu vết">
+                                    <field name="lab_exception_user_id" readonly="1"/>
+                                    <field name="lab_exception_date" readonly="1"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- =================================================================================
+         3. KANBAN — nhìn theo trạng thái như bảng điều phối. Thẻ nào quá tải thì có nhãn
+         đỏ "Quá tải" ngay trên thẻ.
+         ================================================================================= -->
+    <record id="view_lab_chuyen_kanban" model="ir.ui.view">
+        <field name="name">lab.chuyen.kanban</field>
+        <field name="model">lab.chuyen</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state" quick_create="false" class="o_kanban_small_column">
+                <field name="name"/>
+                <field name="loai_van_chuyen"/>
+                <field name="hang_van_chuyen"/>
+                <field name="cut_off_datetime"/>
+                <field name="ti_le_tai"/>
+                <field name="tai_trong_da_dung_kg"/>
+                <field name="tai_trong_max_kg"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="oe_kanban_global_click">
+                            <div class="o_kanban_record_title">
+                                <strong><field name="name"/></strong>
+                            </div>
+                            <div class="text-muted">
+                                <field name="loai_van_chuyen"/> · <field name="hang_van_chuyen"/>
+                            </div>
+                            <div class="mt-2">
+                                <field name="ti_le_tai" widget="progressbar"/>
+                            </div>
+                            <div class="mt-1">
+                                <span class="text-muted">
+                                    Tải: <field name="tai_trong_da_dung_kg"/> / <field name="tai_trong_max_kg"/> kg
+                                </span>
+                            </div>
+                            <div class="mt-1">
+                                <t t-if="record.ti_le_tai.raw_value &gt; 100">
+                                    <span class="badge badge-danger">Quá tải — cần giảm tải</span>
+                                </t>
+                                <t t-elif="record.ti_le_tai.raw_value &gt; 90">
+                                    <span class="badge badge-warning">Sắp đầy</span>
+                                </t>
+                            </div>
+                            <div class="text-muted mt-1">
+                                Hạn chốt: <field name="cut_off_datetime"/>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- =================================================================================
+         4. SEARCH — lọc quá tải / theo loại air-sea / theo 8 trạng thái + groupby.
+         ================================================================================= -->
+    <record id="view_lab_chuyen_search" model="ir.ui.view">
+        <field name="name">lab.chuyen.search</field>
+        <field name="model">lab.chuyen</field>
+        <field name="arch" type="xml">
+            <search string="Tìm chuyến">
+                <field name="name" string="Số chuyến"/>
+                <field name="so_booking"/>
+                <field name="hang_van_chuyen"/>
+
+                <filter name="f_overload" string="Quá tải (trên 100%)"
+                        domain="[('ti_le_tai', '&gt;', 100)]"/>
+                <filter name="f_near_full" string="Sắp đầy (90–100%)"
+                        domain="[('ti_le_tai', '&gt;', 90), ('ti_le_tai', '&lt;=', 100)]"/>
+                <separator/>
+                <filter name="f_air" string="Đường bay"
+                        domain="[('loai_van_chuyen', '=', 'air')]"/>
+                <filter name="f_sea" string="Đường biển"
+                        domain="[('loai_van_chuyen', '=', 'sea')]"/>
+                <separator/>
+                <filter name="f_state_draft" string="Nháp"
+                        domain="[('state', '=', 'draft')]"/>
+                <filter name="f_state_open" string="Đang mở"
+                        domain="[('state', '=', 'open')]"/>
+                <filter name="f_state_booking" string="Đã chốt booking"
+                        domain="[('state', '=', 'booking_confirmed')]"/>
+                <filter name="f_state_departed" string="Đã khởi hành"
+                        domain="[('state', '=', 'departed')]"/>
+                <filter name="f_state_arrived" string="Đã đến nơi"
+                        domain="[('state', '=', 'arrived')]"/>
+                <filter name="f_state_delivered" string="Đã giao khách"
+                        domain="[('state', '=', 'delivered')]"/>
+                <filter name="f_state_closed" string="Đã khoá"
+                        domain="[('state', '=', 'closed')]"/>
+                <filter name="f_state_cancelled" string="Đã huỷ"
+                        domain="[('state', '=', 'cancelled')]"/>
+                <separator/>
+                <filter name="f_exception" string="Đang ở nhánh ngoại lệ"
+                        domain="[('lab_is_exception', '=', True)]"/>
+                <filter name="f_cutoff_due" string="Sắp tới hạn chốt"
+                        domain="[('cut_off_datetime', '&lt;=', (context_today() + relativedelta(days=3)).strftime('%Y-%m-%d %H:%M:%S'))]"/>
+
+                <group expand="0" string="Nhóm theo">
+                    <filter name="g_state" string="Trạng thái"
+                            context="{'group_by': 'state'}"/>
+                    <filter name="g_loai" string="Loại vận chuyển"
+                            context="{'group_by': 'loai_van_chuyen'}"/>
+                    <filter name="g_hang" string="Hãng vận chuyển"
+                            context="{'group_by': 'hang_van_chuyen'}"/>
+                    <filter name="g_kho" string="Kho xuất"
+                            context="{'group_by': 'kho_xuat_id'}"/>
+                    <filter name="g_cutoff_month" string="Tháng chốt hàng"
+                            context="{'group_by': 'cut_off_datetime:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- =================================================================================
+         5. CALENDAR — date_start = cut_off_datetime (hạn chốt hàng là mốc CS phải nhìn).
+         ================================================================================= -->
+    <record id="view_lab_chuyen_calendar" model="ir.ui.view">
+        <field name="name">lab.chuyen.calendar</field>
+        <field name="model">lab.chuyen</field>
+        <field name="arch" type="xml">
+            <calendar string="Lịch chuyến" date_start="cut_off_datetime"
+                      color="loai_van_chuyen" mode="month">
+                <field name="name"/>
+                <field name="loai_van_chuyen"/>
+                <field name="hang_van_chuyen"/>
+                <field name="ti_le_tai"/>
+            </calendar>
+        </field>
+    </record>
+
+    <!-- =================================================================================
+         6. ACTION + ngữ cảnh mở màn hình.
+         ================================================================================= -->
+    <record id="action_lab_chuyen" model="ir.actions.act_window">
+        <field name="name">Chuyến</field>
+        <field name="res_model">lab.chuyen</field>
+        <field name="view_mode">tree,kanban,form,calendar</field>
+        <field name="search_view_id" ref="view_lab_chuyen_search"/>
+        <field name="context">{'search_default_f_state_open': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Chưa có chuyến nào</p>
+            <p>
+                Một <b>chuyến</b> gom nhiều đơn lẻ của nhiều shop đi chung một chuyến bay
+                hoặc chuyến tàu. Tạo chuyến → khai sức chứa (kg và CBM) → gán đơn vào chuyến.
+            </p>
+            <p>
+                <b>Chuyến bay</b> dùng hệ số thể tích 6000, <b>chuyến tàu</b> dùng 1000 —
+                đổi ở Cấu hình sản phẩm vận chuyển. Khi tỉ lệ tải vượt 100%, chuyến bị đánh
+                dấu <b>quá tải</b> và phải giảm tải (chuyển bớt đơn sang chuyến sau).
+            </p>
+        </field>
+    </record>
+
+    <!-- Cùng model, lọc sẵn chuyến quá tải = đường vào nhánh ngoại lệ ② trong ≤ 2 click. -->
+    <record id="action_lab_chuyen_overload" model="ir.actions.act_window">
+        <field name="name">Chuyến quá tải (giảm tải)</field>
+        <field name="res_model">lab.chuyen</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[('ti_le_tai', '&gt;', 100)]</field>
+        <field name="search_view_id" ref="view_lab_chuyen_search"/>
+        <field name="context">{'search_default_f_overload': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Không có chuyến nào quá tải</p>
+            <p>
+                Màn này lọc sẵn các chuyến có tỉ lệ tải trên 100%. Khi có chuyến trong danh
+                sách, mở chuyến → tab <b>Đơn hàng trong chuyến</b> → gỡ bớt đơn sang
+                <b>Chờ chuyến sau</b> (giảm tải). Dòng bị gỡ vẫn giữ nguyên để có dấu vết.
+            </p>
+        </field>
+    </record>
+
+</odoo>

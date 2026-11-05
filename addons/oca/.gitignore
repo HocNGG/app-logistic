@@ -1,0 +1,6 @@
+# addons/oca — vendor OCA, KHÔNG ai sửa tay (AGENTS.md Luật 10).
+#
+# _repos/ là bản clone tạm (git working copy) do infra/scripts/vendor-oca.ps1 tạo ra;
+# nó KHÔNG phải module Odoo và không được commit. Module thật được copy ra
+# addons/oca/<tên module>/ (một cấp, để Odoo quét thấy trong addons_path).
+_repos/

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  =====================================================================================
+  MÀU BRAND Ở DẠNG TÀI NGUYÊN ANDROID — ADR-009 §6 (dark navy + neon lime).
+
+  Nguồn DUY NHẤT của màu trong app vẫn là `design/Tokens.kt` (`object Brand`); tệp này chép
+  lại ĐÚNG hex của bảng token §6 để manifest/theme/icon dùng được TRƯỚC khi Compose khởi động.
+  Không dùng những màu này để vẽ UI Compose (trong Compose luôn lấy `Brand.*` / `AppTheme`).
+
+  Cập nhật 2026-10-30: bỏ toàn bộ hex của hệ "giấy ấm / đêm xanh rừng" (ADR-007) — nếu còn sót
+  ở đây thì cửa sổ Android sẽ CHỚP một khung xanh rừng trong ~50ms đầu, đúng lúc bắt đầu quay
+  video. Self-check khối 5 giữ hex chuẩn ở phía Kotlin; tệp này phải khớp từng dòng với nó.
+
+    ground #080D17 · s1 #101725 · s2 #192231 · card #202A3A · accent #A6F000 · on-accent #080D17
+    ok #5FD68A · warn #E8A33D · bad #FF6B5E · info #6EA8FF · ink #F5F7FA · ink-2 #929CAB
+  =====================================================================================
+-->
+<resources>
+    <color name="brand_ground">#080D17</color>
+    <color name="brand_surface">#101725</color>
+    <color name="brand_surface_2">#192231</color>
+    <color name="brand_card">#202A3A</color>
+    <color name="brand_accent">#A6F000</color>
+    <color name="brand_accent_2">#B8FF28</color>
+    <color name="brand_on_accent">#080D17</color>
+    <color name="brand_ok">#5FD68A</color>
+    <color name="brand_warn">#E8A33D</color>
+    <color name="brand_bad">#FF6B5E</color>
+    <color name="brand_info">#6EA8FF</color>
+    <color name="brand_ink">#F5F7FA</color>
+    <color name="brand_ink_2">#929CAB</color>
+    <!-- Token lab-line = rgba(255,255,255,.08) ⇒ 0x14 = 20/255 = 7,8% (cùng giá trị Kotlin).
+         LƯU Ý: comment XML của Android KHÔNG được chứa hai dấu gạch liền nhau (aapt2
+         báo "The string is not permitted within comments") — đã trúng lỗi này 2 lần. -->
+    <color name="brand_line">#14FFFFFF</color>
+
+    <!-- Nền của launcher icon = nền brand. -->
+    <color name="ic_launcher_background">#080D17</color>
+</resources>

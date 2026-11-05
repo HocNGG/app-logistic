@@ -1,0 +1,87 @@
+# ===========================================================================
+# infra/docker-compose.yml — Odoo 17 CE (Community) + Postgres 15
+# Dự án: AppLogictics (hệ thống gom hàng lẻ xuất khẩu)
+#
+# Chạy:   docker compose -f infra/docker-compose.yml up -d
+# Xem:    http://localhost:8069   (DB: odoo17_lab, xem infra/odoo.conf)
+# Dừng:   docker compose -f infra/docker-compose.yml down
+# Reset:  powershell -File infra/scripts/reset-demo.ps1
+#
+# Ghi chú thiết kế:
+#  * Postgres tạo sẵn bằng POSTGRES_USER=odoo (superuser trong container) để
+#    Odoo tự tạo/sao lưu DB odoo17_lab mà không cần cấp quyền thủ công.
+#  * addons/ của repo mount READ-ONLY: container không được ghi __pycache__ /
+#    file lạ vào repo; vendor OCA cũng read-only theo AGENTS.md Luật 10.
+#  * Không khai "version:" — Compose v2 đã bỏ (khai sẽ bị cảnh báo obsolete).
+# ===========================================================================
+services:
+  db:
+    image: postgres:15
+    container_name: lab_pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD: odoo
+    volumes:
+      - lab_pgdata:/var/lib/postgresql/data
+    ports:
+      # Mở 5432 để psql/pgAdmin trên host đối soát dữ liệu khi demo.
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U odoo -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  odoo:
+    image: applogictics/odoo:17.0-testhelper
+    build:
+      context: .
+      dockerfile: Dockerfile.odoo
+    container_name: lab_odoo
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8069:8069"
+    environment:
+      # Entrypoint của image odoo đọc các biến này và truyền --db_* cho odoo.
+      HOST: db
+      PORT: 5432
+      USER: odoo
+      PASSWORD: odoo
+    volumes:
+      - lab_odoo_data:/var/lib/odoo
+      # addons của dự án: lab_core, lab_chuyen, lab_laixe, lab_hanhtrinh, lab_api, oca/
+      - ../addons:/mnt/extra-addons:ro
+      - ./odoo.conf:/etc/odoo/odoo.conf:ro
+    command: ["odoo", "-c", "/etc/odoo/odoo.conf"]
+    healthcheck:
+      # Dùng python3 (chắc chắn có trong image odoo) thay vì curl/wget để không
+      # phụ thuộc package ngoài. /web/login phải trả 200 khi Odoo sẵn sàng.
+      test:
+        - CMD
+        - python3
+        - "-c"
+        - |
+          import sys
+          import urllib.request
+          try:
+              status = urllib.request.urlopen(
+                  "http://127.0.0.1:8069/web/login", timeout=5
+              ).status
+          except Exception:
+              sys.exit(1)
+          sys.exit(0 if status == 200 else 1)
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      # Odoo lần đầu khởi tạo DB khá lâu -> cho 120s ân hạn trước khi tính là fail.
+      start_period: 120s
+
+volumes:
+  lab_pgdata:
+  lab_odoo_data:
